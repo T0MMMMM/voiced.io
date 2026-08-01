@@ -1,0 +1,64 @@
+/* ─────────────────────────────────────────────────────────────
+   voiced.io — tokens de design « Studio Dub »
+   SEUL fichier du projet autorisé à contenir des valeurs de couleur.
+   Le thème sombre ne fait que redéfinir ces variables.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surfaces */
+  --bg:             #FAFAF8;
+  --surface:        #FFFFFF;
+  --surface-sunken: #F1F1EF;
+  --border:         #E4E4E7;
+  --border-strong:  #C9C9CE;
+
+  /* Texte */
+  --text:           #101014;
+  --text-muted:     #6B6B75;
+  --text-faint:     #9A9AA3;
+
+  /* Accent */
+  --accent:         #FF5A1F;
+  --accent-hover:   #E64E15;
+  --accent-soft:    #FFF0E9;
+  --on-accent:      #FFFFFF;
+
+  /* États */
+  --rec:            #E5484D;
+  --ok:             #12B981;
+  --warn:           #F5A524;
+
+  /* Waveform */
+  --wave-ref:       #C9C9CE;
+  --wave-self:      #FF5A1F;
+  --playhead:       #101014;
+
+  /* Identité joueur */
+  --player-1:       #0EA5E9;
+  --player-2:       #F59E0B;
+
+  /* Forme */
+  --radius:         6px;
+  --radius-lg:      10px;
+  --shadow:         0 1px 2px rgb(16 16 20 / 0.06);
+  --shadow-float:   0 8px 24px rgb(16 16 20 / 0.10);
+}
+
+[data-theme='dark'] {
+  --bg:             #0B0B0D;
+  --surface:        #16161A;
+  --surface-sunken: #0F0F12;
+  --border:         #26262B;
+  --border-strong:  #3A3A42;
+
+  --text:           #F2F2F4;
+  --text-muted:     #9A9AA3;
+  --text-faint:     #6B6B75;
+
+  --accent-soft:    #2A1509;
+  --wave-ref:       #3A3A42;
+  --playhead:       #F2F2F4;
+
+  --shadow:         none;
+  --shadow-float:   0 8px 24px rgb(0 0 0 / 0.50);
+}
