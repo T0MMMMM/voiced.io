@@ -1,3 +1,4 @@
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils/cn'
 
 export function Header({
@@ -20,6 +21,7 @@ export function Header({
       <div className="text-muted flex flex-1 items-center justify-center text-[13px]">
         {children}
       </div>
+      <ThemeToggle />
     </header>
   )
 }
