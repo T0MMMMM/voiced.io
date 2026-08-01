@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col items-center px-6 py-20 text-center">
       <h1 className="text-fg text-2xl font-semibold tracking-tight">
-        Doublez une scène d&apos;anime à deux
+        Doublez une scène d’anime à deux
       </h1>
       <p className="text-muted mt-3 max-w-md text-[15px]">
         Importez un clip, découpez-le en scènes, et enregistrez vos voix chacun
@@ -38,7 +38,7 @@ export default function Home() {
       </div>
 
       <p className="text-faint mt-10 text-[13px]">
-        L&apos;enregistrement nécessite un ordinateur avec un micro.
+        L’enregistrement nécessite un ordinateur avec un micro.
       </p>
     </main>
   )

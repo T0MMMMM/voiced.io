@@ -59,8 +59,11 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      aria-labelledby={titleId}
-      aria-describedby={description ? descriptionId : undefined}
+      // Le titre et la description ne sont rendus que si `open` : pointer
+      // vers leurs id quand la modale est fermée créerait des références
+      // orphelines, signalées par les audits d'accessibilité.
+      aria-labelledby={open ? titleId : undefined}
+      aria-describedby={open && description ? descriptionId : undefined}
       onClick={(event) => {
         // Le clic sur la zone sombre atteint <dialog> lui-même, jamais son contenu.
         if (event.target === ref.current) onClose()
