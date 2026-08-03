@@ -10,11 +10,13 @@
  */
 export { Badge, type BadgeProps } from './Badge'
 export { Button, buttonClassName, type ButtonProps } from './Button'
+export { Checkbox, type CheckboxProps } from './Checkbox'
 export { Dialog, type DialogProps } from './Dialog'
 export { EmptyState, type EmptyStateProps } from './EmptyState'
 export { IconButton, type IconButtonProps } from './IconButton'
 export { Input, type InputProps } from './Input'
 export { Panel, type PanelProps } from './Panel'
+export { Segmented, type SegmentedOption } from './Segmented'
 export { Spinner, type SpinnerProps } from './Spinner'
 export { ThemeToggle } from './ThemeToggle'
 export { Timecode, type TimecodeProps } from './Timecode'

@@ -1,39 +1,90 @@
 'use client'
 
-import { useState } from 'react'
-import { Button } from '@/components/ui'
+import { useRef, useState } from 'react'
+import { CheckIcon, CopyIcon } from '@/components/ui/icons'
+import { cn } from '@/lib/utils/cn'
 
 /**
- * Le code est fait pour etre lu a voix haute au telephone, d'ou la chasse
- * fixe et l'interlettrage genereux : quatre consonnes bien detachees se
+ * Le code est fait pour être lu à voix haute au téléphone, d'où la chasse
+ * fixe et l'interlettrage généreux : quatre consonnes bien détachées se
  * dictent sans se tromper.
+ *
+ * C'est le code lui-même qu'on clique pour le copier — la cible la plus
+ * évidente de l'écran est aussi la plus grande. La petite icône en bas à
+ * droite ne fait que signaler que c'est possible.
  */
 export function RoomCode({ code }: { code: string }) {
+  const codeRef = useRef<HTMLSpanElement>(null)
   const [copied, setCopied] = useState(false)
 
+  function bounce() {
+    const element = codeRef.current
+    if (!element) return
+
+    // Retirer puis remettre la classe ne suffit pas : le navigateur groupe
+    // les deux changements et ne rejoue rien. Lire une propriété de mise en
+    // page force le recalcul entre les deux, et l'animation repart.
+    element.classList.remove('pop')
+    void element.offsetWidth
+    element.classList.add('pop')
+  }
+
   async function copyLink() {
+    bounce()
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/join?code=${code}`)
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/join?code=${code}`,
+      )
       setCopied(true)
-      window.setTimeout(() => setCopied(false), 2000)
+      window.setTimeout(() => setCopied(false), 1800)
     } catch {
-      // Presse-papiers refuse : le code reste lisible a l'ecran, on n'a
+      // Presse-papiers refusé : le code reste lisible à l'écran, on n'a
       // rien perdu d'essentiel.
     }
   }
 
   return (
-    <div className="flex flex-col items-center gap-5">
-      <div className="text-center">
-        <p className="eyebrow text-faint">Code du salon</p>
-        <p className="text-fg mt-2 font-mono text-[clamp(2.5rem,9vw,4.5rem)] leading-none font-bold tracking-[0.18em]">
-          {code}
-        </p>
-      </div>
+    <div className="flex flex-col items-center gap-2">
+      <p className="eyebrow text-faint">Code du salon</p>
 
-      <Button variant="secondary" size="sm" onClick={() => void copyLink()}>
-        {copied ? 'Lien copié' : 'Copier le lien d’invitation'}
-      </Button>
+      <button
+        type="button"
+        onClick={() => void copyLink()}
+        aria-label={
+          copied ? 'Lien copié' : `Copier le lien d’invitation, code ${code}`
+        }
+        className="rounded-token group relative px-4 pb-3 transition-colors duration-200"
+      >
+        <span
+          ref={codeRef}
+          className="text-fg block font-mono text-[clamp(2.75rem,10vw,5rem)] leading-none font-bold tracking-[0.18em]"
+        >
+          {code}
+        </span>
+
+        <span
+          className={cn(
+            'absolute right-0 bottom-0 transition-colors duration-200',
+            copied ? 'text-accent' : 'text-faint group-hover:text-muted',
+          )}
+        >
+          {copied ? (
+            <CheckIcon className="size-[15px]" />
+          ) : (
+            <CopyIcon className="size-[15px]" />
+          )}
+        </span>
+      </button>
+
+      <p
+        aria-live="polite"
+        className={cn(
+          'eyebrow h-4 transition-opacity duration-200',
+          copied ? 'text-accent opacity-100' : 'opacity-0',
+        )}
+      >
+        Lien copié
+      </p>
     </div>
   )
 }

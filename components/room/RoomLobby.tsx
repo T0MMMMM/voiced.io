@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button, Panel } from '@/components/ui'
+import { Button, Checkbox, Panel, Segmented } from '@/components/ui'
 import { PlayerSeats } from '@/components/room/PlayerSeats'
 import { RoomCode } from '@/components/room/RoomCode'
 import { Silhouette } from '@/components/room/Silhouette'
@@ -167,58 +167,36 @@ export function RoomLobby({
           <Panel>
             <fieldset disabled={!isHost || busy} className="space-y-4">
               <div>
-                <legend className="text-fg text-[15px] font-medium">Minuteur</legend>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {TIMER_CHOICES.map((choice) => (
-                    <button
-                      key={choice.value}
-                      type="button"
-                      aria-pressed={options.timerSec === choice.value}
-                      onClick={() =>
-                        void run(() =>
-                          setRoomOptions(room.id, { timerSec: choice.value }),
-                        )
-                      }
-                      className={cn(
-                        'rounded-token px-3 py-1.5 text-[13px]',
-                        'transition-[background-color,color,transform] duration-200 ease-out',
-                        isHost && 'active:scale-95',
-                        options.timerSec === choice.value
-                          ? 'bg-accent text-on-accent'
-                          : 'bg-sunken text-muted',
-                        !isHost && 'cursor-default',
-                      )}
-                    >
-                      {choice.label}
-                    </button>
-                  ))}
-                </div>
+                <legend className="text-fg mb-2 text-[15px] font-medium">
+                  Minuteur
+                </legend>
+                <Segmented
+                  label="Durée du minuteur"
+                  options={TIMER_CHOICES.map((choice) => ({
+                    value: choice.value,
+                    label: choice.label,
+                  }))}
+                  value={options.timerSec}
+                  disabled={!isHost || busy}
+                  onChange={(next) =>
+                    void run(() => setRoomOptions(room.id, { timerSec: next }))
+                  }
+                />
               </div>
 
               <div className="divide-default divide-y border-t border-t-[var(--border)] pt-1">
                 {TOGGLES.map(({ key, label, hint }) => (
-                  <label
+                  <Checkbox
                     key={key}
-                    className={cn(
-                      'flex items-start gap-3 py-2.5',
-                      isHost ? 'cursor-pointer' : 'cursor-default',
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={options[key] as boolean}
-                      onChange={(event) =>
-                        void run(() =>
-                          setRoomOptions(room.id, { [key]: event.target.checked }),
-                        )
-                      }
-                      className="accent-accent mt-0.5 size-4 shrink-0"
-                    />
-                    <span>
-                      <span className="text-fg block text-[15px]">{label}</span>
-                      <span className="text-faint block text-[13px]">{hint}</span>
-                    </span>
-                  </label>
+                    label={label}
+                    hint={hint}
+                    checked={options[key] as boolean}
+                    onChange={(event) =>
+                      void run(() =>
+                        setRoomOptions(room.id, { [key]: event.target.checked }),
+                      )
+                    }
+                  />
                 ))}
               </div>
             </fieldset>
