@@ -36,6 +36,31 @@ export async function upload(
 }
 
 /**
+ * URL d'envoi signée, à consommer directement par le navigateur.
+ *
+ * Un clip peut peser 50 Mo : le faire transiter par une server action
+ * dépasserait la limite de corps de requête du plan gratuit de Vercel.
+ * Le fichier va donc du navigateur à Supabase sans passer par nous, et
+ * seul le droit d'écrire à ce chemin précis est délégué.
+ */
+export async function createUploadUrl(
+  bucket: Bucket,
+  path: string,
+): Promise<{ url: string; token: string }> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUploadUrl(path)
+
+  if (error || !data) {
+    throw new Error(
+      `Échec de la signature d'envoi pour ${bucket}/${path} : ${error?.message}`,
+    )
+  }
+  return { url: data.signedUrl, token: data.token }
+}
+
+/**
  * URL signée pour `clips` et `takes` (buckets privés),
  * URL publique directe pour `thumbs`.
  */

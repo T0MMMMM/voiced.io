@@ -9,7 +9,7 @@
  * `components/room/`, qui les consomment.
  */
 export { Badge, type BadgeProps } from './Badge'
-export { Button, type ButtonProps } from './Button'
+export { Button, buttonClassName, type ButtonProps } from './Button'
 export { Dialog, type DialogProps } from './Dialog'
 export { EmptyState, type EmptyStateProps } from './EmptyState'
 export { IconButton, type IconButtonProps } from './IconButton'

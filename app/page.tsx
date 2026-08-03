@@ -1,4 +1,5 @@
-import { Button } from '@/components/ui'
+import Link from 'next/link'
+import { buttonClassName } from '@/components/ui/Button'
 import { CursorGlow } from '@/components/home/CursorGlow'
 import { VoiceField } from '@/components/home/VoiceField'
 
@@ -43,7 +44,9 @@ export default function Home() {
           </div>
 
           <div className="mt-14 flex flex-col items-center gap-5">
-            <Button size="lg">Créer une partie</Button>
+            <Link href="/create" className={buttonClassName({ size: 'lg' })}>
+              Créer une partie
+            </Link>
             <p className="text-faint text-[13px]">
               La bibliothèque de scènes déjà découpées arrive bientôt.
             </p>

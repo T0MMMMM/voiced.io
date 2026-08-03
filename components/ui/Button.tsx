@@ -24,6 +24,34 @@ const SIZES: Record<Size, string> = {
   lg: 'h-14 px-7 text-[16px] gap-2.5',
 }
 
+/**
+ * Exposé séparément pour qu'un lien puisse porter exactement la même
+ * apparence qu'un bouton, sans dupliquer les classes ni imbriquer un
+ * <button> dans un <a> — ce qui serait invalide.
+ */
+export function buttonClassName({
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  className,
+}: {
+  variant?: Variant
+  size?: Size
+  fullWidth?: boolean
+  className?: string
+} = {}): string {
+  return cn(
+    'rounded-token inline-flex items-center justify-center font-medium tracking-[-0.01em]',
+    'transition-[transform,box-shadow,background-color,color] duration-200 ease-out',
+    'active:translate-y-0 active:shadow-token active:duration-75',
+    'disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none',
+    VARIANTS[variant],
+    SIZES[size],
+    fullWidth && 'w-full',
+    className,
+  )
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
   size?: Size
@@ -50,18 +78,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
-        className={cn(
-          'rounded-token inline-flex items-center justify-center font-medium tracking-[-0.01em]',
-          'transition-[transform,box-shadow,background-color,color] duration-200 ease-out',
-          // Le clic ramène le bouton au ras du fond : le relief se lit
-          // dans le mouvement, pas seulement dans l'ombre.
-          'active:translate-y-0 active:shadow-token active:duration-75',
-          'disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none',
-          VARIANTS[variant],
-          SIZES[size],
-          fullWidth && 'w-full',
-          className,
-        )}
+        // Le clic ramène le bouton au ras du fond : le relief se lit dans
+        // le mouvement, pas seulement dans l'ombre.
+        className={buttonClassName({ variant, size, fullWidth, className })}
         {...props}
       >
         {children}
