@@ -25,12 +25,20 @@ export function isAbsent(player: Player, now: number = Date.now()): boolean {
 /**
  * La base de donnees est l'unique source de verite : chaque transition
  * d'etat est une ecriture, et tous les ecrans se redessinent en ecoutant
- * les changements Postgres. Il devient impossible que deux joueurs voient
- * des choses differentes, et rafraichir la page restaure l'etat exact.
+ * les changements Postgres.
+ *
+ * Deux precautions rendent la connexion sure face au double montage des
+ * effets en developpement :
+ *
+ *   · un jeton de session — apres chaque `await`, une tentative dont le
+ *     jeton n'est plus le courant abandonne et nettoie derriere elle ;
+ *   · un nom de canal unique par tentative — sans lui, deux connexions
+ *     concurrentes recuperent le meme canal, et ajouter des ecouteurs a
+ *     un canal deja abonne est refuse par Realtime.
  */
 export const useRoomStore = create<RoomState>((set) => {
   let cleanup: (() => void) | null = null
-  let connectedTo: string | null = null
+  let session = 0
 
   return {
     room: null,
@@ -40,11 +48,7 @@ export const useRoomStore = create<RoomState>((set) => {
     tick: 0,
 
     async connect(code) {
-      // React monte deux fois les effets en developpement : sans ce garde,
-      // le second appel recupere le canal deja abonne et tente d'y ajouter
-      // des ecouteurs, ce que Realtime refuse apres `subscribe()`.
-      if (connectedTo === code) return
-      connectedTo = code
+      const mine = ++session
 
       cleanup?.()
       cleanup = null
@@ -52,22 +56,15 @@ export const useRoomStore = create<RoomState>((set) => {
 
       const supabase = createBrowserClient()
 
-      // Un canal orphelin peut survivre a un demontage brutal : on nettoie
-      // avant d'en ouvrir un nouveau sur le meme sujet.
-      for (const channel of supabase.getChannels()) {
-        if (channel.topic === `realtime:room:${code}`) {
-          await supabase.removeChannel(channel)
-        }
-      }
-
       const { data: room } = await supabase
         .from('rooms')
         .select('*')
         .eq('code', code)
         .maybeSingle()
 
+      if (mine !== session) return
+
       if (!room) {
-        connectedTo = null
         set({ loading: false, error: 'Aucun salon ne porte ce code.' })
         return
       }
@@ -77,6 +74,8 @@ export const useRoomStore = create<RoomState>((set) => {
         .select('*')
         .eq('room_id', room.id)
         .order('slot')
+
+      if (mine !== session) return
 
       set({ room, players: players ?? [], loading: false })
 
@@ -89,10 +88,8 @@ export const useRoomStore = create<RoomState>((set) => {
         set({ players: data ?? [] })
       }
 
-      // Un seul canal par salon : ouvrir plusieurs connexions Realtime pour
-      // un meme onglet consommerait le quota gratuit pour rien.
       const channel = supabase
-        .channel(`room:${code}`)
+        .channel(`room:${code}:${mine}`)
         .on(
           'postgres_changes',
           {
@@ -115,21 +112,30 @@ export const useRoomStore = create<RoomState>((set) => {
         )
         .subscribe()
 
-      const heartbeat = window.setInterval(
+      // Une tentative devenue obsolete pendant l'abonnement doit refermer
+      // son propre canal, sinon il resterait ouvert pour rien.
+      if (mine !== session) {
+        void supabase.removeChannel(channel)
+        return
+      }
+
+      const ticker = window.setInterval(
         () => set((state) => ({ tick: state.tick + 1 })),
         5_000,
       )
 
       cleanup = () => {
-        window.clearInterval(heartbeat)
+        window.clearInterval(ticker)
         void supabase.removeChannel(channel)
       }
     },
 
     disconnect() {
+      // Invalide toute tentative en cours : sans cela, un `connect` encore
+      // suspendu sur un `await` reprendrait et ouvrirait un canal orphelin.
+      session++
       cleanup?.()
       cleanup = null
-      connectedTo = null
       set({ room: null, players: [], loading: true, error: null })
     },
   }

@@ -17,13 +17,13 @@ export default function Home() {
             className="rise text-fg max-w-2xl text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.95] font-medium tracking-[-0.05em] text-balance"
             style={{ animationDelay: '60ms' }}
           >
-            Quatre jeux, un code.
+            Jouez ensemble. Découvrez à la fin.
           </h1>
           <p
             className="rise text-muted mt-5 max-w-md text-[17px] leading-relaxed"
             style={{ animationDelay: '160ms' }}
           >
-            Tout le monde joue de son côté. Tout se révèle à la fin.
+            Quatre jeux à plusieurs, sans rien installer.
           </p>
 
           <div className="rise mt-12 sm:mt-14" style={{ animationDelay: '260ms' }}>
@@ -33,7 +33,7 @@ export default function Home() {
           {/* Créer un salon est l'action du site : elle occupe quatre
               cinquièmes de la ligne, rejoindre se contente du reste. */}
           <div
-            className="rise mt-12 flex w-full max-w-xl gap-3"
+            className="rise mt-12 flex w-full gap-3"
             style={{ animationDelay: '380ms' }}
           >
             <Link
@@ -48,14 +48,14 @@ export default function Home() {
             </Link>
             <Link
               href="/join"
-              aria-label="J’ai un code"
+              aria-label="Rejoindre une partie"
               className={buttonClassName({
                 variant: 'secondary',
                 size: 'lg',
                 className: 'basis-1/5 gap-2 px-0',
               })}
             >
-              <span className="hidden sm:inline">Code</span>
+              <span className="hidden sm:inline">Rejoindre</span>
               <ArrowRightIcon />
             </Link>
           </div>

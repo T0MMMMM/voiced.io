@@ -6,10 +6,8 @@ import { PlayerSeats } from '@/components/room/PlayerSeats'
 import { RoomCode } from '@/components/room/RoomCode'
 import { Silhouette } from '@/components/room/Silhouette'
 import { GAMES } from '@/lib/games'
-import { ClipUploader } from '@/components/upload/ClipUploader'
-import { PlayIcon, SlidersIcon, UploadIcon, UsersIcon } from '@/components/ui/icons'
+import { PlayIcon, SlidersIcon, UsersIcon } from '@/components/ui/icons'
 import {
-  setRoomClip,
   setRoomGame,
   setRoomOptions,
   startGame,
@@ -62,9 +60,6 @@ export function RoomLobby({
   const you = players.find((player) => player.id === youId) ?? null
   const isHost = you?.is_host ?? false
   const options = mergeOptions(room.options)
-
-  // Le doublage ne peut pas demarrer sans matiere a doubler.
-  const needsClip = room.game === 'dub' && !room.clip_id
 
   // Battement de présence. Sans lui, un joueur reste « prêt » pour toujours,
   // y compris après avoir fermé son onglet.
@@ -133,7 +128,8 @@ export function RoomLobby({
                       onClick={() => void run(() => setRoomGame(room.id, game.id))}
                       className={cn(
                         'flex w-full items-center gap-3 px-4 py-3.5 text-left',
-                        'transition-colors duration-150',
+                        'transition-[background-color,transform] duration-200 ease-out',
+                        selectable && 'active:scale-[0.99]',
                         chosen && 'bg-accent-soft',
                         selectable && !chosen && 'hover:bg-sunken',
                         !selectable && 'cursor-default',
@@ -184,7 +180,9 @@ export function RoomLobby({
                         )
                       }
                       className={cn(
-                        'rounded-token px-3 py-1.5 text-[13px] transition-colors duration-150',
+                        'rounded-token px-3 py-1.5 text-[13px]',
+                        'transition-[background-color,color,transform] duration-200 ease-out',
+                        isHost && 'active:scale-95',
                         options.timerSec === choice.value
                           ? 'bg-accent text-on-accent'
                           : 'bg-sunken text-muted',
@@ -228,38 +226,16 @@ export function RoomLobby({
         </section>
       </div>
 
-      {needsClip && (
-        <section aria-label="Clip à doubler">
-          <SectionTitle
-            icon={<UploadIcon />}
-            aside={isHost ? undefined : 'L’hôte s’en charge'}
-          >
-            Clip à doubler
-          </SectionTitle>
-
-          {isHost ? (
-            <ClipUploader
-              onUploaded={(clipId) => run(() => setRoomClip(room.id, clipId))}
-            />
-          ) : (
-            <Panel className="text-muted py-8 text-center text-[15px]">
-              L’hôte est en train de choisir un clip.
-            </Panel>
-          )}
-        </section>
-      )}
-
       <section className="flex flex-col items-center gap-4">
         {isHost ? (
           <Button
             size="lg"
             loading={busy}
-            disabled={needsClip}
             className="gap-2.5"
             onClick={() => void run(() => startGame(room.id))}
           >
             <PlayIcon />
-            {needsClip ? 'Importez un clip pour lancer' : 'Lancer la partie'}
+            Lancer la partie
           </Button>
         ) : (
           <p className="text-muted text-[15px]">

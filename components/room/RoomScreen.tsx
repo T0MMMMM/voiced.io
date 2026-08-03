@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { ClipStep } from '@/components/room/ClipStep'
 import { RoomLobby } from '@/components/room/RoomLobby'
 import type { Player, Room } from '@/lib/supabase/types'
 import { useRoomStore } from '@/stores/useRoomStore'
@@ -50,6 +51,13 @@ export function RoomScreen({
 
   if (room.status === 'lobby') {
     return <RoomLobby room={room} players={players} youId={youId} />
+  }
+
+  // Le doublage ne peut pas commencer sans matiere : l'import devient une
+  // etape a part entiere, apres le lobby et avant le jeu.
+  if (room.game === 'dub' && !room.clip_id) {
+    const you = players.find((player) => player.id === youId)
+    return <ClipStep room={room} isHost={you?.is_host ?? false} />
   }
 
   return (
