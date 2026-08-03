@@ -3,6 +3,7 @@ import { CursorGlow } from '@/components/home/CursorGlow'
 import { GameLane } from '@/components/home/GameLane'
 import { VoiceField } from '@/components/home/VoiceField'
 import { buttonClassName } from '@/components/ui/Button'
+import { ArrowRightIcon, PlusIcon } from '@/components/ui/icons'
 import { GAMES } from '@/lib/games'
 
 export default function Home() {
@@ -12,27 +13,50 @@ export default function Home() {
 
       <main className="mx-auto max-w-4xl px-6 pb-24 sm:px-10">
         <section className="flex min-h-[86vh] flex-col justify-center pt-28 sm:pt-32">
-          <h1 className="text-fg max-w-2xl text-[clamp(2.25rem,6.4vw,4.25rem)] leading-[0.97] font-medium tracking-[-0.045em] text-balance">
-            Quatre jeux, un code à quatre lettres.
+          <h1
+            className="rise text-fg max-w-2xl text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.95] font-medium tracking-[-0.05em] text-balance"
+            style={{ animationDelay: '60ms' }}
+          >
+            Quatre jeux, un code.
           </h1>
-          <p className="text-muted mt-6 max-w-lg text-[17px] leading-relaxed text-pretty">
-            Vos amis vous rejoignent depuis leur navigateur. Pendant la partie,
-            personne ne voit ce que font les autres — tout se révèle à la fin.
+          <p
+            className="rise text-muted mt-5 max-w-md text-[17px] leading-relaxed"
+            style={{ animationDelay: '160ms' }}
+          >
+            Tout le monde joue de son côté. Tout se révèle à la fin.
           </p>
 
-          <div className="mt-12 sm:mt-16">
+          <div className="rise mt-12 sm:mt-14" style={{ animationDelay: '260ms' }}>
             <VoiceField />
           </div>
 
-          <div className="mt-12 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <Link href="/create" className={buttonClassName({ size: 'lg' })}>
+          {/* Créer un salon est l'action du site : elle occupe quatre
+              cinquièmes de la ligne, rejoindre se contente du reste. */}
+          <div
+            className="rise mt-12 flex w-full max-w-xl gap-3"
+            style={{ animationDelay: '380ms' }}
+          >
+            <Link
+              href="/create"
+              className={buttonClassName({
+                size: 'lg',
+                className: 'basis-4/5 gap-2.5',
+              })}
+            >
+              <PlusIcon />
               Créer un salon
             </Link>
             <Link
               href="/join"
-              className={buttonClassName({ variant: 'secondary', size: 'lg' })}
+              aria-label="J’ai un code"
+              className={buttonClassName({
+                variant: 'secondary',
+                size: 'lg',
+                className: 'basis-1/5 gap-2 px-0',
+              })}
             >
-              J’ai un code
+              <span className="hidden sm:inline">Code</span>
+              <ArrowRightIcon />
             </Link>
           </div>
         </section>

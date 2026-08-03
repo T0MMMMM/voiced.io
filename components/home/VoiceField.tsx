@@ -7,14 +7,17 @@ const BAR_COUNT = 84
 /** Amplitude au repos : une piste n'est jamais tout à fait plate. */
 const FLOOR = 0.045
 
-/** Raideur de la corde : plus elle est haute, plus l'onde voyage vite. */
-const TENSION = 0.28
+/** Largeur de la bosse que le curseur creuse, en fraction de la piste. */
+const SIGMA = 0.085
 
-/** Ce qui reste d'une image à l'autre. En dessous de 1, l'onde s'éteint. */
-const DAMPING = 0.955
-
-/** Largeur du souffle injecté sous le curseur, en barres. */
-const BREATH = 3.2
+/**
+ * Irrégularité fixe par barre. Sans elle, la bosse suivant le curseur est
+ * une cloche parfaite : ça se lit comme un graphique, pas comme une voix.
+ */
+const GRAIN = Array.from(
+  { length: BAR_COUNT },
+  (_, i) => 0.72 + 0.28 * Math.abs(Math.sin(i * 2.39 + 1.1)),
+)
 
 /**
  * Motif de la piste de référence. Déterministe — calculé une seule fois au
@@ -30,12 +33,10 @@ const REFERENCE = Array.from({ length: BAR_COUNT }, (_, i) => {
 /**
  * Le geste signature du site.
  *
- * La piste du haut est la réplique d'origine : figée, indifférente à vous.
- * Celle du bas est la vôtre — et ce n'est pas une bosse qui suit le
- * curseur, c'est une vraie corde. On y injecte de l'énergie là où l'on
- * passe, elle se propage de proche en proche puis s'éteint. Bouger vite
- * frappe plus fort : le curseur parle, et la piste garde un instant la
- * trace de ce qu'on vient d'y dire.
+ * La piste du haut est la réplique d'origine : figée, elle ne dépend de
+ * rien. Celle du bas est la vôtre, et elle n'existe que là où vous passez —
+ * c'est exactement le rapport que le produit installe entre les deux voix.
+ * Le curseur y tient le rôle de la parole.
  *
  * Rien ne transite par l'état React : quatre-vingt-quatre barres
  * déclencheraient un rendu par image.
@@ -43,17 +44,15 @@ const REFERENCE = Array.from({ length: BAR_COUNT }, (_, i) => {
 export function VoiceField() {
   const containerRef = useRef<HTMLDivElement>(null)
   const selfBars = useRef<(HTMLDivElement | null)[]>([])
+  const amplitudes = useRef<number[]>(Array<number>(BAR_COUNT).fill(FLOOR))
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const height = new Float32Array(BAR_COUNT)
-    const velocity = new Float32Array(BAR_COUNT)
-
+    // Hors de la fenêtre, la piste retombe au silence : tant que personne
+    // ne parle, il n'y a rien à voir.
     let pointerX = 0.5
-    let lastPointerX = 0.5
-    let speed = 0
-    let presence = 0
+    let intensity = 0
     let frame = 0
 
     function handlePointer(event: PointerEvent) {
@@ -61,75 +60,43 @@ export function VoiceField() {
       if (!container) return
 
       const rect = container.getBoundingClientRect()
-      const x = (event.clientX - rect.left) / rect.width
-      speed = Math.min(Math.abs(x - pointerX) * 26, 1.6)
-      lastPointerX = pointerX
-      pointerX = x
+      pointerX = (event.clientX - rect.left) / rect.width
 
-      // L'influence décroît avec l'éloignement vertical : la corde réagit
+      // L'influence décroît avec l'éloignement vertical : la piste réagit
       // depuis toute la page, mais d'autant plus qu'on s'en approche.
       const centerY = rect.top + rect.height / 2
-      presence = Math.max(0, 1 - Math.abs(event.clientY - centerY) / 460)
+      intensity = Math.max(0, 1 - Math.abs(event.clientY - centerY) / 460)
     }
 
     function handleLeave() {
-      presence = 0
-    }
-
-    // Un clic est un cri : une impulsion franche, plus large et plus forte.
-    function handleDown() {
-      if (presence <= 0) return
-      const center = pointerX * (BAR_COUNT - 1)
-      for (let i = 0; i < BAR_COUNT; i++) {
-        const offset = (i - center) / (BREATH * 1.8)
-        velocity[i] = (velocity[i] ?? 0) + Math.exp(-offset * offset) * 2.6
-      }
+      intensity = 0
     }
 
     function tick() {
-      const center = pointerX * (BAR_COUNT - 1)
-      // Le souffle de base garde la corde vivante ; la vitesse du geste
-      // décide de la force. Immobile, on chuchote ; en mouvement, on parle.
-      const force = presence * (0.16 + speed * 0.9)
+      const current = amplitudes.current
 
       for (let i = 0; i < BAR_COUNT; i++) {
-        const offset = (i - center) / BREATH
-        velocity[i] = (velocity[i] ?? 0) + Math.exp(-offset * offset) * force * 0.5
-      }
+        const offset = i / (BAR_COUNT - 1) - pointerX
+        const bell = Math.exp(-(offset * offset) / (2 * SIGMA * SIGMA))
+        const target = FLOOR + (1 - FLOOR) * bell * intensity * (GRAIN[i] ?? 1)
 
-      // Équation des ondes : chaque barre est tirée vers la moyenne de ses
-      // voisines. C'est ce terme qui fait voyager l'onde vers l'extérieur.
-      for (let i = 0; i < BAR_COUNT; i++) {
-        const left = height[i - 1] ?? height[i] ?? 0
-        const right = height[i + 1] ?? height[i] ?? 0
-        const pull = left + right - 2 * (height[i] ?? 0)
-        velocity[i] = ((velocity[i] ?? 0) + pull * TENSION) * DAMPING
-      }
+        const previous = current[i] ?? FLOOR
+        const next = previous + (target - previous) * 0.16
+        current[i] = next
 
-      for (let i = 0; i < BAR_COUNT; i++) {
-        height[i] = (height[i] ?? 0) + (velocity[i] ?? 0)
-
-        const amplitude = Math.min(1, FLOOR + Math.abs(height[i] ?? 0) * 0.9)
         const bar = selfBars.current[i]
-        if (bar) bar.style.transform = `scaleY(${amplitude.toFixed(4)})`
+        if (bar) bar.style.transform = `scaleY(${next.toFixed(4)})`
       }
-
-      // La vitesse retombe si le curseur s'arrête : sans cela, un geste
-      // rapide continuerait de crier après s'être immobilisé.
-      speed *= 0.86
-      if (pointerX === lastPointerX) speed *= 0.7
 
       frame = requestAnimationFrame(tick)
     }
 
     window.addEventListener('pointermove', handlePointer, { passive: true })
-    window.addEventListener('pointerdown', handleDown)
     document.addEventListener('pointerleave', handleLeave)
     frame = requestAnimationFrame(tick)
 
     return () => {
       window.removeEventListener('pointermove', handlePointer)
-      window.removeEventListener('pointerdown', handleDown)
       document.removeEventListener('pointerleave', handleLeave)
       cancelAnimationFrame(frame)
     }
@@ -173,7 +140,7 @@ export function VoiceField() {
 
       <div className="mt-2.5 flex items-end justify-between">
         <span className="eyebrow text-accent">Vous</span>
-        <span className="eyebrow text-faint">Bougez, cliquez</span>
+        <span className="eyebrow text-faint">À enregistrer</span>
       </div>
     </div>
   )

@@ -6,7 +6,15 @@ import { PlayerSeats } from '@/components/room/PlayerSeats'
 import { RoomCode } from '@/components/room/RoomCode'
 import { Silhouette } from '@/components/room/Silhouette'
 import { GAMES } from '@/lib/games'
-import { setRoomGame, setRoomOptions, startGame, touchPlayer } from '@/lib/rooms/actions'
+import { ClipUploader } from '@/components/upload/ClipUploader'
+import { PlayIcon, SlidersIcon, UploadIcon, UsersIcon } from '@/components/ui/icons'
+import {
+  setRoomClip,
+  setRoomGame,
+  setRoomOptions,
+  startGame,
+  touchPlayer,
+} from '@/lib/rooms/actions'
 import { mergeOptions, TIMER_CHOICES, type RoomOptions } from '@/lib/rooms/options'
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
@@ -20,15 +28,20 @@ const TOGGLES: { key: keyof RoomOptions; label: string; hint: string }[] = [
 ]
 
 function SectionTitle({
+  icon,
   children,
   aside,
 }: {
+  icon: React.ReactNode
   children: React.ReactNode
   aside?: React.ReactNode
 }) {
   return (
-    <div className="mb-3 flex items-baseline justify-between px-1">
-      <span className="eyebrow text-faint">{children}</span>
+    <div className="mb-3 flex items-center justify-between px-1">
+      <span className="eyebrow text-faint flex items-center gap-2">
+        <span className="[&>svg]:size-4">{icon}</span>
+        {children}
+      </span>
       {aside && <span className="eyebrow text-faint">{aside}</span>}
     </div>
   )
@@ -49,6 +62,9 @@ export function RoomLobby({
   const you = players.find((player) => player.id === youId) ?? null
   const isHost = you?.is_host ?? false
   const options = mergeOptions(room.options)
+
+  // Le doublage ne peut pas demarrer sans matiere a doubler.
+  const needsClip = room.game === 'dub' && !room.clip_id
 
   // Battement de présence. Sans lui, un joueur reste « prêt » pour toujours,
   // y compris après avoir fermé son onglet.
@@ -83,7 +99,10 @@ export function RoomLobby({
       </div>
 
       <section aria-label="Joueurs">
-        <SectionTitle aside={isHost ? 'Vous arbitrez' : undefined}>
+        <SectionTitle
+          icon={<UsersIcon />}
+          aside={isHost ? 'Vous arbitrez' : undefined}
+        >
           Autour de la table
         </SectionTitle>
         <PlayerSeats players={players} youId={youId} hostId={room.host_player_id} />
@@ -91,7 +110,10 @@ export function RoomLobby({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section aria-label="Jeu">
-          <SectionTitle aside={isHost ? 'Vous choisissez' : 'L’hôte choisit'}>
+          <SectionTitle
+            icon={<PlayIcon />}
+            aside={isHost ? 'Vous choisissez' : 'L’hôte choisit'}
+          >
             Jeu
           </SectionTitle>
 
@@ -139,7 +161,10 @@ export function RoomLobby({
         </section>
 
         <section aria-label="Réglages">
-          <SectionTitle aside={isHost ? undefined : 'Lecture seule'}>
+          <SectionTitle
+            icon={<SlidersIcon />}
+            aside={isHost ? undefined : 'Lecture seule'}
+          >
             Réglages
           </SectionTitle>
 
@@ -203,14 +228,38 @@ export function RoomLobby({
         </section>
       </div>
 
+      {needsClip && (
+        <section aria-label="Clip à doubler">
+          <SectionTitle
+            icon={<UploadIcon />}
+            aside={isHost ? undefined : 'L’hôte s’en charge'}
+          >
+            Clip à doubler
+          </SectionTitle>
+
+          {isHost ? (
+            <ClipUploader
+              onUploaded={(clipId) => run(() => setRoomClip(room.id, clipId))}
+            />
+          ) : (
+            <Panel className="text-muted py-8 text-center text-[15px]">
+              L’hôte est en train de choisir un clip.
+            </Panel>
+          )}
+        </section>
+      )}
+
       <section className="flex flex-col items-center gap-4">
         {isHost ? (
           <Button
             size="lg"
             loading={busy}
+            disabled={needsClip}
+            className="gap-2.5"
             onClick={() => void run(() => startGame(room.id))}
           >
-            Lancer la partie
+            <PlayIcon />
+            {needsClip ? 'Importez un clip pour lancer' : 'Lancer la partie'}
           </Button>
         ) : (
           <p className="text-muted text-[15px]">

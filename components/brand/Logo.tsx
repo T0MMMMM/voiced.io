@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { cn } from '@/lib/utils/cn'
 
 /**
@@ -37,17 +38,22 @@ export function WaveMark({ className }: { className?: string }) {
 
 /**
  * Le bloc de marque : une tuile en relief — la même matière que tous les
- * boutons du site — suivie du mot en noir franc.
+ * boutons du site — suivie du mot en noir franc. Elle ramène à l'accueil,
+ * comme tout logo de site.
  */
 export function Logo({ className }: { className?: string }) {
   return (
-    <span className={cn('inline-flex items-center gap-2.5', className)}>
-      <span className="bg-surface shadow-token rounded-token text-accent inline-flex size-9 shrink-0 items-center justify-center">
+    <Link
+      href="/"
+      aria-label="voiced.io — retour à l’accueil"
+      className={cn('group inline-flex items-center gap-2.5', className)}
+    >
+      <span className="bg-surface shadow-token rounded-token text-accent inline-flex size-9 shrink-0 items-center justify-center transition-[transform,box-shadow] duration-200 ease-out group-hover:-translate-y-px group-hover:shadow-[var(--shadow-lift)]">
         <WaveMark />
       </span>
       <span className="text-fg text-[17px] font-semibold tracking-[-0.02em]">
         voiced.io
       </span>
-    </span>
+    </Link>
   )
 }

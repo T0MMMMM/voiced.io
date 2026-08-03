@@ -214,6 +214,16 @@ export async function setRoomGame(roomId: string, game: GameId): Promise<void> {
   if (error) throw new Error(`Changement de jeu impossible : ${error.message}`)
 }
 
+/** Rattache le clip importe au salon. Le doublage en a besoin pour demarrer. */
+export async function setRoomClip(roomId: string, clipId: string): Promise<void> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('rooms')
+    .update({ clip_id: clipId })
+    .eq('id', roomId)
+  if (error) throw new Error(`Impossible d’attacher le clip : ${error.message}`)
+}
+
 export async function startGame(roomId: string): Promise<void> {
   const supabase = createServiceClient()
   const { error } = await supabase

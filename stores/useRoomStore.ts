@@ -28,8 +28,9 @@ export function isAbsent(player: Player, now: number = Date.now()): boolean {
  * les changements Postgres. Il devient impossible que deux joueurs voient
  * des choses differentes, et rafraichir la page restaure l'etat exact.
  */
-export const useRoomStore = create<RoomState>((set, get) => {
+export const useRoomStore = create<RoomState>((set) => {
   let cleanup: (() => void) | null = null
+  let connectedTo: string | null = null
 
   return {
     room: null,
@@ -39,10 +40,25 @@ export const useRoomStore = create<RoomState>((set, get) => {
     tick: 0,
 
     async connect(code) {
-      get().disconnect()
+      // React monte deux fois les effets en developpement : sans ce garde,
+      // le second appel recupere le canal deja abonne et tente d'y ajouter
+      // des ecouteurs, ce que Realtime refuse apres `subscribe()`.
+      if (connectedTo === code) return
+      connectedTo = code
+
+      cleanup?.()
+      cleanup = null
       set({ loading: true, error: null })
 
       const supabase = createBrowserClient()
+
+      // Un canal orphelin peut survivre a un demontage brutal : on nettoie
+      // avant d'en ouvrir un nouveau sur le meme sujet.
+      for (const channel of supabase.getChannels()) {
+        if (channel.topic === `realtime:room:${code}`) {
+          await supabase.removeChannel(channel)
+        }
+      }
 
       const { data: room } = await supabase
         .from('rooms')
@@ -51,6 +67,7 @@ export const useRoomStore = create<RoomState>((set, get) => {
         .maybeSingle()
 
       if (!room) {
+        connectedTo = null
         set({ loading: false, error: 'Aucun salon ne porte ce code.' })
         return
       }
@@ -75,7 +92,7 @@ export const useRoomStore = create<RoomState>((set, get) => {
       // Un seul canal par salon : ouvrir plusieurs connexions Realtime pour
       // un meme onglet consommerait le quota gratuit pour rien.
       const channel = supabase
-        .channel(`room:${room.id}`)
+        .channel(`room:${code}`)
         .on(
           'postgres_changes',
           {
@@ -112,6 +129,7 @@ export const useRoomStore = create<RoomState>((set, get) => {
     disconnect() {
       cleanup?.()
       cleanup = null
+      connectedTo = null
       set({ room: null, players: [], loading: true, error: null })
     },
   }
