@@ -31,9 +31,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         aria-invalid={error ? true : undefined}
         aria-describedby={message ? messageId : undefined}
         className={cn(
-          'rounded-token bg-surface text-fg placeholder:text-faint h-10 w-full border px-3 text-[15px]',
-          'transition-colors duration-150 outline-none',
-          mono && 'font-mono tnum',
+          // Creusé, à l'inverse des boutons qui sont posés : la saisie est
+          // un endroit où l'on entre, pas un objet que l'on presse.
+          'rounded-token bg-sunken text-fg placeholder:text-faint h-11 w-full border px-3.5 text-[15px]',
+          'transition-colors duration-200 outline-none',
+          mono && 'font-mono tnum tracking-[0.08em]',
           error ? 'border-rec' : 'border-default focus:border-strong',
           'disabled:opacity-40',
           className,

@@ -87,7 +87,7 @@ export function Dialog({
                 </p>
               )}
             </div>
-            <IconButton label="Fermer" size="sm" onClick={onClose}>
+            <IconButton label="Fermer" size="sm" variant="ghost" onClick={onClose}>
               ×
             </IconButton>
           </div>

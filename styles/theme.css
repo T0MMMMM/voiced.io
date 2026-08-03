@@ -1,64 +1,95 @@
 /* ─────────────────────────────────────────────────────────────
-   voiced.io — tokens de design « Studio Dub »
+   voiced.io — tokens de design
+
    SEUL fichier du projet autorisé à contenir des valeurs de couleur.
-   Le thème sombre ne fait que redéfinir ces variables.
+   Le thème sombre ne fait que redéfinir ces variables : aucun composant
+   ne contient de variante conditionnelle.
+
+   Direction : fond crème, contrôles en relief, le vert comme unique
+   couleur, noir franc sur la typographie. L'élévation remplace la
+   bordure — un contrôle se lit parce qu'il flotte au-dessus du fond,
+   pas parce qu'on l'a encadré.
    ───────────────────────────────────────────────────────────── */
 
 :root {
   /* Surfaces */
-  --bg:             #FAFAF8;
+  --bg:             #FFF7EA;
   --surface:        #FFFFFF;
-  --surface-sunken: #F1F1EF;
-  --border:         #E4E4E7;
-  --border-strong:  #C9C9CE;
+  --surface-sunken: #F6EEE0;
+  --border:         #EBE2D2;
+  --border-strong:  #C7D9C4;
 
-  /* Texte */
-  --text:           #101014;
-  --text-muted:     #6B6B75;
-  --text-faint:     #9A9AA3;
+  /* Texte — le noir franc porte l'identité */
+  --text:           #0A0A0A;
+  --text-muted:     #5E5B54;
+  --text-faint:     #918D85;
 
-  /* Accent */
-  --accent:         #FF5A1F;
-  --accent-hover:   #E64E15;
-  --accent-soft:    #FFF0E9;
+  /* Accent : l'échelle de verts */
+  --accent:         #7A9B7A;
+  --accent-hover:   #67856A;
+  --accent-mid:     #A6BFA2;
+  --accent-soft:    #E7F0E2;
   --on-accent:      #FFFFFF;
 
-  /* États */
-  --rec:            #E5484D;
-  --ok:             #12B981;
-  --warn:           #F5A524;
+  /* États. Le rouge d'enregistrement est la seule couleur chaude du
+     système : il ne doit jamais avoir de concurrent à l'écran. */
+  --rec:            #C2554A;
+  --ok:             #7A9B7A;
+  --warn:           #B98C2E;
 
   /* Waveform */
-  --wave-ref:       #C9C9CE;
-  --wave-self:      #FF5A1F;
-  --playhead:       #101014;
+  --wave-ref:       #C7D9C4;
+  --wave-self:      #7A9B7A;
+  --playhead:       #0A0A0A;
 
-  /* Identité joueur */
-  --player-1:       #0EA5E9;
-  --player-2:       #F59E0B;
+  /* Identité joueur — vert contre noir : la distinction la plus nette
+     possible sans introduire de couleur étrangère à la palette. */
+  --player-1:       #7A9B7A;
+  --player-2:       #2E2C28;
 
   /* Forme */
-  --radius:         6px;
-  --radius-lg:      10px;
-  --shadow:         0 1px 2px rgb(16 16 20 / 0.06);
-  --shadow-float:   0 8px 24px rgb(16 16 20 / 0.10);
+  --radius:         12px;
+  --radius-lg:      20px;
+
+  /* Élévation : la signature des contrôles. Deux ombres superposées —
+     une courte et nette qui pose l'objet, une large et diffuse qui le
+     décolle du fond. */
+  --shadow:         0 1px 1px rgb(24 20 12 / 0.04), 0 2px 6px rgb(24 20 12 / 0.07);
+  --shadow-lift:    0 2px 4px rgb(24 20 12 / 0.05), 0 10px 24px rgb(24 20 12 / 0.11);
+  --shadow-press:   inset 0 1px 2px rgb(24 20 12 / 0.10);
+  --shadow-float:   0 16px 48px rgb(24 20 12 / 0.16);
 }
 
 [data-theme='dark'] {
-  --bg:             #0B0B0D;
-  --surface:        #16161A;
-  --surface-sunken: #0F0F12;
-  --border:         #26262B;
-  --border-strong:  #3A3A42;
+  --bg:             #151714;
+  --surface:        #1F221E;
+  --surface-sunken: #1A1D19;
+  --border:         #2C302B;
+  --border-strong:  #414A40;
 
-  --text:           #F2F2F4;
-  --text-muted:     #9A9AA3;
-  --text-faint:     #6B6B75;
+  --text:           #F4F1E9;
+  --text-muted:     #A5A199;
+  --text-faint:     #706C65;
 
-  --accent-soft:    #2A1509;
-  --wave-ref:       #3A3A42;
-  --playhead:       #F2F2F4;
+  /* On remonte dans l'échelle de verts : le vert foncé du thème clair
+     ne tiendrait pas le contraste sur un fond sombre. */
+  --accent:         #A6BFA2;
+  --accent-hover:   #C7D9C4;
+  --accent-mid:     #7A9B7A;
+  --accent-soft:    #232A21;
+  --on-accent:      #10130F;
 
-  --shadow:         none;
-  --shadow-float:   0 8px 24px rgb(0 0 0 / 0.50);
+  --rec:            #E0705F;
+
+  --wave-ref:       #414A40;
+  --wave-self:      #A6BFA2;
+  --playhead:       #F4F1E9;
+
+  --player-1:       #A6BFA2;
+  --player-2:       #E4E0D6;
+
+  --shadow:         0 1px 1px rgb(0 0 0 / 0.35), 0 2px 6px rgb(0 0 0 / 0.40);
+  --shadow-lift:    0 2px 4px rgb(0 0 0 / 0.40), 0 10px 24px rgb(0 0 0 / 0.50);
+  --shadow-press:   inset 0 1px 2px rgb(0 0 0 / 0.50);
+  --shadow-float:   0 16px 48px rgb(0 0 0 / 0.55);
 }

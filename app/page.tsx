@@ -1,45 +1,81 @@
-import { Button, Panel } from '@/components/ui'
+import { Button } from '@/components/ui'
+import { CursorGlow } from '@/components/home/CursorGlow'
+import { VoiceField } from '@/components/home/VoiceField'
+
+/**
+ * Les trois temps du parcours. L'ordre porte l'information : ce sont des
+ * étapes qui s'enchaînent, d'où la ligne qui les traverse — la même ligne
+ * que la timeline de l'éditeur.
+ */
+const STEPS = [
+  {
+    title: 'Importez',
+    body: 'Un MP4 de moins de trois minutes. Rien à installer.',
+  },
+  {
+    title: 'Découpez',
+    body: 'Un marqueur à chaque changement de réplique. C’est tout l’éditeur.',
+  },
+  {
+    title: 'Doublez',
+    body: 'Chacun ses personnages, chacun son tour, en direct.',
+  },
+]
 
 export default function Home() {
   return (
-    <main className="mx-auto flex max-w-2xl flex-col items-center px-6 py-20 text-center">
-      <h1 className="text-fg text-2xl font-semibold tracking-tight">
-        Doublez une scène d’anime à deux
-      </h1>
-      <p className="text-muted mt-3 max-w-md text-[15px]">
-        Importez un clip, découpez-le en scènes, et enregistrez vos voix chacun
-        votre tour. Aucun compte, aucune installation.
-      </p>
+    <>
+      <CursorGlow />
 
-      <div className="mt-10 grid w-full gap-4 sm:grid-cols-2">
-        <Panel className="flex flex-col items-start gap-3 text-left">
-          <div>
-            <h2 className="text-fg text-[15px] font-medium">Créer une partie</h2>
-            <p className="text-muted mt-1 text-[15px]">
-              Importez votre propre clip MP4 et invitez un ami avec un code.
+      <main className="px-6 sm:px-10">
+        <section className="mx-auto flex max-w-5xl flex-col items-center pt-32 pb-20 text-center sm:pt-40">
+          <h1 className="text-fg max-w-3xl text-[clamp(2.25rem,6.4vw,4.5rem)] leading-[0.97] font-medium tracking-[-0.045em] text-balance">
+            Prêtez vos voix à une scène d’anime.
+          </h1>
+
+          <p className="text-muted mt-6 max-w-xl text-[17px] leading-relaxed text-pretty">
+            Importez un clip, découpez-le, et doublez chacun votre tour. À
+            deux, dans le navigateur, sans créer de compte.
+          </p>
+
+          <div className="mt-16 w-full sm:mt-20">
+            <VoiceField />
+          </div>
+
+          <div className="mt-14 flex flex-col items-center gap-5">
+            <Button size="lg">Créer une partie</Button>
+            <p className="text-faint text-[13px]">
+              La bibliothèque de scènes déjà découpées arrive bientôt.
             </p>
           </div>
-          <Button className="mt-auto" fullWidth>
-            Commencer
-          </Button>
-        </Panel>
+        </section>
 
-        <Panel sunken className="flex flex-col items-start gap-3 text-left">
-          <div>
-            <h2 className="text-muted text-[15px] font-medium">Bibliothèque</h2>
-            <p className="text-faint mt-1 text-[15px]">
-              Une sélection de scènes déjà découpées, prêtes à doubler.
-            </p>
+        <section className="mx-auto max-w-4xl pb-28">
+          <div className="relative">
+            {/* La ligne ne relie les étapes que lorsqu'elles sont côte à côte ;
+                empilées, elle n'aurait plus rien à relier. */}
+            <div className="bg-strong absolute top-[5px] right-8 left-8 hidden h-px sm:block" />
+
+            <ol className="grid gap-10 sm:grid-cols-3 sm:gap-8">
+              {STEPS.map(({ title, body }) => (
+                <li key={title} className="relative sm:text-center">
+                  <span className="bg-accent mb-5 block size-[11px] rounded-full sm:mx-auto" />
+                  <h2 className="text-fg text-[17px] font-medium tracking-[-0.015em]">
+                    {title}
+                  </h2>
+                  <p className="text-muted mx-auto mt-1.5 max-w-[15rem] text-[15px] leading-relaxed">
+                    {body}
+                  </p>
+                </li>
+              ))}
+            </ol>
           </div>
-          <Button variant="secondary" className="mt-auto" fullWidth disabled>
-            Bientôt disponible
-          </Button>
-        </Panel>
-      </div>
 
-      <p className="text-faint mt-10 text-[13px]">
-        L’enregistrement nécessite un ordinateur avec un micro.
-      </p>
-    </main>
+          <p className="text-faint mt-24 text-center text-[13px]">
+            L’enregistrement demande un ordinateur et un micro.
+          </p>
+        </section>
+      </main>
+    </>
   )
 }

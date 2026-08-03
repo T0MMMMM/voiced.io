@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import '../styles/theme.css';
 
+/* Le mot-clé `inline` est essentiel : sans lui, Tailwind fige les couleurs
+   à la compilation et la bascule de thème à l'exécution devient impossible.
+   C'est ce qui permet la règle « aucune variante dark: dans un composant ». */
 @theme inline {
   --color-bg:          var(--bg);
   --color-surface:     var(--surface);
@@ -15,6 +18,7 @@
 
   --color-accent:      var(--accent);
   --color-accent-hover:var(--accent-hover);
+  --color-accent-mid:  var(--accent-mid);
   --color-accent-soft: var(--accent-soft);
   --color-on-accent:   var(--on-accent);
 
@@ -33,10 +37,12 @@
   --radius-token-lg:   var(--radius-lg);
 
   --shadow-token:      var(--shadow);
+  --shadow-lift:       var(--shadow-lift);
+  --shadow-press:      var(--shadow-press);
   --shadow-float:      var(--shadow-float);
 
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-sans: var(--font-grotesk), system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, monospace;
 }
 
 @layer base {
@@ -56,12 +62,13 @@
     background-color: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   /* Focus visible uniforme sur tout le site */
   :focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: 2px;
+    outline-offset: 3px;
   }
 
   /* Chiffres à chasse fixe : indispensable pour les compteurs et timecodes,
@@ -69,5 +76,37 @@
   .tnum {
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum';
+  }
+
+  /* Petite capitale de service : eyebrows, libellés de piste, unités.
+     Space Mono en très petit, largement interlettré. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+}
+
+/* Le geste d'ouverture : les barres de la waveform se lèvent de gauche à
+   droite au chargement, comme une lecture qui démarre. */
+@keyframes wave-rise {
+  from {
+    transform: scaleY(0.04);
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -63,10 +63,10 @@ export default function UiKitchenSink() {
         <IconButton label="Supprimer" variant="danger">
           ×
         </IconButton>
-        <IconButton label="Options" variant="secondary">
+        <IconButton label="Options" variant="ghost">
           ⋯
         </IconButton>
-        <IconButton label="Ajouter" size="sm" variant="secondary">
+        <IconButton label="Ajouter" size="sm">
           +
         </IconButton>
       </Section>
