@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { Button, Panel } from '@/components/ui'
-import { PlayerList } from '@/components/room/PlayerList'
+import { PlayerSeats } from '@/components/room/PlayerSeats'
 import { RoomCode } from '@/components/room/RoomCode'
+import { Silhouette } from '@/components/room/Silhouette'
 import { GAMES } from '@/lib/games'
 import { setRoomGame, setRoomOptions, startGame, touchPlayer } from '@/lib/rooms/actions'
 import { mergeOptions, TIMER_CHOICES, type RoomOptions } from '@/lib/rooms/options'
@@ -18,38 +19,18 @@ const TOGGLES: { key: keyof RoomOptions; label: string; hint: string }[] = [
   { key: 'allowSteal', label: 'Question volée', hint: 'Celui qui passe laisse la main aux autres' },
 ]
 
-function Toggle({
-  checked,
-  disabled,
-  label,
-  hint,
-  onChange,
+function SectionTitle({
+  children,
+  aside,
 }: {
-  checked: boolean
-  disabled: boolean
-  label: string
-  hint: string
-  onChange: (next: boolean) => void
+  children: React.ReactNode
+  aside?: React.ReactNode
 }) {
   return (
-    <label
-      className={cn(
-        'flex cursor-pointer items-start gap-3 py-2.5',
-        disabled && 'cursor-default opacity-55',
-      )}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.checked)}
-        className="accent-accent mt-0.5 size-4 shrink-0"
-      />
-      <span>
-        <span className="text-fg block text-[15px]">{label}</span>
-        <span className="text-faint block text-[13px]">{hint}</span>
-      </span>
-    </label>
+    <div className="mb-3 flex items-baseline justify-between px-1">
+      <span className="eyebrow text-faint">{children}</span>
+      {aside && <span className="eyebrow text-faint">{aside}</span>}
+    </div>
   )
 }
 
@@ -69,8 +50,8 @@ export function RoomLobby({
   const isHost = you?.is_host ?? false
   const options = mergeOptions(room.options)
 
-  // Battement de presence. Sans lui, un joueur reste « prêt » pour
-  // toujours, y compris apres avoir ferme son onglet.
+  // Battement de présence. Sans lui, un joueur reste « prêt » pour toujours,
+  // y compris après avoir fermé son onglet.
   useEffect(() => {
     if (!youId) return
     void touchPlayer(youId)
@@ -92,97 +73,135 @@ export function RoomLobby({
 
   return (
     <div className="space-y-12">
-      <RoomCode code={room.code} />
+      <div className="flex flex-col items-center gap-6">
+        <span className="bg-surface shadow-token rounded-token text-muted inline-flex items-center gap-2 px-3 py-1.5 text-[13px]">
+          <span className="bg-accent size-2 animate-pulse rounded-full" />
+          En direct · {players.length} joueur{players.length > 1 ? 's' : ''}
+        </span>
+
+        <RoomCode code={room.code} />
+      </div>
 
       <section aria-label="Joueurs">
-        <p className="eyebrow text-faint mb-3 text-center">
-          {players.length} joueur{players.length > 1 ? 's' : ''}
-        </p>
-        <PlayerList players={players} youId={youId} hostId={room.host_player_id} />
+        <SectionTitle aside={isHost ? 'Vous arbitrez' : undefined}>
+          Autour de la table
+        </SectionTitle>
+        <PlayerSeats players={players} youId={youId} hostId={room.host_player_id} />
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        <Panel>
-          <h2 className="text-fg text-[15px] font-medium">Jeu</h2>
-          <p className="text-faint mt-1 text-[13px]">
-            {isHost ? 'Vous choisissez.' : 'L’hôte choisit.'}
-          </p>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section aria-label="Jeu">
+          <SectionTitle aside={isHost ? 'Vous choisissez' : 'L’hôte choisit'}>
+            Jeu
+          </SectionTitle>
 
-          <ul className="mt-4 space-y-1.5">
-            {GAMES.map((game) => {
-              const chosen = room.game === game.id
-              const available = game.href !== null
-              return (
-                <li key={game.id}>
-                  <button
-                    type="button"
-                    disabled={!isHost || busy || !available}
-                    onClick={() => void run(() => setRoomGame(room.id, game.id))}
+          <Panel padded={false} className="overflow-hidden">
+            <ul className="divide-default divide-y">
+              {GAMES.map((game) => {
+                const chosen = room.game === game.id
+                const available = game.href !== null
+                const selectable = isHost && available && !busy
+
+                return (
+                  <li key={game.id}>
+                    <button
+                      type="button"
+                      disabled={!selectable}
+                      aria-pressed={chosen}
+                      onClick={() => void run(() => setRoomGame(room.id, game.id))}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-4 py-3.5 text-left',
+                        'transition-colors duration-150',
+                        chosen && 'bg-accent-soft',
+                        selectable && !chosen && 'hover:bg-sunken',
+                        !selectable && 'cursor-default',
+                      )}
+                    >
+                      <Silhouette
+                        gameId={game.id}
+                        className={chosen ? 'bg-accent' : 'bg-wave-ref'}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="text-fg block text-[15px] font-medium">
+                          {game.name}
+                        </span>
+                        {!available && (
+                          <span className="eyebrow text-faint">Bientôt</span>
+                        )}
+                      </span>
+                      {chosen && <span className="eyebrow text-accent">Choisi</span>}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </Panel>
+        </section>
+
+        <section aria-label="Réglages">
+          <SectionTitle aside={isHost ? undefined : 'Lecture seule'}>
+            Réglages
+          </SectionTitle>
+
+          <Panel>
+            <fieldset disabled={!isHost || busy} className="space-y-4">
+              <div>
+                <legend className="text-fg text-[15px] font-medium">Minuteur</legend>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {TIMER_CHOICES.map((choice) => (
+                    <button
+                      key={choice.value}
+                      type="button"
+                      aria-pressed={options.timerSec === choice.value}
+                      onClick={() =>
+                        void run(() =>
+                          setRoomOptions(room.id, { timerSec: choice.value }),
+                        )
+                      }
+                      className={cn(
+                        'rounded-token px-3 py-1.5 text-[13px] transition-colors duration-150',
+                        options.timerSec === choice.value
+                          ? 'bg-accent text-on-accent'
+                          : 'bg-sunken text-muted',
+                        !isHost && 'cursor-default',
+                      )}
+                    >
+                      {choice.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="divide-default divide-y border-t border-t-[var(--border)] pt-1">
+                {TOGGLES.map(({ key, label, hint }) => (
+                  <label
+                    key={key}
                     className={cn(
-                      'rounded-token flex w-full items-center justify-between px-3 py-2 text-left text-[15px]',
-                      'transition-colors duration-150',
-                      chosen ? 'bg-accent-soft text-fg' : 'text-muted',
-                      isHost && available && !chosen && 'hover:bg-sunken',
-                      (!isHost || !available) && 'cursor-default',
+                      'flex items-start gap-3 py-2.5',
+                      isHost ? 'cursor-pointer' : 'cursor-default',
                     )}
                   >
-                    <span>{game.name}</span>
-                    {!available && <span className="eyebrow text-faint">Bientôt</span>}
-                    {chosen && <span className="eyebrow text-accent">Choisi</span>}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </Panel>
-
-        <Panel>
-          <h2 className="text-fg text-[15px] font-medium">Réglages</h2>
-          <p className="text-faint mt-1 text-[13px]">
-            Visibles de tous, modifiables par l’hôte.
-          </p>
-
-          <div className="mt-4">
-            <span className="text-fg block text-[15px]">Minuteur</span>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {TIMER_CHOICES.map((choice) => (
-                <button
-                  key={choice.value}
-                  type="button"
-                  disabled={!isHost || busy}
-                  onClick={() =>
-                    void run(() => setRoomOptions(room.id, { timerSec: choice.value }))
-                  }
-                  className={cn(
-                    'rounded-token px-3 py-1.5 text-[13px] transition-colors duration-150',
-                    options.timerSec === choice.value
-                      ? 'bg-accent text-on-accent'
-                      : 'bg-sunken text-muted',
-                    !isHost && 'cursor-default opacity-70',
-                  )}
-                >
-                  {choice.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="divide-default mt-4 divide-y">
-            {TOGGLES.map(({ key, label, hint }) => (
-              <Toggle
-                key={key}
-                label={label}
-                hint={hint}
-                checked={options[key] as boolean}
-                disabled={!isHost || busy}
-                onChange={(next) =>
-                  void run(() => setRoomOptions(room.id, { [key]: next }))
-                }
-              />
-            ))}
-          </div>
-        </Panel>
-      </section>
+                    <input
+                      type="checkbox"
+                      checked={options[key] as boolean}
+                      onChange={(event) =>
+                        void run(() =>
+                          setRoomOptions(room.id, { [key]: event.target.checked }),
+                        )
+                      }
+                      className="accent-accent mt-0.5 size-4 shrink-0"
+                    />
+                    <span>
+                      <span className="text-fg block text-[15px]">{label}</span>
+                      <span className="text-faint block text-[13px]">{hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </Panel>
+        </section>
+      </div>
 
       <section className="flex flex-col items-center gap-4">
         {isHost ? (

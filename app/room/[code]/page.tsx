@@ -19,7 +19,7 @@ export default async function RoomPage({
   const supabase = createServiceClient()
   const { data: room } = await supabase
     .from('rooms')
-    .select('id, code')
+    .select('*')
     .eq('code', code)
     .maybeSingle()
 
@@ -46,9 +46,22 @@ export default async function RoomPage({
     redirect(`/join?code=${code}`)
   }
 
+  // L'état initial part avec la page : le salon s'affiche complet dès la
+  // première image, et le temps réel prend le relais ensuite.
+  const { data: players } = await supabase
+    .from('players')
+    .select('*')
+    .eq('room_id', room.id)
+    .order('slot')
+
   return (
     <main className="mx-auto max-w-3xl px-6 pt-28 pb-24 sm:px-10 sm:pt-32">
-      <RoomScreen code={code} youId={identity.playerId} />
+      <RoomScreen
+        code={code}
+        youId={identity.playerId}
+        initialRoom={room}
+        initialPlayers={players ?? []}
+      />
     </main>
   )
 }

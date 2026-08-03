@@ -2,40 +2,48 @@
 
 import { useEffect } from 'react'
 import { RoomLobby } from '@/components/room/RoomLobby'
-import { Spinner } from '@/components/ui'
+import type { Player, Room } from '@/lib/supabase/types'
 import { useRoomStore } from '@/stores/useRoomStore'
 
 /**
- * Aiguilleur du salon : le meme ecran suit l'etat en base et bascule du
- * lobby au jeu sans que personne ait a recharger. C'est ce que garantit
- * la source de verite unique.
+ * Aiguilleur du salon : le même écran suit l'état en base et bascule du
+ * lobby au jeu sans que personne ait à recharger.
+ *
+ * L'état initial vient du serveur, et le temps réel prend le relais dès
+ * qu'il est prêt. Sans ce relais, on afficherait un chargement à chaque
+ * arrivée alors que la donnée est déjà là.
  */
 export function RoomScreen({
   code,
   youId,
+  initialRoom,
+  initialPlayers,
 }: {
   code: string
   youId: string | null
+  initialRoom: Room
+  initialPlayers: Player[]
 }) {
-  const { room, players, loading, error, connect, disconnect } = useRoomStore()
+  const {
+    room: liveRoom,
+    players: livePlayers,
+    error,
+    connect,
+    disconnect,
+  } = useRoomStore()
 
   useEffect(() => {
     void connect(code)
     return () => disconnect()
   }, [code, connect, disconnect])
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-24">
-        <Spinner label="Connexion au salon" />
-      </div>
-    )
-  }
+  const room = liveRoom ?? initialRoom
+  const players = liveRoom ? livePlayers : initialPlayers
 
-  if (error || !room) {
+  if (error) {
     return (
       <div className="py-16 text-center">
-        <p className="text-fg text-[17px]">{error ?? 'Salon introuvable.'}</p>
+        <p className="text-fg text-[17px]">{error}</p>
       </div>
     )
   }
