@@ -35,11 +35,17 @@ export default function Home() {
           </ul>
         </section>
 
-        <section className="mt-14 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
+        <section className="mt-14 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4">
           <Link href="/create" className={buttonClassName({ size: 'lg' })}>
-            Doubler un clip
+            Créer un salon
           </Link>
-          <p className="text-faint text-[13px] leading-relaxed">
+          <Link
+            href="/join"
+            className={buttonClassName({ variant: 'secondary', size: 'lg' })}
+          >
+            J’ai un code
+          </Link>
+          <p className="text-faint text-[13px] leading-relaxed sm:ml-2">
             Le doublage est jouable dès maintenant.
             <br className="hidden sm:block" /> Les trois autres jeux arrivent.
           </p>

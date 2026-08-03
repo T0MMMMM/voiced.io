@@ -1,8 +1,9 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Panel, buttonClassName } from '@/components/ui'
+import { Button, Input, Panel } from '@/components/ui'
+import { createRoom } from '@/lib/rooms/actions'
 import { DropZone } from '@/components/upload/DropZone'
 import { UploadStatus } from '@/components/upload/UploadStatus'
 import { createClipDraft, discardClipDraft } from '@/lib/clips/actions'
@@ -49,6 +50,9 @@ function putWithProgress(
 }
 
 export default function CreatePage() {
+  const router = useRouter()
+  const [nickname, setNickname] = useState('')
+  const [creating, setCreating] = useState(false)
   const [state, setState] = useState<State>({ step: 'idle' })
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -168,22 +172,51 @@ export default function CreatePage() {
               />
             </Panel>
 
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-fg text-[15px] font-medium">
-                  {state.file.name}
-                </p>
-                <p className="eyebrow text-accent mt-1">Clip importé</p>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="ghost" onClick={reset}>
-                  Changer de clip
-                </Button>
-                <Link href={`/dub/${state.clipId}`} className={buttonClassName()}>
-                  Commencer à doubler
-                </Link>
-              </div>
+            <div className="flex flex-wrap items-baseline justify-between gap-4">
+              <p className="text-fg text-[15px] font-medium">{state.file.name}</p>
+              <Button variant="ghost" size="sm" onClick={reset}>
+                Changer de clip
+              </Button>
             </div>
+
+            <Panel className="space-y-4">
+              <div>
+                <h2 className="text-fg text-[15px] font-medium">Ouvrir le salon</h2>
+                <p className="text-muted mt-1 text-[15px]">
+                  Vous recevrez un code à quatre lettres à donner à vos amis.
+                </p>
+              </div>
+
+              <Input
+                label="Votre pseudo"
+                value={nickname}
+                onChange={(event) => setNickname(event.target.value)}
+                placeholder="Tom"
+                maxLength={20}
+              />
+
+              <Button
+                fullWidth
+                loading={creating}
+                disabled={nickname.trim().length === 0}
+                onClick={() => {
+                  setCreating(true)
+                  setError(null)
+                  createRoom({ game: 'dub', nickname, clipId: state.clipId })
+                    .then((room) => router.push(`/room/${room.code}`))
+                    .catch((cause: unknown) => {
+                      setError(
+                        cause instanceof Error
+                          ? cause.message
+                          : 'Impossible de créer le salon.',
+                      )
+                      setCreating(false)
+                    })
+                }}
+              >
+                Créer le salon
+              </Button>
+            </Panel>
           </div>
         )}
       </div>

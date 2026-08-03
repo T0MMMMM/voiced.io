@@ -99,31 +99,46 @@ export type Database = {
       }
       rooms: {
         Row: {
-          clip_id: string
+          clip_id: string | null
           code: string
           created_at: string
+          current_step: number
           expires_at: string
+          game: string
+          host_player_id: string | null
           id: string
+          options: Json
           recording_by: string | null
           status: string
+          step_started_at: string | null
         }
         Insert: {
-          clip_id: string
+          clip_id?: string | null
           code: string
           created_at?: string
+          current_step?: number
           expires_at?: string
+          game?: string
+          host_player_id?: string | null
           id?: string
+          options?: Json
           recording_by?: string | null
           status?: string
+          step_started_at?: string | null
         }
         Update: {
-          clip_id?: string
+          clip_id?: string | null
           code?: string
           created_at?: string
+          current_step?: number
           expires_at?: string
+          game?: string
+          host_player_id?: string | null
           id?: string
+          options?: Json
           recording_by?: string | null
           status?: string
+          step_started_at?: string | null
         }
         Relationships: [
           {
@@ -131,6 +146,13 @@ export type Database = {
             columns: ["clip_id"]
             isOneToOne: false
             referencedRelation: "clips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_host_player_id_fkey"
+            columns: ["host_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
