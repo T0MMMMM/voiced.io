@@ -14,78 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      assignments: {
-        Row: {
-          character_id: string
-          player_id: string
-          room_id: string
-        }
-        Insert: {
-          character_id: string
-          player_id: string
-          room_id: string
-        }
-        Update: {
-          character_id?: string
-          player_id?: string
-          room_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assignments_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assignments_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assignments_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      characters: {
-        Row: {
-          clip_id: string
-          color: string
-          id: string
-          name: string
-          sort: number
-        }
-        Insert: {
-          clip_id: string
-          color: string
-          id?: string
-          name: string
-          sort?: number
-        }
-        Update: {
-          clip_id?: string
-          color?: string
-          id?: string
-          name?: string
-          sort?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "characters_clip_id_fkey"
-            columns: ["clip_id"]
-            isOneToOne: false
-            referencedRelation: "clips"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       clips: {
         Row: {
           anime_title: string | null
@@ -174,27 +102,27 @@ export type Database = {
           clip_id: string
           code: string
           created_at: string
-          current_idx: number
           expires_at: string
           id: string
+          recording_by: string | null
           status: string
         }
         Insert: {
           clip_id: string
           code: string
           created_at?: string
-          current_idx?: number
           expires_at?: string
           id?: string
+          recording_by?: string | null
           status?: string
         }
         Update: {
           clip_id?: string
           code?: string
           created_at?: string
-          current_idx?: number
           expires_at?: string
           id?: string
+          recording_by?: string | null
           status?: string
         }
         Relationships: [
@@ -205,49 +133,11 @@ export type Database = {
             referencedRelation: "clips"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      scenes: {
-        Row: {
-          character_id: string | null
-          clip_id: string
-          end_sec: number
-          id: string
-          idx: number
-          label: string | null
-          start_sec: number
-        }
-        Insert: {
-          character_id?: string | null
-          clip_id: string
-          end_sec: number
-          id?: string
-          idx: number
-          label?: string | null
-          start_sec: number
-        }
-        Update: {
-          character_id?: string | null
-          clip_id?: string
-          end_sec?: number
-          id?: string
-          idx?: number
-          label?: string | null
-          start_sec?: number
-        }
-        Relationships: [
           {
-            foreignKeyName: "scenes_character_id_fkey"
-            columns: ["character_id"]
+            foreignKeyName: "rooms_recording_by_fkey"
+            columns: ["recording_by"]
             isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "scenes_clip_id_fkey"
-            columns: ["clip_id"]
-            isOneToOne: false
-            referencedRelation: "clips"
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
         ]
@@ -263,7 +153,7 @@ export type Database = {
           peaks: Json | null
           player_id: string | null
           room_id: string
-          scene_id: string
+          start_sec: number
           storage_path: string
         }
         Insert: {
@@ -276,7 +166,7 @@ export type Database = {
           peaks?: Json | null
           player_id?: string | null
           room_id: string
-          scene_id: string
+          start_sec?: number
           storage_path: string
         }
         Update: {
@@ -289,7 +179,7 @@ export type Database = {
           peaks?: Json | null
           player_id?: string | null
           room_id?: string
-          scene_id?: string
+          start_sec?: number
           storage_path?: string
         }
         Relationships: [
@@ -305,13 +195,6 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "takes_scene_id_fkey"
-            columns: ["scene_id"]
-            isOneToOne: false
-            referencedRelation: "scenes"
             referencedColumns: ["id"]
           },
         ]

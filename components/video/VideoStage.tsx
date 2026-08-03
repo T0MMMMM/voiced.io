@@ -13,6 +13,11 @@ export interface VideoStageHandle {
   seek: (time: number) => void
   /** Joue un intervalle et s'arrête tout seul à la fin. */
   playRange: (start: number, end: number) => void
+  /**
+   * Relance sans le son, pour enregistrer par-dessus. Indispensable : un
+   * lecteur qui parle pendant la prise se retrouve dans l'enregistrement.
+   */
+  playMuted: (from: number) => void
   toggle: () => void
   pause: () => void
 }
@@ -78,10 +83,19 @@ export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
         video.currentTime = start
         void video.play()
       },
+      playMuted(from) {
+        const video = videoRef.current
+        if (!video) return
+        stopAt.current = null
+        video.muted = true
+        video.currentTime = from
+        void video.play()
+      },
       toggle() {
         const video = videoRef.current
         if (!video) return
         stopAt.current = null
+        video.muted = false
         if (video.paused) void video.play()
         else video.pause()
       },

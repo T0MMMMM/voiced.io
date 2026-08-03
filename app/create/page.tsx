@@ -179,11 +179,8 @@ export default function CreatePage() {
                 <Button variant="ghost" onClick={reset}>
                   Changer de clip
                 </Button>
-                <Link
-                  href={`/create/${state.clipId}`}
-                  className={buttonClassName()}
-                >
-                  Découper en scènes
+                <Link href={`/dub/${state.clipId}`} className={buttonClassName()}>
+                  Commencer à doubler
                 </Link>
               </div>
             </div>
