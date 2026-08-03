@@ -2,6 +2,7 @@
 
 import { createUploadUrl, clipPath, remove } from '@/lib/storage'
 import { createServiceClient } from '@/lib/supabase/server'
+import { MAX_SCENES, MIN_SCENE_SEC, type Scene } from './scenes'
 import { validateDuration } from './validate'
 
 /** Les clips importes sont ephemeres : le stockage gratuit est la ressource rare. */
@@ -58,6 +59,52 @@ export async function createClipDraft(input: DraftInput): Promise<ClipDraft> {
 
   const { url } = await createUploadUrl('clips', storagePath)
   return { clipId, uploadUrl: url, storagePath }
+}
+
+/**
+ * Enregistre le decoupage. Les scenes sont remplacees en bloc plutot que
+ * reconciliees une a une : le decoupage est court, et une reconciliation
+ * partielle laisserait des index en trous si un insert echouait.
+ */
+export async function saveScenes(
+  clipId: string,
+  scenes: Pick<Scene, 'start' | 'end'>[],
+): Promise<{ count: number }> {
+  if (scenes.length === 0) {
+    throw new Error('Un clip doit contenir au moins une scène.')
+  }
+  if (scenes.length > MAX_SCENES) {
+    throw new Error(`Un clip ne peut pas dépasser ${MAX_SCENES} scènes.`)
+  }
+  if (scenes.some((scene) => scene.end - scene.start < MIN_SCENE_SEC)) {
+    throw new Error('Une scène est trop courte pour être doublée.')
+  }
+
+  const supabase = createServiceClient()
+
+  const { error: clearError } = await supabase
+    .from('scenes')
+    .delete()
+    .eq('clip_id', clipId)
+
+  if (clearError) {
+    throw new Error(`Impossible de remplacer le découpage : ${clearError.message}`)
+  }
+
+  const { error } = await supabase.from('scenes').insert(
+    scenes.map((scene, index) => ({
+      clip_id: clipId,
+      idx: index,
+      start_sec: Number(scene.start.toFixed(3)),
+      end_sec: Number(scene.end.toFixed(3)),
+    })),
+  )
+
+  if (error) {
+    throw new Error(`Impossible d’enregistrer le découpage : ${error.message}`)
+  }
+
+  return { count: scenes.length }
 }
 
 /**

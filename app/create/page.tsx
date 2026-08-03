@@ -1,7 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Panel } from '@/components/ui'
+import { Button, Panel, buttonClassName } from '@/components/ui'
 import { DropZone } from '@/components/upload/DropZone'
 import { UploadStatus } from '@/components/upload/UploadStatus'
 import { createClipDraft, discardClipDraft } from '@/lib/clips/actions'
@@ -155,11 +156,15 @@ export default function CreatePage() {
 
         {state.step === 'ready' && previewUrl && (
           <div className="space-y-6">
-            <Panel padded={false} className="overflow-hidden">
+            <Panel className="flex justify-center">
               <video
                 src={previewUrl}
                 controls
-                className="bg-sunken aspect-video w-full"
+                style={{
+                  aspectRatio: state.meta.width / state.meta.height || 16 / 9,
+                  maxHeight: '58vh',
+                }}
+                className="rounded-token bg-playhead max-w-full"
               />
             </Panel>
 
@@ -174,13 +179,14 @@ export default function CreatePage() {
                 <Button variant="ghost" onClick={reset}>
                   Changer de clip
                 </Button>
-                <Button disabled>Découper en scènes</Button>
+                <Link
+                  href={`/create/${state.clipId}`}
+                  className={buttonClassName()}
+                >
+                  Découper en scènes
+                </Link>
               </div>
             </div>
-
-            <p className="text-faint text-[13px]">
-              L’écran de découpage est la prochaine étape à construire.
-            </p>
           </div>
         )}
       </div>
