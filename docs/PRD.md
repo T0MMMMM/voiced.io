@@ -286,7 +286,7 @@ Tout est activable ou désactivable par l'hôte, en `rooms.options` :
 - indices dégressifs activés
 - vol de question activé
 - ordre des questions aléatoire ou fixe
-Il n'y a plus de bouton de validation : la réponse s'enregistre au fil de la saisie et c'est le minuteur qui la fige. Un bouton n'ajoutait qu'un geste de plus à rater, et laissait perdre la réponse de qui oubliait de cliquer.
+La réponse s'enregistre au fil de la saisie, jamais au clic : personne ne perd ce qu'il a écrit pour avoir oublié un bouton. Le bouton **Valider**, en haut à droite de la question, dit autre chose — « j'ai fini ». Il fige la réponse, et quand toute la table a validé, la question suivante arrive sans attendre le minuteur.
 
 - réponses anonymes pendant la correction (l'hôte ne voit pas qui a écrit quoi : corrige les biais entre amis)
 

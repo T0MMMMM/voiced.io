@@ -270,6 +270,7 @@ export async function answeredPlayers(
     .select('player_id')
     .eq('room_id', roomId)
     .eq('question_id', questionId)
+    .eq('submitted', true)
 
   return (data ?? []).map((answer) => answer.player_id)
 }
@@ -279,17 +280,67 @@ export async function myAnswer(
   roomId: string,
   playerId: string,
   questionId: string,
-): Promise<unknown | null> {
+): Promise<{ payload: unknown; submitted: boolean } | null> {
   const supabase = createServiceClient()
   const { data } = await supabase
     .from('answers')
-    .select('payload')
+    .select('payload, submitted')
     .eq('room_id', roomId)
     .eq('player_id', playerId)
     .eq('question_id', questionId)
     .maybeSingle()
 
-  return data?.payload ?? null
+  if (!data) return null
+
+  // Valider sans rien saisir laisse une reponse vide en base : elle n'a pas
+  // de forme, et la rendre telle quelle remplirait l'ecran d'un objet qui
+  // ne veut rien dire.
+  const payload = data.payload as { kind?: unknown } | null
+  const real = payload && typeof payload === 'object' && 'kind' in payload
+
+  return { payload: real ? data.payload : null, submitted: data.submitted }
+}
+
+/**
+ * « J'ai fini. »
+ *
+ * La reponse s'enregistre deja toute seule ; valider dit autre chose : que
+ * le joueur ne la retouchera plus. Quand toute la table a valide, la
+ * question suivante arrive sans attendre le minuteur.
+ */
+export async function lockAnswer(input: {
+  roomId: string
+  playerId: string
+  questionId: string
+  payload: AnswerPayload | null
+}): Promise<void> {
+  // Valider sans avoir rien saisi doit rester possible : on cree alors une
+  // reponse vide, sans quoi la table attendrait indefiniment quelqu'un qui
+  // a renonce.
+  if (input.payload) {
+    await submitAnswer({
+      roomId: input.roomId,
+      playerId: input.playerId,
+      questionId: input.questionId,
+      payload: input.payload,
+    })
+  }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.from('answers').upsert(
+    {
+      room_id: input.roomId,
+      player_id: input.playerId,
+      question_id: input.questionId,
+      // La colonne n'accepte pas l'absence de valeur : un objet vide dit
+      // « rien saisi » sans mentir sur la forme.
+      ...(input.payload ? {} : { payload: {} as never }),
+      submitted: true,
+    },
+    { onConflict: 'room_id,player_id,question_id' },
+  )
+
+  if (error) throw new Error(`Validation impossible : ${error.message}`)
 }
 
 /**

@@ -26,6 +26,7 @@ export type Database = {
           player_id: string
           question_id: string
           room_id: string
+          submitted: boolean
         }
         Insert: {
           answered_at?: string
@@ -38,6 +39,7 @@ export type Database = {
           player_id: string
           question_id: string
           room_id: string
+          submitted?: boolean
         }
         Update: {
           answered_at?: string
@@ -50,6 +52,7 @@ export type Database = {
           player_id?: string
           question_id?: string
           room_id?: string
+          submitted?: boolean
         }
         Relationships: [
           {

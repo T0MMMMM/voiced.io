@@ -13,11 +13,12 @@ import { ThemeQuestion } from '@/components/quiz/kinds/ThemeQuestion'
 import { TimelineQuestion } from '@/components/quiz/kinds/TimelineQuestion'
 import { WrittenQuestion } from '@/components/quiz/kinds/WrittenQuestion'
 import { QuestionMeta } from '@/components/quiz/QuestionMeta'
-import { Panel } from '@/components/ui'
+import { Button, Panel } from '@/components/ui'
 import { CheckIcon } from '@/components/ui/icons'
 import {
   advanceQuiz,
   answeredPlayers,
+  lockAnswer,
   myAnswer,
   startGrading,
   submitAnswer,
@@ -60,15 +61,17 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
 
   const [answer, setAnswer] = useState<AnswerPayload | null>(null)
   const [saved, setSaved] = useState(false)
+  const [done, setDone] = useState(false)
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   /**
    * Ce qui est deja parti au serveur, sous sa forme serialisee.
    *
-   * Il n'y a plus de bouton de validation : c'est le temps qui arrete la
-   * question, et la reponse doit donc etre enregistree au fil de la
-   * saisie. Cette reference evite de reecrire la meme reponse a chaque
-   * frappe.
+   * La reponse s'enregistre au fil de la saisie et non au clic : le bouton
+   * de validation ne l'envoie pas, il annonce qu'on a fini. Une reponse
+   * commencee puis abandonnee compte donc quand meme. Cette reference evite
+   * de reecrire la meme reponse a chaque frappe.
    */
   const stored = useRef('')
 
@@ -117,13 +120,16 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
   useEffect(() => {
     setAnswer(null)
     setSaved(false)
+    setDone(false)
     stored.current = ''
     if (!question || !youId) return
 
     void myAnswer(room.id, youId, question.id).then((previous) => {
       if (!previous) return
-      setAnswer(previous as AnswerPayload)
-      stored.current = JSON.stringify(previous)
+      setDone(previous.submitted)
+      if (previous.payload === null) return
+      setAnswer(previous.payload as AnswerPayload)
+      stored.current = JSON.stringify(previous.payload)
       setSaved(true)
     })
   }, [room.id, youId, question])
@@ -139,7 +145,9 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
       )
 
     poll()
-    const timer = window.setInterval(poll, 2500)
+    // Une seconde et demie : c'est ce qui separe la derniere validation du
+    // passage a la question suivante, et trois secondes se sentent.
+    const timer = window.setInterval(poll, 1500)
     return () => window.clearInterval(timer)
   }, [room.id, question])
 
@@ -196,7 +204,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
    * de perdre les derniers mots au moment ou le temps tombe.
    */
   useEffect(() => {
-    if (!answer || timeUp) return
+    if (!answer || timeUp || done) return
 
     // Une reponse relue depuis le serveur est deja a jour : l'annoncer en
     // cours d'enregistrement laisserait le message tourner indefiniment.
@@ -208,7 +216,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
     setSaved(false)
     const timer = window.setTimeout(() => void send(), 500)
     return () => window.clearTimeout(timer)
-  }, [answer, timeUp, send])
+  }, [answer, timeUp, done, send])
 
   // Le temps est ecoule : ce qui n'est pas encore parti part maintenant,
   // sans attendre le temps mort.
@@ -237,7 +245,9 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
     if (replies.questionId !== question.id) return
     if (clock.startedAt !== room.step_started_at) return
 
-    if (clock.left > 0) return
+    const everyoneDone =
+      players.length > 0 && replies.ids.length >= players.length
+    if (clock.left > 0 && !everyoneDone) return
 
     leaving.current = question.id
     const action =
@@ -251,7 +261,8 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
     isHost,
     question,
     clock,
-    replies.questionId,
+    replies,
+    players.length,
     room.id,
     room.step_started_at,
     step,
@@ -266,20 +277,59 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
     )
   }
 
-  const locked = timeUp
+  const locked = timeUp || done
+
+  /** Valider, c'est dire « j'ai fini » : la reponse ne bouge plus. */
+  async function validate() {
+    if (!question || !youId || done) return
+    setBusy(true)
+    setError(null)
+    try {
+      await lockAnswer({
+        roomId: room.id,
+        playerId: youId,
+        questionId: question.id,
+        payload: answer,
+      })
+      stored.current = answer ? JSON.stringify(answer) : ''
+      setSaved(Boolean(answer))
+      setDone(true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Validation impossible.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="space-y-8">
       <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="eyebrow text-faint">
-            Question {step + 1} sur {questions.length} · {KIND_LABELS[question.kind]}
+          <span className="flex flex-wrap items-center gap-3">
+            <span className="eyebrow text-faint">
+              Question {step + 1} sur {questions.length} · {KIND_LABELS[question.kind]}
+            </span>
+            {/* Le theme au choix n'annonce ni difficulte ni points : c'est le
+                joueur qui les fixe, et les afficher d'avance mentirait. */}
+            {question.kind !== 'theme' && (
+              <QuestionMeta difficulty={question.difficulty} points={question.points} />
+            )}
           </span>
-          {/* Le theme au choix n'annonce ni difficulte ni points : c'est le
-              joueur qui les fixe, et les afficher d'avance mentirait. */}
-          {question.kind !== 'theme' && (
-            <QuestionMeta difficulty={question.difficulty} points={question.points} />
-          )}
+
+          {/* Valider ne sert pas a envoyer la reponse, qui part deja toute
+              seule : c'est dire « j'ai fini ». Quand toute la table a
+              valide, on passe sans attendre le minuteur. */}
+          <Button
+            size="sm"
+            variant={done ? 'ghost' : 'primary'}
+            loading={busy}
+            disabled={done || timeUp}
+            onClick={() => void validate()}
+            className="gap-2"
+          >
+            {done && <CheckIcon className="size-4" />}
+            {done ? 'Validé' : 'Valider'}
+          </Button>
         </div>
 
         {/* Le temps se lit d'un coup d'oeil : une barre qui se vide dit
@@ -433,7 +483,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
 
         {/* On voit qui a repondu, jamais ce qu'ils ont repondu. */}
         <p className="text-faint text-[13px]">
-          {answered.length} sur {players.length} ont répondu
+          {answered.length} sur {players.length} ont validé
         </p>
 
         <div className="flex flex-wrap justify-center gap-1.5">
@@ -453,10 +503,6 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
           ))}
         </div>
       </div>
-
-      <p className="text-faint text-center text-[13px]">
-        La question suivante arrive à la fin du temps.
-      </p>
 
       {error && (
         <p role="alert" className="text-rec text-center text-[15px]">
