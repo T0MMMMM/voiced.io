@@ -1,41 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { frameFor, MapCanvas, MapPin } from '@/components/quiz/kinds/MapCanvas'
 import type { MapPayload, QuestionComponentProps } from '@/lib/quiz/kinds'
-import { cn } from '@/lib/utils/cn'
-
-/**
- * Le cadrage, en degrés : longitude à gauche, latitude la plus au nord,
- * puis la largeur et la hauteur. Montrer le monde entier pour situer un
- * département français ne demanderait pas une connaissance mais une souris
- * précise.
- *
- * Le planisphère s'arrête à 58° sud : l'Antarctique occupait un quart de
- * l'image pour rien et repoussait tout le reste vers le haut.
- */
-interface Frame {
-  x: number
-  y: number
-  w: number
-  h: number
-}
-
-const FRAMES: Record<string, Frame> = {
-  monde: { x: -180, y: -80, w: 360, h: 138 },
-  europe: { x: -13, y: -72, w: 56, h: 39 },
-  france: { x: -5.6, y: -51.6, w: 15.6, h: 10.8 },
-}
 
 /**
  * La carte à cliquer.
  *
- * Le fond de carte est livré avec le code plutôt que chargé depuis un
- * service : une carte en ligne coûterait une clé d'API et un quota, deux
- * choses que ce projet s'interdit.
- *
- * Le repère du SVG est la longitude et la latitude elles-mêmes, ce qui
- * évite toute conversion : le point cliqué se relit directement, et cadrer
- * sur l'Europe ne demande qu'un `viewBox`.
+ * Elle prend toute la largeur disponible, marges du panneau comprises :
+ * placer un point au millier de kilomètres près demande de la place, et une
+ * carte à l'étroit transforme une question de géographie en question de
+ * précision de souris.
  *
  * La note est dégressive à la distance. Poser Rome à Naples vaut mieux que
  * de la poser à Berlin, et une note tout ou rien confondait les deux.
@@ -46,54 +21,18 @@ export function MapQuestion({
   disabled,
   onChange,
 }: QuestionComponentProps<MapPayload, { kind: 'carte'; lat: number; lng: number }>) {
-  const [paths, setPaths] = useState<string[]>([])
   const [point, setPoint] = useState<{ lat: number; lng: number } | null>(
     value ? { lat: value.lat, lng: value.lng } : null,
   )
-  const svg = useRef<SVGSVGElement>(null)
-
-  // Le fond de carte pèse une centaine de kilo-octets : il n'arrive que
-  // pour les questions qui en ont besoin, pas dans le lot commun.
-  useEffect(() => {
-    let alive = true
-    void import('@/lib/quiz/world').then((module) => {
-      if (alive) setPaths(module.WORLD_PATHS)
-    })
-    return () => {
-      alive = false
-    }
-  }, [])
 
   useEffect(() => {
     setPoint(value ? { lat: value.lat, lng: value.lng } : null)
   }, [payload.region, value])
 
-  // Un pays sans entree nommee porte son propre cadrage : la banque en
-  // ajoute sans qu'il faille toucher au composant.
-  const frame: Frame = payload.box ?? FRAMES[payload.region] ?? FRAMES.monde!
+  const frame = frameFor(payload)
 
-  /**
-   * Tout ce qui se dessine se mesure en degrés, donc à l'échelle du
-   * cadrage. Une taille fixe donnait un point invisible sur le planisphère
-   * et un pâté sur la France.
-   */
-  const unit = frame.w / 100
-
-  function place(event: React.MouseEvent<SVGSVGElement>) {
+  function place(next: { lat: number; lng: number }) {
     if (disabled) return
-    const element = svg.current
-    const matrix = element?.getScreenCTM()
-    if (!element || !matrix) return
-
-    // Le navigateur connaît la transformation exacte entre l'écran et le
-    // repère du SVG, cadrage et marges comprises : la recalculer à la main
-    // reviendrait à la deviner.
-    const cursor = element.createSVGPoint()
-    cursor.x = event.clientX
-    cursor.y = event.clientY
-    const inside = cursor.matrixTransform(matrix.inverse())
-
-    const next = { lat: -inside.y, lng: inside.x }
     setPoint(next)
     onChange({ kind: 'carte', ...next })
   }
@@ -106,54 +45,15 @@ export function MapQuestion({
           : 'Cliquez sur la carte pour placer votre réponse.'}
       </p>
 
-      <div
-        className="bg-sunken rounded-token relative overflow-hidden"
-        style={{ aspectRatio: frame.w / frame.h }}
+      {/* Les marges négatives rendent au fond de carte la place que le
+          panneau lui prenait de chaque côté. */}
+      <MapCanvas
+        frame={frame}
+        onPick={disabled ? undefined : place}
+        className="-mx-6 rounded-none sm:mx-0 sm:rounded-[10px]"
       >
-        <svg
-          ref={svg}
-          viewBox={`${frame.x} ${frame.y} ${frame.w} ${frame.h}`}
-          onClick={place}
-          className={cn(
-            'h-full w-full',
-            disabled ? 'cursor-default' : 'cursor-crosshair',
-          )}
-          role="img"
-          aria-label="Carte à cliquer"
-        >
-          <g
-            fill="var(--accent-soft)"
-            stroke="var(--accent)"
-            strokeWidth={unit * 0.08}
-            strokeLinejoin="round"
-          >
-            {paths.map((path, index) => (
-              <path key={index} d={path} />
-            ))}
-          </g>
-
-          {point && (
-            <g transform={`translate(${point.lng} ${-point.lat})`}>
-              {/* Le point reste petit : c'est lui qui dit la precision de
-                  la reponse, et un gros disque laisserait croire qu'on a
-                  droit a cinq cents kilometres d'a-peu-pres. Le liseré
-                  clair le detache de la terre comme de la mer. */}
-              <circle
-                r={unit * 0.75}
-                fill="var(--rec)"
-                stroke="var(--surface)"
-                strokeWidth={unit * 0.3}
-              />
-            </g>
-          )}
-        </svg>
-
-        {paths.length === 0 && (
-          <p className="text-faint absolute inset-0 flex items-center justify-center text-[13px]">
-            Chargement de la carte…
-          </p>
-        )}
-      </div>
+        {point && <MapPin frame={frame} lat={point.lat} lng={point.lng} />}
+      </MapCanvas>
 
       <p className="text-faint text-[13px]">
         {point

@@ -36,7 +36,10 @@ function cutAtAntimeridian(ring) {
   let run = []
   let previous = null
 
-  for (const point of ring) {
+  // Le contour est ferme : son dernier segment, celui qui revient au point
+  // de depart, traverse lui aussi. Sans le parcourir, le `Z` final le
+  // tracait en diagonale a travers le Pacifique.
+  for (const point of [...ring, ring[0]]) {
     if (previous && Math.abs(point[0] - previous[0]) > 180) {
       const edge = previous[0] > 0 ? 180 : -180
       // La latitude du croisement, prise sur la route la plus courte.
@@ -53,6 +56,14 @@ function cutAtAntimeridian(ring) {
   }
 
   runs.push(run)
+
+  // Le premier et le dernier morceau ne font qu'un : le parcours est parti
+  // du milieu d'une piece et y est revenu.
+  if (runs.length > 1) {
+    const tail = runs.pop()
+    runs[0] = [...tail, ...runs[0]]
+  }
+
   return runs
 }
 

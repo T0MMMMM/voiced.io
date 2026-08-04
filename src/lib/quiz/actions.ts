@@ -339,6 +339,39 @@ export async function answersFor(
   }))
 }
 
+/**
+ * La correction attendue d'une question.
+ *
+ * Meme verrou que les reponses des joueurs : tant que la partie n'est pas
+ * arrivee a la correction, elle ne sort pas de la base. C'est tout
+ * l'interet de passer par une action serveur plutot que de la livrer avec
+ * l'enonce.
+ */
+export async function expectedAnswer(
+  roomId: string,
+  questionId: string,
+): Promise<unknown> {
+  const supabase = createServiceClient()
+
+  const { data: room } = await supabase
+    .from('rooms')
+    .select('status')
+    .eq('id', roomId)
+    .maybeSingle()
+
+  if (room?.status !== 'grading' && room?.status !== 'results') {
+    throw new Error('La correction n’est pas encore consultable.')
+  }
+
+  const { data } = await supabase
+    .from('questions')
+    .select('answer')
+    .eq('id', questionId)
+    .maybeSingle()
+
+  return data?.answer ?? null
+}
+
 export interface Standing {
   playerId: string
   nickname: string

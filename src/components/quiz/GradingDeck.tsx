@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, Panel } from '@/components/ui'
 import { CheckIcon } from '@/components/ui/icons'
+import { AnswerKey } from '@/components/quiz/AnswerKey'
 import {
   advanceQuiz,
   answersFor,
+  expectedAnswer,
   gradeAnswers,
   publishResults,
   type PlayerAnswer,
@@ -98,6 +100,18 @@ export function GradingDeck({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  /**
+   * La correction attendue, avec la question dont elle vient.
+   *
+   * Elle ne descend jamais avec l'enonce : elle se demande au serveur au
+   * moment de corriger, et le couple evite d'afficher la reponse de la
+   * question precedente pendant le rendu qui suit un changement d'etape.
+   */
+  const [key, setKey] = useState<{ questionId: string; expected: unknown }>({
+    questionId: '',
+    expected: null,
+  })
+
   const load = useCallback(async () => {
     if (!question) return
     try {
@@ -105,6 +119,14 @@ export function GradingDeck({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Lecture impossible.')
     }
+  }, [room.id, question])
+
+  useEffect(() => {
+    if (!question) return
+    const questionId = question.id
+    void expectedAnswer(room.id, questionId)
+      .then((expected) => setKey({ questionId, expected }))
+      .catch(() => setKey({ questionId, expected: null }))
   }, [room.id, question])
 
   useEffect(() => {
@@ -179,6 +201,22 @@ export function GradingDeck({
   )
   const byId = new Map(answers.map((answer) => [answer.id, answer]))
 
+  // Les points poses sur la carte, avec leur auteur. La correction anonyme
+  // les laisse sur la carte mais leur retire leur nom.
+  const placed = answers
+    .map((answer) => {
+      const payload = answer.payload as { lat?: unknown; lng?: unknown } | null
+      if (typeof payload?.lat !== 'number' || typeof payload?.lng !== 'number') {
+        return null
+      }
+      return {
+        nickname: options.anonymousGrading ? '' : answer.nickname,
+        lat: payload.lat,
+        lng: payload.lng,
+      }
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+
   return (
     <div className="space-y-7">
       <header className="space-y-3">
@@ -203,6 +241,14 @@ export function GradingDeck({
           {question.prompt}
         </h1>
       </header>
+
+      {/* La bonne reponse en tete, avant les copies : on corrige avec le
+          bareme sous les yeux, pas de memoire. */}
+      {key.questionId === question.id && (
+        <Panel sunken>
+          <AnswerKey question={question} expected={key.expected} placed={placed} />
+        </Panel>
+      )}
 
       {auto && (
         <p className="text-muted text-[15px]">

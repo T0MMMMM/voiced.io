@@ -141,7 +141,7 @@ const PAYS = {
 /** Une ville a placer dans son seul pays, comme on le fait pour la France. */
 const carteVille = (difficulty, target, country, lat, lng, maxKm) => ({
   theme: 'Géographie', kind: 'carte',
-  prompt: `Placez ${target} — ${country}`,
+  prompt: `${country} : placez ${target}`,
   difficulty, points: POINTS[difficulty], hint: null,
   payload: { region: 'pays', box: PAYS[country], target },
   answer: { point: { lat, lng }, maxKm },
