@@ -228,7 +228,7 @@ export const QUESTIONS = [
   ecrite('Géographie', 2, 'Quel fleuve traverse Paris ?', ['Seine', 'La Seine']),
   ecrite('Géographie', 3, 'Quelle chaîne de montagnes sépare l’Europe de l’Asie ?',
     ['Oural', 'Monts Oural']),
-  liste('Géographie', 1, 'Citez 3 pays d’Amérique du Sud', 3, [
+  liste('Géographie', 1, 'Citez 4 pays d’Amérique du Sud', 4, [
     'Brésil', 'Argentine', 'Chili', 'Pérou', 'Colombie', 'Bolivie', 'Équateur',
     'Venezuela', 'Paraguay', 'Uruguay', 'Guyana', 'Suriname',
   ]),
@@ -236,12 +236,12 @@ export const QUESTIONS = [
     'Belgique', 'Luxembourg', 'Allemagne', 'Suisse', 'Italie', 'Espagne',
     'Andorre', 'Monaco',
   ]),
-  liste('Géographie', 2, 'Citez 4 pays d’Océanie', 4, [
+  liste('Géographie', 2, 'Citez 5 pays d’Océanie', 5, [
     'Australie', 'Nouvelle-Zélande', 'Papouasie-Nouvelle-Guinée', 'Fidji',
     'Samoa', 'Tonga', 'Vanuatu', 'Palaos', 'Nauru', 'Tuvalu', 'Kiribati',
     'Micronésie', 'Îles Marshall', 'Îles Salomon',
   ]),
-  liste('Géographie', 2, 'Citez 3 fleuves français', 3, [
+  liste('Géographie', 2, 'Citez 4 fleuves français', 4, [
     'Loire', 'Seine', 'Rhône', 'Garonne', 'Rhin', 'Meuse', 'Adour', 'Charente',
     'Somme', 'Orne', 'Vilaine', 'Var', 'Aude', 'Hérault',
   ]),
@@ -285,7 +285,7 @@ export const QUESTIONS = [
     'François Mitterrand', 'Jacques Chirac', 'Nicolas Sarkozy',
     'François Hollande', 'Emmanuel Macron', 'Vincent Auriol', 'René Coty',
   ]),
-  liste('Histoire', 2, 'Citez 3 rois de France prénommés Louis', 3, [
+  liste('Histoire', 2, 'Citez 4 rois de France prénommés Louis', 4, [
     'Louis XIV', 'Louis XVI', 'Louis XV', 'Louis XIII', 'Louis IX', 'Saint Louis',
     'Louis XI', 'Louis XVIII', 'Louis-Philippe', 'Louis VIII', 'Louis X',
   ]),
@@ -320,9 +320,9 @@ export const QUESTIONS = [
   liste('Sciences', 1, 'Citez 4 planètes du système solaire', 4, [
     'Mercure', 'Vénus', 'Terre', 'Mars', 'Jupiter', 'Saturne', 'Uranus', 'Neptune',
   ]),
-  liste('Sciences', 1, 'Citez 3 des cinq sens', 3,
+  liste('Sciences', 1, 'Citez 2 des cinq sens', 2,
     ['Vue', 'Ouïe', 'Odorat', 'Goût', 'Toucher']),
-  liste('Sciences', 2, 'Citez 3 os du corps humain', 3, [
+  liste('Sciences', 2, 'Citez 6 os du corps humain', 6, [
     'Fémur', 'Tibia', 'Péroné', 'Humérus', 'Radius', 'Cubitus', 'Ulna',
     'Clavicule', 'Sternum', 'Crâne', 'Mandibule', 'Rotule', 'Omoplate',
     'Scapula', 'Vertèbre', 'Côte', 'Bassin', 'Phalange',
@@ -367,12 +367,12 @@ export const QUESTIONS = [
     ['Faucon Millenium', 'Millennium Falcon']),
   ecrite('Cinéma', 3, 'Quel film a remporté l’Oscar du meilleur film en 2020 ?',
     ['Parasite']),
-  liste('Cinéma', 1, 'Citez 3 super-héros Marvel', 3, [
+  liste('Cinéma', 1, 'Citez 5 super-héros Marvel', 5, [
     'Iron Man', 'Captain America', 'Thor', 'Hulk', 'Spider-Man', 'Black Widow',
     'Docteur Strange', 'Black Panther', 'Ant-Man', 'Wolverine', 'Deadpool',
     'Daredevil', 'Captain Marvel', 'Hawkeye', 'Faucon',
   ]),
-  liste('Cinéma', 2, 'Citez 3 films d’animation Pixar', 3, [
+  liste('Cinéma', 2, 'Citez 4 films d’animation Pixar', 4, [
     'Toy Story', 'Le Monde de Nemo', 'Les Indestructibles', 'Ratatouille',
     'Wall-E', 'Là-haut', 'Vice-versa', 'Coco', 'Cars', 'Monstres et Cie',
     'Rebelle', 'Soul', 'Luca',
@@ -395,9 +395,9 @@ export const QUESTIONS = [
   ecrite('Musique', 2, 'Quel compositeur est devenu sourd ?',
     ['Beethoven', 'Ludwig van Beethoven']),
   ecrite('Musique', 2, 'De quel instrument jouait Miles Davis ?', ['Trompette']),
-  liste('Musique', 1, 'Citez 4 notes de la gamme', 4,
+  liste('Musique', 1, 'Citez 3 notes de la gamme', 3,
     ['Do', 'Ré', 'Mi', 'Fa', 'Sol', 'La', 'Si']),
-  liste('Musique', 1, 'Citez 3 instruments à cordes', 3, [
+  liste('Musique', 1, 'Citez 4 instruments à cordes', 4, [
     'Violon', 'Alto', 'Violoncelle', 'Contrebasse', 'Guitare', 'Harpe', 'Banjo',
     'Mandoline', 'Ukulélé', 'Luth', 'Piano',
   ]),
@@ -420,7 +420,7 @@ export const QUESTIONS = [
   ecrite('Littérature', 2, 'Qui a écrit « 1984 » ?', ['George Orwell', 'Orwell']),
   ecrite('Littérature', 2, 'Qui a écrit « Vingt mille lieues sous les mers » ?',
     ['Jules Verne', 'Verne']),
-  liste('Littérature', 1, 'Citez 3 maisons de Poudlard', 3,
+  liste('Littérature', 1, 'Citez 2 maisons de Poudlard', 2,
     ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']),
   intrus('Littérature', 2, 'Lequel n’est pas un roman de Jules Verne ?',
     ['Michel Strogoff', 'L’Île mystérieuse', 'Les Misérables',
@@ -438,12 +438,12 @@ export const QUESTIONS = [
     ['5', 'Cinq']),
   ecrite('Sport', 2, 'Quelle course cycliste traverse la France chaque été ?',
     ['Tour de France', 'Le Tour de France']),
-  liste('Sport', 1, 'Citez 3 sports olympiques d’hiver', 3, [
+  liste('Sport', 1, 'Citez 4 sports olympiques d’hiver', 4, [
     'Ski alpin', 'Ski de fond', 'Biathlon', 'Patinage artistique',
     'Patinage de vitesse', 'Hockey sur glace', 'Curling', 'Bobsleigh', 'Luge',
     'Skeleton', 'Snowboard', 'Saut à ski',
   ]),
-  liste('Sport', 2, 'Citez 3 tournois du Grand Chelem de tennis', 3,
+  liste('Sport', 2, 'Citez 2 tournois du Grand Chelem de tennis', 2,
     ['Roland-Garros', 'Wimbledon', 'US Open', 'Open d’Australie']),
   estimation('Sport', 1, 'Quelle est la longueur d’un marathon, en kilomètres ?',
     42, 'km'),
@@ -462,12 +462,12 @@ export const QUESTIONS = [
   ecrite('Gastronomie', 2, 'Quelle céréale sert à faire le saké ?', ['Riz']),
   ecrite('Gastronomie', 2, 'Quelle épice donne sa couleur jaune au curry ?',
     ['Curcuma', 'Le curcuma']),
-  liste('Gastronomie', 1, 'Citez 3 fromages français', 3, [
+  liste('Gastronomie', 1, 'Citez 5 fromages français', 5, [
     'Camembert', 'Roquefort', 'Comté', 'Brie', 'Reblochon', 'Munster', 'Cantal',
     'Beaufort', 'Bleu d’Auvergne', 'Époisses', 'Saint-Nectaire', 'Tomme',
     'Morbier', 'Maroilles', 'Chèvre',
   ]),
-  liste('Gastronomie', 1, 'Citez 3 épices', 3, [
+  liste('Gastronomie', 1, 'Citez 5 épices', 5, [
     'Poivre', 'Cannelle', 'Curcuma', 'Cumin', 'Paprika', 'Safran', 'Gingembre',
     'Muscade', 'Clou de girofle', 'Coriandre', 'Cardamome', 'Piment', 'Curry',
     'Anis', 'Vanille',
@@ -489,10 +489,6 @@ export const QUESTIONS = [
     'Lion', 'Tigre', 'Léopard', 'Guépard', 'Jaguar', 'Panthère', 'Lynx', 'Puma',
     'Ocelot', 'Chat', 'Caracal', 'Serval',
   ]),
-  liste('Nature', 2, 'Citez 3 animaux qui hibernent', 3, [
-    'Ours', 'Marmotte', 'Hérisson', 'Chauve-souris', 'Loir', 'Écureuil',
-    'Grenouille', 'Tortue', 'Serpent', 'Escargot',
-  ]),
   estimation('Nature', 2, 'Combien d’années peut vivre une tortue géante ?', 100, 'ans'),
   classement('Nature', 1, 'Classez ces animaux du plus lourd au plus léger',
     ['Baleine bleue', 'Éléphant', 'Girafe', 'Ours brun', 'Loup'],
@@ -510,7 +506,7 @@ export const QUESTIONS = [
     ['Lent', 'Lente']),
   ecrite('Langue française', 2, 'Comment appelle-t-on un mot qui se lit dans les deux sens ?',
     ['Palindrome']),
-  liste('Langue française', 2, 'Citez 3 figures de style', 3, [
+  liste('Langue française', 2, 'Citez 5 figures de style', 5, [
     'Métaphore', 'Comparaison', 'Hyperbole', 'Litote', 'Métonymie', 'Oxymore',
     'Anaphore', 'Allitération', 'Personnification', 'Euphémisme', 'Antithèse',
     'Ironie', 'Périphrase', 'Pléonasme',
@@ -526,7 +522,7 @@ export const QUESTIONS = [
   ecrite('Technologie', 2, 'Combien de bits compte un octet ?', ['8', 'Huit']),
   ecrite('Technologie', 2, 'Quel langage de programmation porte le nom d’un serpent ?',
     ['Python']),
-  liste('Technologie', 2, 'Citez 3 langages de programmation', 3, [
+  liste('Technologie', 2, 'Citez 4 langages de programmation', 4, [
     'Python', 'JavaScript', 'Java', 'C', 'C++', 'C#', 'Ruby', 'Go', 'Rust',
     'PHP', 'Swift', 'Kotlin', 'TypeScript', 'SQL',
   ]),
@@ -877,17 +873,17 @@ export const QUESTIONS = [
     ['Herbivore']),
   ecrite('Animaux', 3, 'Quel animal a la plus longue gestation ?',
     ['Éléphant', 'L’éléphant']),
-  liste('Animaux', 1, 'Citez 3 animaux de la savane africaine', 3, [
+  liste('Animaux', 1, 'Citez 6 animaux de la savane africaine', 6, [
     'Lion', 'Éléphant', 'Girafe', 'Zèbre', 'Hippopotame', 'Rhinocéros',
     'Guépard', 'Gnou', 'Hyène', 'Babouin', 'Crocodile', 'Autruche',
     'Léopard', 'Buffle', 'Antilope', 'Suricate',
   ]),
-  liste('Animaux', 1, 'Citez 3 animaux marins', 3, [
+  liste('Animaux', 1, 'Citez 6 animaux marins', 6, [
     'Dauphin', 'Baleine', 'Requin', 'Orque', 'Phoque', 'Méduse', 'Pieuvre',
     'Tortue', 'Morse', 'Raie', 'Otarie', 'Narval', 'Hippocampe', 'Corail',
     'Étoile de mer', 'Crabe', 'Homard', 'Thon', 'Sardine',
   ]),
-  liste('Animaux', 2, 'Citez 4 races de chiens', 4, [
+  liste('Animaux', 2, 'Citez 5 races de chiens', 5, [
     'Labrador', 'Berger allemand', 'Caniche', 'Bouledogue', 'Chihuahua',
     'Husky', 'Beagle', 'Teckel', 'Golden retriever', 'Dalmatien',
     'Rottweiler', 'Boxer', 'Border collie', 'Yorkshire', 'Cocker',
@@ -940,17 +936,17 @@ export const QUESTIONS = [
   ecrite('Jeux vidéo', 3, 'Quel jeu de 2017 a lancé la mode de la « battle royale » ?',
     ['PUBG', 'PlayerUnknown’s Battlegrounds', 'Battlegrounds'],
     'Il a précédé Fortnite de quelques mois'),
-  liste('Jeux vidéo', 1, 'Citez 3 consoles de salon', 3, [
+  liste('Jeux vidéo', 1, 'Citez 5 consoles de salon', 5, [
     'PlayStation', 'Xbox', 'Nintendo Switch', 'Wii', 'GameCube',
     'Nintendo 64', 'Mega Drive', 'Super Nintendo', 'Dreamcast', 'PlayStation 2',
     'Atari 2600', 'NES', 'Wii U', 'PlayStation 5', 'Xbox 360',
   ]),
-  liste('Jeux vidéo', 2, 'Citez 3 jeux de la série Mario', 3, [
+  liste('Jeux vidéo', 2, 'Citez 4 jeux de la série Mario', 4, [
     'Mario Kart', 'Super Mario Bros', 'Mario Party', 'Super Mario Odyssey',
     'Mario Tennis', 'Super Mario 64', 'Super Mario Galaxy', 'Paper Mario',
     'Mario Maker', 'Super Mario Sunshine', 'Mario Golf', 'Super Mario World',
   ]),
-  liste('Jeux vidéo', 2, 'Citez 4 Pokémon', 4, [
+  liste('Jeux vidéo', 2, 'Citez 6 Pokémon', 6, [
     'Pikachu', 'Bulbizarre', 'Salamèche', 'Carapuce', 'Évoli', 'Rondoudou',
     'Miaouss', 'Ronflex', 'Dracaufeu', 'Mewtwo', 'Mew', 'Magicarpe',
     'Léviator', 'Tortank', 'Florizarre', 'Roucool', 'Rattata', 'Aspicot',

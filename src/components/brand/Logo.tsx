@@ -2,21 +2,22 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils/cn'
 
 /**
- * Cinq barres de niveau sonore dont les centres descendent puis remontent :
- * la marque dessine un V tout en restant une waveform. Le vocabulaire est
- * celui de la forme d'onde utilisée partout ailleurs dans le produit, et la
- * lettre est celle du nom.
+ * Une barre de son plate, et un pic au milieu.
  *
- * Ce sont les centres qui font le V, pas les hauteurs : des barres de
- * tailles très différentes se lisaient comme un spectre quelconque, alors
- * qu'un décalage vertical net se reconnaît même en seize pixels.
+ * C'est le vocabulaire de la forme d'onde utilisée partout ailleurs dans le
+ * produit, réduit à ce qui se reconnaît : le silence, puis la voix. Un
+ * spectre aux hauteurs variées se lit comme n'importe quel égaliseur ;
+ * un seul pic sur une ligne plate ne ressemble qu'à lui-même.
+ *
+ * Toutes les barres partagent le même centre : c'est la hauteur seule qui
+ * fait le dessin, et la marque tient donc à seize pixels.
  */
 const BARS = [
-  { x: 1.2, cy: 5.6, height: 7 },
-  { x: 5.1, cy: 9.5, height: 6.4 },
-  { x: 9, cy: 13.4, height: 6 },
-  { x: 12.9, cy: 9.5, height: 6.4 },
-  { x: 16.8, cy: 5.6, height: 7 },
+  { x: 1.8, height: 3 },
+  { x: 5.4, height: 3 },
+  { x: 9, height: 16 },
+  { x: 12.6, height: 3 },
+  { x: 16.2, height: 3 },
 ]
 
 export function WaveMark({ className }: { className?: string }) {
@@ -27,11 +28,11 @@ export function WaveMark({ className }: { className?: string }) {
       className={cn('size-5', className)}
       fill="currentColor"
     >
-      {BARS.map(({ x, cy, height }) => (
+      {BARS.map(({ x, height }) => (
         <rect
           key={x}
           x={x}
-          y={cy - height / 2}
+          y={(20 - height) / 2}
           width="2"
           height={height}
           rx="1"

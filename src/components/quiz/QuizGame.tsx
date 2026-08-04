@@ -320,19 +320,24 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
           {/* Valider ne sert pas a envoyer la reponse, qui part deja toute
               seule : c'est dire « j'ai fini ». Quand toute la table a
               valide, on passe sans attendre le minuteur. */}
-          <IconButton
-            label={done ? 'Réponse validée' : 'Valider ma réponse'}
-            size="sm"
-            variant={done ? 'ghost' : 'raised'}
-            disabled={done || timeUp || busy}
-            onClick={() => void validate()}
-            className={cn(
-              'absolute top-1/2 right-0 -translate-y-1/2',
-              done && 'text-accent disabled:opacity-100',
-            )}
-          >
-            <CheckIcon className="size-[18px]" />
-          </IconButton>
+          {/* Le placement vit sur l'enveloppe, jamais sur le bouton : la
+              translation de survol remplacait celle du centrage, et le
+              bouton sautait d'une demi-hauteur des qu'on l'approchait. */}
+          <span className="absolute top-1/2 right-0 -translate-y-1/2">
+            <IconButton
+              label={done ? 'Réponse validée' : 'Valider ma réponse'}
+              size="sm"
+              variant={done ? 'ghost' : 'raised'}
+              disabled={done || timeUp || busy}
+              onClick={() => void validate()}
+              className={cn(
+                'hover:translate-y-0',
+                done && 'text-accent disabled:opacity-100',
+              )}
+            >
+              <CheckIcon className="size-[18px]" />
+            </IconButton>
+          </span>
         </div>
 
         {/* Le temps se lit d'un coup d'oeil : une barre qui se vide dit

@@ -32,7 +32,9 @@ const BASE: Record<QuestionKind, number> = {
   frise: 26,
   silhouette: 24,
   carte: 30,
-  liste: 32,
+  // On peut demander jusqu'a six reponses : trente secondes suffisaient
+  // pour trois, elles etranglaient les listes longues.
+  liste: 40,
   theme: 34,
   classement: 38,
   association: 42,

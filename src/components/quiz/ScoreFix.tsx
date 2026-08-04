@@ -38,7 +38,10 @@ export function ScoreFix({
 
   const load = useCallback(async () => {
     try {
-      setRows(await standings(room.id))
+      // Le classement arrive trie par score : le remettre dans l'ordre des
+      // pseudos evite de devoiler le podium sur cet ecran.
+      const rows = await standings(room.id)
+      setRows([...rows].sort((a, b) => a.nickname.localeCompare(b.nickname)))
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Lecture impossible.')
     }
@@ -58,14 +61,14 @@ export function ScoreFix({
 
   /** L'écran bouge avant le serveur : un ajustement doit se sentir immédiat. */
   function adjust(playerId: string, delta: number) {
+    // L'ordre ne bouge pas : reclasser en direct reviendrait a annoncer le
+    // podium avant l'heure.
     setRows((current) =>
-      [...current]
-        .map((row) =>
-          row.playerId === playerId
-            ? { ...row, score: row.score + delta, bonus: row.bonus + delta }
-            : row,
-        )
-        .sort((a, b) => b.score - a.score),
+      current.map((row) =>
+        row.playerId === playerId
+          ? { ...row, score: row.score + delta, bonus: row.bonus + delta }
+          : row,
+      ),
     )
 
     void adjustScore(playerId, delta).catch((cause) => {
@@ -93,8 +96,8 @@ export function ScoreFix({
         </h1>
         <p className="text-muted text-[15px]">
           {isHost
-            ? 'Ajustez les totaux si la correction a été injuste, puis publiez.'
-            : 'L’hôte vérifie les totaux avant de publier les résultats.'}
+            ? 'Rattrapez une correction injuste, puis publiez. Les totaux restent cachés jusqu’au podium.'
+            : 'L’hôte rattrape les erreurs de correction avant le podium.'}
         </p>
       </header>
 
@@ -117,10 +120,6 @@ export function ScoreFix({
                     {row.bonus} ajusté{Math.abs(row.bonus) > 1 ? 's' : ''}
                   </span>
                 )}
-              </span>
-
-              <span className="tnum text-fg text-[19px] font-semibold">
-                {row.score}
               </span>
 
               {isHost && (
