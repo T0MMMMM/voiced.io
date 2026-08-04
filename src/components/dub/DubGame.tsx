@@ -333,7 +333,7 @@ export function DubGame({
     target.current = aim
     stage.current?.seek(aim.start)
     setCounting(true)
-  }, [room.id, youId])
+  }, [room.id, youId, holderName])
 
   /** Charge les prises une fois, puis les rejoue calees sur la video. */
   const playResult = useCallback(async () => {
