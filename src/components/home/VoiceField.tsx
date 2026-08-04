@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { amplitudeAt, FLOOR } from '@/lib/audio/wavefield'
 
 const BAR_COUNT = 84
-
-/** Amplitude au repos : une piste n'est jamais tout à fait plate. */
-const FLOOR = 0.045
 
 /** Largeur de la bosse que le curseur creuse, en fraction de la piste. */
 const SIGMA = 0.085
@@ -20,38 +18,32 @@ const GRAIN = Array.from(
 )
 
 /**
- * Motif de la piste de référence. Déterministe — calculé une seule fois au
- * chargement du module, donc identique côté serveur et côté client : une
- * valeur aléatoire provoquerait une divergence d'hydratation.
+ * État de départ de la piste de référence, à l'instant zéro du champ.
+ * Déterministe, donc identique côté serveur et côté client — et la boucle
+ * reprend exactement là où le rendu initial s'est arrêté, sans saut.
  */
-const REFERENCE = Array.from({ length: BAR_COUNT }, (_, i) => {
-  const envelope = Math.max(0, Math.sin(i * 0.075 + 0.6)) ** 1.4
-  const carrier = 0.42 + 0.58 * Math.abs(Math.sin(i * 0.91 + Math.cos(i * 0.37)))
-  return FLOOR + (1 - FLOOR) * envelope * carrier
-})
+const REFERENCE = Array.from({ length: BAR_COUNT }, (_, i) => amplitudeAt(i, 0))
 
 /**
  * Durée de l'entrée des barres. Tant qu'elle dure, l'animation CSS pilote
  * la transformation : la boucle ne doit pas écrire par-dessus, sinon les
  * deux se disputent la même propriété et le tracé tremble.
  */
-const REVEAL_MS = 1250
-
-/** Cadence propre à chaque barre : sans elle, la piste respirerait d'un bloc. */
-const SHIMMER = Array.from({ length: BAR_COUNT }, (_, i) => ({
-  speed: 1.1 + 0.9 * Math.abs(Math.sin(i * 1.77)),
-  phase: i * 0.83,
-}))
+const REVEAL_MS = 900
 
 /**
  * Le geste signature du site.
  *
- * La piste du haut est la réplique d'origine : figée, elle ne dépend de
- * rien. Celle du bas est la vôtre, et elle n'existe que là où vous passez —
- * c'est exactement le rapport que le produit installe entre les deux voix.
- * Le curseur y tient le rôle de la parole.
+ * La piste du haut joue en continu : un champ d'onde la traverse dans les
+ * deux sens, et deux barres voisines lisent deux points proches de la même
+ * courbe — c'est cette continuité qui fait une vague plutôt qu'un
+ * scintillement.
  *
- * Rien ne transite par l'état React : quatre-vingt-quatre barres
+ * Celle du bas est la vôtre, et elle n'existe que là où vous passez : c'est
+ * exactement le rapport que le produit installe entre les deux voix. Le
+ * curseur y tient le rôle de la parole.
+ *
+ * Rien ne transite par l'état React : cent soixante-huit barres
  * déclencheraient un rendu par image.
  */
 export function VoiceField() {
@@ -63,8 +55,8 @@ export function VoiceField() {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    // Hors de la fenêtre, la piste retombe au silence : tant que personne
-    // ne parle, il n'y a rien à voir.
+    // Hors de la fenêtre, la piste du bas retombe au silence : tant que
+    // personne ne parle, il n'y a rien à voir.
     let pointerX = 0.5
     let intensity = 0
     let frame = 0
@@ -88,21 +80,14 @@ export function VoiceField() {
     }
 
     function tick(now: number) {
-      const t = now / 1000
+      const elapsed = now - started
 
-      // La piste du haut joue toute seule : une onde d'activité la
-      // traverse lentement de gauche à droite pendant que chaque barre
-      // frémit à sa propre cadence. C'est un clip qui tourne en boucle,
-      // pas un graphique figé.
-      const revealed = now - started > REVEAL_MS
-      for (let i = 0; revealed && i < BAR_COUNT; i++) {
-        const travel = 0.42 + 0.58 * (0.5 + 0.5 * Math.sin(i * 0.075 - t * 0.85))
-        const shimmer =
-          0.72 + 0.28 * Math.sin(t * (SHIMMER[i]?.speed ?? 1) + (SHIMMER[i]?.phase ?? 0))
-        const amplitude = FLOOR + ((REFERENCE[i] ?? FLOOR) - FLOOR) * travel * shimmer
-
-        const bar = refBars.current[i]
-        if (bar) bar.style.transform = `scaleY(${amplitude.toFixed(4)})`
+      if (elapsed > REVEAL_MS) {
+        const t = elapsed / 1000
+        for (let i = 0; i < BAR_COUNT; i++) {
+          const bar = refBars.current[i]
+          if (bar) bar.style.transform = `scaleY(${amplitudeAt(i, t).toFixed(4)})`
+        }
       }
 
       const current = amplitudes.current
@@ -151,7 +136,8 @@ export function VoiceField() {
             className="bg-wave-ref h-full flex-1 origin-bottom rounded-full"
             style={{
               transform: `scaleY(${amplitude.toFixed(4)})`,
-              animation: `wave-rise 620ms ${i * 6}ms both cubic-bezier(.2,.8,.2,1)`,
+              animation: `wave-rise 520ms ${i * 4}ms both cubic-bezier(.2,.8,.2,1)`,
+              willChange: 'transform',
             }}
           />
         ))}
