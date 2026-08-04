@@ -111,6 +111,8 @@ export function DubGame({
   const mixer = useRef<DubMixer | null>(null)
   /** Filet de securite : si la boucle du lecteur s'interrompt, la prise s'arrete quand meme. */
   const guard = useRef<number | null>(null)
+  /** Fin de l'ecoute en cours : au-dela, le melange se tait avec la video. */
+  const reviewEnd = useRef(Number.POSITIVE_INFINITY)
 
   const [peaks, setPeaks] = useState<number[]>([])
   const [peaksError, setPeaksError] = useState(false)
@@ -193,6 +195,14 @@ export function DubGame({
     if (target.current && recorder.current && time >= target.current.end) {
       stopRef.current()
     }
+
+    // La video s'arrete d'elle-meme au bout du segment ; le melange des
+    // voix, lui, tourne sur sa propre horloge et ne le saurait pas.
+    if (time >= reviewEnd.current) {
+      reviewEnd.current = Number.POSITIVE_INFINITY
+      mixer.current?.stop()
+      setReviewing(false)
+    }
   }, [])
 
   const persist = useCallback(
@@ -208,6 +218,29 @@ export function DubGame({
   const dropBreakpoint = useCallback(() => {
     persist(addBreakpoint(points, clock.current, durationSec))
   }, [persist, points, durationSec])
+
+  /**
+   * Lecture bornee au segment courant.
+   *
+   * On travaille replique par replique : une lecture qui deborde oblige a
+   * couper a la main, ce qui est precisement le geste dont tout le reste de
+   * l'ecran cherche a nous dispenser.
+   */
+  const playSegment = useCallback(() => {
+    if (playing) {
+      mixer.current?.stop()
+      reviewEnd.current = Number.POSITIVE_INFINITY
+      setReviewing(false)
+      stage.current?.pause()
+      return
+    }
+
+    const segment = segmentAt(segmentsRef.current, clock.current)
+    if (!segment) return
+    // Relire depuis le debut du segment : on veut entendre la replique
+    // entiere, pas sa fin.
+    stage.current?.playRange(segment.start, segment.end)
+  }, [playing])
 
   const goToSegment = useCallback((segment: Segment | null) => {
     if (!segment) return
@@ -340,6 +373,7 @@ export function DubGame({
     if (busy) return
     if (reviewing) {
       mixer.current?.stop()
+      reviewEnd.current = Number.POSITIVE_INFINITY
       stage.current?.pause()
       setReviewing(false)
       return
@@ -367,14 +401,17 @@ export function DubGame({
       setError(`${total - loaded} prise(s) sur ${total} n’ont pas pu être lues.`)
     }
 
-    // On repart du debut : apres une prise, la tete est posee a la fin du
-    // segment, et « ecouter le resultat » n'aurait fait entendre que la
-    // toute fin de la scene.
+    // On ecoute la replique en cours, pas toute la scene : c'est a cette
+    // echelle qu'on juge un doublage et qu'on decide de le refaire.
+    const segment = segmentAt(segmentsRef.current, clock.current)
+    if (!segment) return
+
     setReviewing(true)
-    await mixer.current.start(0)
+    reviewEnd.current = segment.end
+    await mixer.current.start(segment.start)
     // La video part muette : on entend le doublage a la place des voix
     // d'origine, ce qui est tout l'objet de l'ecoute.
-    stage.current?.playSilentFrom(0)
+    stage.current?.playSilentRange(segment.start, segment.end)
   }, [busy, reviewing, takes])
 
   const toggleRecord = useCallback(() => {
@@ -448,7 +485,7 @@ export function DubGame({
       switch (event.code) {
         case 'Space':
           event.preventDefault()
-          if (!busy) stage.current?.toggle()
+          if (!busy) playSegment()
           break
         case 'KeyB':
           event.preventDefault()
@@ -495,7 +532,7 @@ export function DubGame({
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [busy, dropBreakpoint, goToSegment, toggleRecord, playResult])
+  }, [busy, dropBreakpoint, goToSegment, toggleRecord, playResult, playSegment])
 
   return (
     <div className="space-y-8">
@@ -561,7 +598,7 @@ export function DubGame({
         blockedBy={someoneElseRecords ? holderName : null}
         elapsedMs={elapsedMs}
         level={level}
-        onPlayPause={() => stage.current?.toggle()}
+        onPlayPause={playSegment}
         onRecord={toggleRecord}
         onRestart={() => stage.current?.seek(0)}
         reviewing={reviewing}

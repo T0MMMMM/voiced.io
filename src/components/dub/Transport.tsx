@@ -26,11 +26,11 @@ export interface TransportProps {
 
 /** Un raccourci n'est utile que s'il est écrit quelque part. */
 const SHORTCUTS: [key: string, action: string][] = [
-  ['Espace', 'lire ou mettre en pause'],
+  ['Espace', 'écouter le segment courant'],
   ['B', 'poser une coupe à cet instant'],
   ['R', 'doubler le segment courant'],
   ['← →', 'segment précédent ou suivant'],
-  ['L', 'écouter le résultat'],
+  ['L', 'écouter le segment doublé'],
   ['Début', 'revenir au début'],
 ]
 
@@ -113,7 +113,7 @@ export function Transport({
         </IconButton>
 
         <IconButton
-          label={playing ? 'Mettre en pause' : 'Lire'}
+          label={playing ? 'Arrêter' : 'Écouter le segment courant'}
           onClick={onPlayPause}
           disabled={recording}
         >
@@ -177,7 +177,7 @@ export function Transport({
         </IconButton>
 
         <IconButton
-          label={reviewing ? 'Arrêter l’écoute' : 'Écouter le résultat'}
+          label={reviewing ? 'Arrêter l’écoute' : 'Écouter le segment doublé'}
           onClick={onReview}
           disabled={recording || !canReview}
           variant={reviewing ? 'danger' : 'raised'}

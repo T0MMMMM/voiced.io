@@ -6,7 +6,7 @@ import { PlayIcon } from '@/components/ui/icons'
 import { VideoStage, type VideoStageHandle } from '@/components/video/VideoStage'
 import { DubMixer } from '@/lib/audio/mixer'
 import { reopenRoom } from '@/lib/rooms/actions'
-import type { SavedTake } from '@/lib/takes/actions'
+import { listTakes, type SavedTake } from '@/lib/takes/actions'
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
 
@@ -34,10 +34,25 @@ export function DubResult({
   videoUrl,
   durationSec,
   aspectRatio,
-  takes,
+  takes: initialTakes,
 }: DubResultProps) {
   const stage = useRef<VideoStageHandle>(null)
   const mixer = useRef<DubMixer | null>(null)
+
+  /**
+   * Les prises sont relues a l'arrivee.
+   *
+   * Celles recues en props datent du rendu serveur, c'est-a-dire de
+   * l'ouverture de la page — donc d'avant les enregistrements. En basculant
+   * sur le resultat, on heritait de cette photo perimee : une video muette
+   * alors que les prises existaient bel et bien.
+   */
+  const [takes, setTakes] = useState<SavedTake[]>(initialTakes)
+
+  useEffect(() => {
+    void listTakes(room.id).then(setTakes)
+  }, [room.id])
+
   const [playing, setPlaying] = useState(false)
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)

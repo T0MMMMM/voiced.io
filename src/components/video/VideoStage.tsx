@@ -22,6 +22,8 @@ export interface VideoStageHandle {
   pause: () => void
   /** Joue depuis `from` en coupant le son. Sert a ecouter le doublage seul. */
   playSilentFrom: (from: number) => void
+  /** Joue un intervalle sans le son, et s'arrete tout seul a la fin. */
+  playSilentRange: (start: number, end: number) => void
   setVolume: (volume: number) => void
 }
 
@@ -124,6 +126,14 @@ export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
         stopAt.current = null
         video.muted = true
         video.currentTime = from
+        void video.play()
+      },
+      playSilentRange(start, end) {
+        const video = videoRef.current
+        if (!video) return
+        stopAt.current = end
+        video.muted = true
+        video.currentTime = start
         void video.play()
       },
       setVolume(volume) {
