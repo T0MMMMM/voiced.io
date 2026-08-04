@@ -6,6 +6,7 @@ import { Button, Input } from '@/components/ui'
 import { PlusIcon } from '@/components/ui/icons'
 import { createRoom } from '@/lib/rooms/actions'
 import { GAMES, type GameId } from '@/lib/games'
+import { useT } from '@/lib/i18n'
 
 /**
  * On ouvre le salon d'abord, on choisit le jeu ensuite.
@@ -15,6 +16,7 @@ import { GAMES, type GameId } from '@/lib/games'
  * choix se fait a plusieurs, une fois tout le monde arrive.
  */
 function CreateForm() {
+  const t = useT()
   const router = useRouter()
   const params = useSearchParams()
 
@@ -37,7 +39,7 @@ function CreateForm() {
       router.push(`/room/${room.code}`)
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Impossible de créer le salon.',
+        cause instanceof Error ? cause.message : t.create.failed,
       )
       setBusy(false)
     }
@@ -49,14 +51,13 @@ function CreateForm() {
         className="rise text-fg text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.05] font-medium tracking-[-0.035em]"
         style={{ animationDelay: '40ms' }}
       >
-        Ouvrir un salon.
+        {t.create.title}
       </h1>
       <p
         className="rise text-muted mt-4 text-[17px] leading-relaxed"
         style={{ animationDelay: '120ms' }}
       >
-        Vous recevrez un code à quatre lettres. Le jeu se choisit ensuite, à
-        plusieurs.
+        {t.create.lead}
       </p>
 
       <form
@@ -65,10 +66,10 @@ function CreateForm() {
         style={{ animationDelay: '200ms' }}
       >
         <Input
-          label="Votre pseudo"
+          label={t.create.nickname}
           value={nickname}
           onChange={(event) => setNickname(event.target.value)}
-          placeholder="Tom"
+          placeholder={t.create.nicknamePlaceholder}
           maxLength={20}
           autoFocus
           required
@@ -83,7 +84,7 @@ function CreateForm() {
           className="gap-2.5"
         >
           <PlusIcon />
-          Créer le salon
+          {t.create.submit}
         </Button>
 
         {error && (

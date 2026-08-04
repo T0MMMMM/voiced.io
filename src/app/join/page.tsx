@@ -5,8 +5,10 @@ import { Suspense, useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { joinRoom } from '@/lib/rooms/actions'
 import { normalizeRoomCode } from '@/lib/utils/id'
+import { useT } from '@/lib/i18n'
 
 function JoinForm() {
+  const t = useT()
   const router = useRouter()
   const params = useSearchParams()
 
@@ -23,7 +25,7 @@ function JoinForm() {
       const joined = await joinRoom({ code, nickname })
       router.push(`/room/${joined.code}`)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Impossible de rejoindre.')
+      setError(cause instanceof Error ? cause.message : t.join.failed)
       setBusy(false)
     }
   }
@@ -31,17 +33,17 @@ function JoinForm() {
   return (
     <form onSubmit={submit} className="space-y-6">
       <Input
-        label="Votre pseudo"
+        label={t.join.nickname}
         value={nickname}
         onChange={(event) => setNickname(event.target.value)}
-        placeholder="Tom"
+        placeholder={t.join.nicknamePlaceholder}
         maxLength={20}
         autoFocus
         required
       />
 
       <Input
-        label="Code du salon"
+        label={t.join.code}
         mono
         value={code}
         // On normalise a la saisie : personne ne devrait avoir a se
@@ -53,7 +55,7 @@ function JoinForm() {
       />
 
       <Button type="submit" fullWidth loading={busy}>
-        Rejoindre
+        {t.join.submit}
       </Button>
 
       {error && (
@@ -66,13 +68,15 @@ function JoinForm() {
 }
 
 export default function JoinPage() {
+  const t = useT()
+
   return (
     <main className="mx-auto max-w-sm px-6 pt-32 pb-24 sm:pt-40">
       <h1 className="text-fg text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.05] font-medium tracking-[-0.035em]">
-        Rejoindre une partie.
+        {t.join.title}
       </h1>
       <p className="text-muted mt-4 text-[17px] leading-relaxed">
-        Demandez le code à la personne qui a créé le salon.
+        {t.join.lead}
       </p>
 
       <div className="mt-10">

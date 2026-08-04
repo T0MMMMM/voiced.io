@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { PairsPayload, QuestionComponentProps } from '@/lib/quiz/kinds'
 import { cn } from '@/lib/utils/cn'
+import { useT } from '@/lib/i18n'
 
 /**
  * L'association.
@@ -25,6 +26,7 @@ export function PairsQuestion({
   PairsPayload,
   { kind: 'association'; pairs: Record<string, string> }
 >) {
+  const t = useT()
   const [pairs, setPairs] = useState<Record<string, string>>(value?.pairs ?? {})
   const [pending, setPending] = useState<string | null>(null)
 
@@ -116,9 +118,7 @@ export function PairsQuestion({
       </div>
 
       <p className="text-faint text-[13px]">
-        {pending
-          ? `Choisissez le partenaire de « ${pending} »`
-          : 'Choisissez un élément de gauche, puis son partenaire à droite.'}
+        {pending ? t.forms.pairsPartner(pending) : t.forms.pairsPick}
       </p>
     </div>
   )

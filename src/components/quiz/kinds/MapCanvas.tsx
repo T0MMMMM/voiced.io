@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MapPayload } from '@/lib/quiz/kinds'
 import { cn } from '@/lib/utils/cn'
+import { useT } from '@/lib/i18n'
 
 export interface Frame {
   x: number
@@ -54,6 +55,7 @@ export function MapCanvas({
   children?: React.ReactNode
   className?: string
 }) {
+  const t = useT()
   const [paths, setPaths] = useState<string[]>([])
   const svg = useRef<SVGSVGElement>(null)
 
@@ -96,7 +98,7 @@ export function MapCanvas({
         onClick={pick}
         className={cn('h-full w-full', onPick ? 'cursor-crosshair' : 'cursor-default')}
         role="img"
-        aria-label="Carte"
+        aria-label={t.forms.map}
       >
         <g
           fill="var(--accent-soft)"
@@ -114,7 +116,7 @@ export function MapCanvas({
 
       {paths.length === 0 && (
         <p className="text-faint absolute inset-0 flex items-center justify-center text-[13px]">
-          Chargement de la carte…
+          {t.forms.mapLoading}
         </p>
       )}
     </div>

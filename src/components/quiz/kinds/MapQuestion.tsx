@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { frameFor, MapCanvas, MapPin } from '@/components/quiz/kinds/MapCanvas'
 import type { MapPayload, QuestionComponentProps } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 
 /**
  * La carte à cliquer.
@@ -21,6 +22,7 @@ export function MapQuestion({
   disabled,
   onChange,
 }: QuestionComponentProps<MapPayload, { kind: 'carte'; lat: number; lng: number }>) {
+  const t = useT()
   const [point, setPoint] = useState<{ lat: number; lng: number } | null>(
     value ? { lat: value.lat, lng: value.lng } : null,
   )
@@ -41,8 +43,8 @@ export function MapQuestion({
     <div className="space-y-3">
       <p className="text-muted text-[15px]">
         {payload.target
-          ? `Cliquez sur la carte pour placer ${payload.target}.`
-          : 'Cliquez sur la carte pour placer votre réponse.'}
+          ? t.forms.mapPlace(payload.target)
+          : t.forms.mapPlaceAny}
       </p>
 
       {/* Les marges négatives rendent au fond de carte la place que le
@@ -56,9 +58,7 @@ export function MapQuestion({
       </MapCanvas>
 
       <p className="text-faint text-[13px]">
-        {point
-          ? 'Point posé. Cliquez ailleurs pour le déplacer.'
-          : 'Plus vous êtes proche, plus vous marquez.'}
+        {point ? t.forms.mapPlaced : t.forms.mapCloser}
       </p>
     </div>
   )

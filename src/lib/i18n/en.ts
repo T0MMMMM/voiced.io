@@ -45,17 +45,22 @@ export const en = {
   },
 
   create: {
-    title: 'Create a room',
+    title: 'Open a room.',
+    lead: 'You will get a four-letter code. The game is picked afterwards, together.',
     nickname: 'Your nickname',
-    nicknamePlaceholder: 'What should we call you?',
+    nicknamePlaceholder: 'Sam',
     submit: 'Create the room',
+    failed: 'Could not create the room.',
   },
 
   join: {
-    title: 'Join a room',
-    code: 'Room code',
+    title: 'Join a game.',
+    lead: 'Ask the code from whoever created the room.',
     nickname: 'Your nickname',
+    nicknamePlaceholder: 'Sam',
+    code: 'Room code',
     submit: 'Join',
+    failed: 'Could not join.',
   },
 
   room: {
@@ -127,6 +132,33 @@ export const en = {
     },
   },
 
+  forms: {
+    yourAnswer: 'Your answer',
+    typeHere: 'Type here',
+    typeYourAnswer: 'Type your answer',
+    yourEstimate: 'Your estimate',
+    expectedAnswers: (n: number) => `${n} answers expected`,
+    choices: 'Choices',
+    map: 'Map',
+    mapPlace: (target: string) => `Click the map to place ${target}.`,
+    mapPlaceAny: 'Click the map to place your answer.',
+    mapPlaced: 'Pin dropped. Click elsewhere to move it.',
+    mapCloser: 'The closer you are, the more you score.',
+    mapLoading: 'Loading the map…',
+    pairsPick: 'Pick an item on the left, then its partner on the right.',
+    pairsPartner: (item: string) => `Pick the partner for “${item}”`,
+    silhouette: 'Silhouette of a country',
+    whichCountry: 'Which country is this?',
+    typeItsName: 'Type its name',
+    theme: 'Topic',
+    themePick: 'Pick your difficulty to reveal the question. The choice is final.',
+    bacOneWord: 'One word per category, starting with',
+    timelineWhen: (event: string) => `When? ${event}`,
+    bc: (year: number) => `${year} BC`,
+    rankUp: 'Move up',
+    rankDown: 'Move down',
+  },
+
   grading: {
     title: (step: number, total: number) => `Grading ${step} of ${total}`,
     expected: 'Expected answer',
@@ -140,6 +172,8 @@ export const en = {
     toFix: 'Adjust the points',
     keyboard: 'Enter or → to move on',
     watching: 'The host is going through the answers.',
+    playersDot: 'the players',
+    amongst: (n: number, list: string) => `${n} expected among: ${list}`,
     empty: '(empty)',
   },
 

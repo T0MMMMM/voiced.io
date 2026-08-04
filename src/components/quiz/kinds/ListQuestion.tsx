@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui'
 import type { ListPayload, QuestionComponentProps } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 
 /**
  * « Citez N ».
@@ -21,6 +22,7 @@ export function ListQuestion({
   disabled,
   onChange,
 }: QuestionComponentProps<ListPayload, { kind: 'liste'; items: string[] }>) {
+  const t = useT()
   const count = Math.max(1, payload.count)
   const [items, setItems] = useState<string[]>(
     value?.items ?? Array.from({ length: count }, () => ''),
@@ -42,7 +44,7 @@ export function ListQuestion({
       {Array.from({ length: count }, (_, index) => (
         <Input
           key={index}
-          label={index === 0 ? `${count} réponses attendues` : undefined}
+          label={index === 0 ? t.forms.expectedAnswers(count) : undefined}
           value={items[index] ?? ''}
           placeholder={`Réponse ${index + 1}`}
           disabled={disabled}

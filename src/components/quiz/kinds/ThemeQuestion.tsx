@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui'
 import { DIFFICULTY_LABELS, type QuestionComponentProps, type ThemePayload } from '@/lib/quiz/kinds'
 import { cn } from '@/lib/utils/cn'
+import { useT } from '@/lib/i18n'
 
 const TONES: Record<number, string> = {
   1: 'text-ok',
@@ -32,6 +33,7 @@ export function ThemeQuestion({
   ThemePayload,
   { kind: 'theme'; level: number; text: string }
 >) {
+  const t = useT()
   const [level, setLevel] = useState<number | null>(value?.level ?? null)
   const [text, setText] = useState(value?.text ?? '')
 
@@ -58,7 +60,7 @@ export function ThemeQuestion({
   return (
     <div className="space-y-5">
       <div className="text-center">
-        <p className="eyebrow text-faint">Thème</p>
+        <p className="eyebrow text-faint">{t.forms.theme}</p>
         <p className="text-fg mt-1 text-[19px] font-medium">{payload.theme}</p>
       </div>
 
@@ -107,9 +109,9 @@ export function ThemeQuestion({
         <div className="space-y-3">
           <p className="text-fg text-[17px] text-balance">{chosen.prompt}</p>
           <Input
-            label="Votre réponse"
+            label={t.forms.yourAnswer}
             value={text}
-            placeholder="Écrivez ici"
+            placeholder={t.forms.typeHere}
             disabled={disabled}
             maxLength={80}
             autoFocus

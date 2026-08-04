@@ -3,12 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { QuestionComponentProps, TimelinePayload } from '@/lib/quiz/kinds'
 import { cn } from '@/lib/utils/cn'
-
-/** Une année négative se lit « avant Jésus-Christ », jamais « -2560 ». */
-function readYear(year: number): string {
-  const rounded = Math.round(year)
-  return rounded < 0 ? `${Math.abs(rounded)} av. J.-C.` : String(rounded)
-}
+import { useT } from '@/lib/i18n'
 
 /**
  * La frise chronologique.
@@ -33,6 +28,14 @@ export function TimelineQuestion({
   disabled,
   onChange,
 }: QuestionComponentProps<TimelinePayload, { kind: 'frise'; year: number }>) {
+  const t = useT()
+
+  /** Une année négative se lit « avant notre ère », jamais « -2560 ». */
+  const readYear = (year: number) => {
+    const rounded = Math.round(year)
+    return rounded < 0 ? t.forms.bc(Math.abs(rounded)) : String(rounded)
+  }
+
   const middle = Math.round((payload.from + payload.to) / 2)
   const [year, setYear] = useState<number>(value?.year ?? middle)
   const [touched, setTouched] = useState(value != null)
@@ -119,7 +122,7 @@ export function TimelineQuestion({
         ref={track}
         role="slider"
         tabIndex={disabled ? -1 : 0}
-        aria-label={`Année pour : ${payload.event}`}
+        aria-label={t.forms.timelineWhen(payload.event)}
         aria-valuemin={payload.from}
         aria-valuemax={payload.to}
         aria-valuenow={year}

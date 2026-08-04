@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui'
 import type { PetitBacPayload, QuestionComponentProps } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 
 /**
  * Le petit bac.
@@ -24,6 +25,7 @@ export function PetitBacQuestion({
   PetitBacPayload,
   { kind: 'petit_bac'; words: Record<string, string> }
 >) {
+  const t = useT()
   const [words, setWords] = useState<Record<string, string>>(value?.words ?? {})
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export function PetitBacQuestion({
   return (
     <div className="space-y-4">
       <p className="text-muted text-[15px]">
-        Un mot par catégorie, commençant par
+        {t.forms.bacOneWord}
         <span className="text-fg mx-1.5 font-mono text-[19px] font-bold">
           {payload.letter}
         </span>

@@ -1,13 +1,9 @@
 'use client'
 
 import { frameFor, MapCanvas, MapPin } from '@/components/quiz/kinds/MapCanvas'
+import { useT, type Dictionary } from '@/lib/i18n'
 import type { MapPayload, Question, SilhouettePayload } from '@/lib/quiz/kinds'
 import { cn } from '@/lib/utils/cn'
-
-/** Une année négative se lit « avant Jésus-Christ », jamais « -2560 ». */
-function readYear(year: number): string {
-  return year < 0 ? `${Math.abs(year)} av. J.-C.` : String(year)
-}
 
 /**
  * La bonne réponse, mise en mots.
@@ -15,7 +11,11 @@ function readYear(year: number): string {
  * Corriger sans l'avoir sous les yeux obligeait l'hôte à la connaître par
  * cœur, ou à ouvrir un autre onglet pendant que la table attend.
  */
-function words(question: Question, expected: unknown): string | null {
+function words(
+  question: Question,
+  expected: unknown,
+  t: Dictionary,
+): string | null {
   if (expected === null || expected === undefined) return null
   const value = expected as Record<string, unknown>
 
@@ -29,7 +29,7 @@ function words(question: Question, expected: unknown): string | null {
       const count = (value.count as number) ?? accepted.length
       // Le vivier d'une liste tient rarement sur une ligne : on annonce
       // combien on en demandait, puis on déroule.
-      return `${count} attendues parmi : ${accepted.join(' · ')}`
+      return t.grading.amongst(count, accepted.join(' · '))
     }
 
     case 'estimation': {
@@ -40,8 +40,10 @@ function words(question: Question, expected: unknown): string | null {
     case 'classement':
       return (expected as string[]).join(' · ')
 
-    case 'frise':
-      return readYear(value.year as number)
+    case 'frise': {
+      const year = value.year as number
+      return year < 0 ? t.forms.bc(Math.abs(year)) : String(year)
+    }
 
     case 'intrus':
       return String(expected)
@@ -83,6 +85,8 @@ export function AnswerKey({
   /** Les points posés par les joueurs, pour les questions de carte. */
   placed?: { nickname: string; lat: number; lng: number }[]
 }) {
+  const t = useT()
+
   if (question.kind === 'carte') {
     const payload = question.payload as MapPayload
     const frame = frameFor(payload)
@@ -107,9 +111,9 @@ export function AnswerKey({
         </MapCanvas>
 
         <p className="text-faint text-[13px]">
-          <span className="text-accent">●</span> {payload.target ?? 'la réponse'}
+          <span className="text-accent">●</span> {payload.target ?? t.grading.answer}
           {' · '}
-          <span className="text-fg">●</span> les joueurs
+          <span className="text-fg">●</span> {t.grading.playersDot}
         </p>
       </div>
     )
@@ -128,27 +132,25 @@ export function AnswerKey({
           </svg>
         </div>
         <div>
-          <p className="eyebrow text-faint">Réponse</p>
+          <p className="eyebrow text-faint">{t.grading.answer}</p>
           <p className="text-fg mt-1 text-[19px] font-medium">
-            {words(question, expected) ?? 'Inconnue'}
+            {words(question, expected, t) ?? '?'}
           </p>
         </div>
       </div>
     )
   }
 
-  const text = words(question, expected)
+  const text = words(question, expected, t)
   if (!text) {
     return (
-      <p className="text-faint text-[15px]">
-        Aucune correction attendue : c’est vous qui tranchez.
-      </p>
+      <p className="text-faint text-[15px]">{t.grading.noExpected}</p>
     )
   }
 
   return (
     <div>
-      <p className="eyebrow text-faint">Réponse attendue</p>
+      <p className="eyebrow text-faint">{t.grading.expected}</p>
       <p className={cn('text-fg mt-1 text-[17px]', text.length > 90 && 'text-[15px]')}>
         {text}
       </p>

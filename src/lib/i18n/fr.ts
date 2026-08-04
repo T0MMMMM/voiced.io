@@ -53,17 +53,22 @@ export const fr = {
   },
 
   create: {
-    title: 'Créer un salon',
+    title: 'Ouvrir un salon.',
+    lead: 'Vous recevrez un code à quatre lettres. Le jeu se choisit ensuite, à plusieurs.',
     nickname: 'Votre pseudo',
-    nicknamePlaceholder: 'Comment on vous appelle ?',
+    nicknamePlaceholder: 'Tom',
     submit: 'Créer le salon',
+    failed: 'Impossible de créer le salon.',
   },
 
   join: {
-    title: 'Rejoindre un salon',
-    code: 'Code du salon',
+    title: 'Rejoindre une partie.',
+    lead: 'Demandez le code à la personne qui a créé le salon.',
     nickname: 'Votre pseudo',
+    nicknamePlaceholder: 'Tom',
+    code: 'Code du salon',
     submit: 'Rejoindre',
+    failed: 'Impossible de rejoindre.',
   },
 
   room: {
@@ -135,6 +140,33 @@ export const fr = {
     },
   },
 
+  forms: {
+    yourAnswer: 'Votre réponse',
+    typeHere: 'Écrivez ici',
+    typeYourAnswer: 'Tapez votre réponse',
+    yourEstimate: 'Votre estimation',
+    expectedAnswers: (n: number) => `${n} réponses attendues`,
+    choices: 'Propositions',
+    map: 'Carte',
+    mapPlace: (target: string) => `Cliquez sur la carte pour placer ${target}.`,
+    mapPlaceAny: 'Cliquez sur la carte pour placer votre réponse.',
+    mapPlaced: 'Point posé. Cliquez ailleurs pour le déplacer.',
+    mapCloser: 'Plus vous êtes proche, plus vous marquez.',
+    mapLoading: 'Chargement de la carte…',
+    pairsPick: 'Choisissez un élément de gauche, puis son partenaire à droite.',
+    pairsPartner: (item: string) => `Choisissez le partenaire de « ${item} »`,
+    silhouette: 'Silhouette d’un pays',
+    whichCountry: 'Quel est ce pays ?',
+    typeItsName: 'Écrivez son nom',
+    theme: 'Thème',
+    themePick: 'Choisissez votre difficulté pour découvrir la question. Le choix est définitif.',
+    bacOneWord: 'Un mot par catégorie, commençant par',
+    timelineWhen: (event: string) => `Quand ? ${event}`,
+    bc: (year: number) => `${year} av. J.-C.`,
+    rankUp: 'Monter',
+    rankDown: 'Descendre',
+  },
+
   grading: {
     title: (step: number, total: number) => `Correction ${step} sur ${total}`,
     expected: 'Réponse attendue',
@@ -148,6 +180,8 @@ export const fr = {
     toFix: 'Ajuster les points',
     keyboard: 'Entrée ou → pour avancer',
     watching: 'L’hôte passe les réponses en revue.',
+    playersDot: 'les joueurs',
+    amongst: (n: number, list: string) => `${n} attendues parmi : ${list}`,
     empty: '(vide)',
   },
 

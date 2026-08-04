@@ -2,6 +2,7 @@
 
 import { Input } from '@/components/ui'
 import type { QuestionComponentProps, SilhouettePayload } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 
 /**
  * La silhouette d'un pays.
@@ -21,6 +22,7 @@ export function SilhouetteQuestion({
   disabled,
   onChange,
 }: QuestionComponentProps<SilhouettePayload, { kind: 'silhouette'; text: string }>) {
+  const t = useT()
   return (
     <div className="space-y-4">
       <div className="bg-sunken rounded-token flex aspect-[4/3] items-center justify-center p-6">
@@ -28,7 +30,7 @@ export function SilhouetteQuestion({
           viewBox="0 0 100 100"
           className="h-full w-full"
           role="img"
-          aria-label="Silhouette d’un pays"
+          aria-label={t.forms.silhouette}
         >
           {/* La rotation se fait autour du centre du cadre : autour de
               l'origine, la forme sortirait de l'image. */}
@@ -45,9 +47,9 @@ export function SilhouetteQuestion({
       </div>
 
       <Input
-        label="Quel est ce pays ?"
+        label={t.forms.whichCountry}
         value={value?.text ?? ''}
-        placeholder="Écrivez son nom"
+        placeholder={t.forms.typeItsName}
         disabled={disabled}
         maxLength={60}
         autoFocus

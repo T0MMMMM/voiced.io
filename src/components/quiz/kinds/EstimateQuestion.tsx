@@ -2,6 +2,7 @@
 
 import { Input } from '@/components/ui'
 import type { EstimatePayload, QuestionComponentProps } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 
 /**
  * Estimation chiffrée.
@@ -17,10 +18,11 @@ export function EstimateQuestion({
   disabled,
   onChange,
 }: QuestionComponentProps<EstimatePayload, { kind: 'estimation'; value: number }>) {
+  const t = useT()
   return (
     <div className="flex items-end gap-3">
       <Input
-        label="Votre estimation"
+        label={t.forms.yourEstimate}
         type="number"
         inputMode="numeric"
         mono

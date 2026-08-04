@@ -2,6 +2,7 @@
 
 import { Input } from '@/components/ui'
 import type { QuestionComponentProps, WrittenPayload } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 
 /**
  * Réponse libre.
@@ -16,11 +17,12 @@ export function WrittenQuestion({
   disabled,
   onChange,
 }: QuestionComponentProps<WrittenPayload, { kind: 'ecrite'; text: string }>) {
+  const t = useT()
   return (
     <Input
-      label="Votre réponse"
+      label={t.forms.yourAnswer}
       value={value?.text ?? ''}
-      placeholder={payload.placeholder ?? 'Tapez votre réponse'}
+      placeholder={payload.placeholder ?? t.forms.typeYourAnswer}
       disabled={disabled}
       maxLength={120}
       autoFocus

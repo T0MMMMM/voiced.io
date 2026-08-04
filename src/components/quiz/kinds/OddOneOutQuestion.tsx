@@ -2,6 +2,7 @@
 
 import type { OddOneOutPayload, QuestionComponentProps } from '@/lib/quiz/kinds'
 import { cn } from '@/lib/utils/cn'
+import { useT } from '@/lib/i18n'
 
 /**
  * L'intrus.
@@ -17,8 +18,9 @@ export function OddOneOutQuestion({
   disabled,
   onChange,
 }: QuestionComponentProps<OddOneOutPayload, { kind: 'intrus'; choice: string }>) {
+  const t = useT()
   return (
-    <ul className="space-y-2" role="radiogroup" aria-label="Propositions">
+    <ul className="space-y-2" role="radiogroup" aria-label={t.forms.choices}>
       {payload.items.map((item) => {
         const chosen = value?.choice === item
 
