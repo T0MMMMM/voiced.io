@@ -2,17 +2,19 @@
 
 import { createServiceClient } from '@/lib/supabase/server'
 import { mergeOptions } from '@/lib/rooms/options'
+import { drawQuestions } from './draw'
 import { isAutoScored, type AnswerPayload, type Question } from './kinds'
 import {
+  scoreDistance,
   scoreEstimate,
   scoreList,
   scoreOddOneOut,
   scorePairs,
   scoreRanking,
+  scoreTimeline,
   scoreWritten,
   type LatLng,
 } from './scoring'
-import { scoreDistance } from './scoring'
 
 export interface PlayerAnswer {
   playerId: string
@@ -43,7 +45,7 @@ export async function startQuiz(roomId: string): Promise<void> {
 
   const { data: pool } = await supabase
     .from('questions')
-    .select('id')
+    .select('id, kind')
     .in('kind', kinds)
     .limit(500)
 
@@ -55,7 +57,10 @@ export async function startQuiz(roomId: string): Promise<void> {
 
   // On tire toujours au hasard dans la banque ; l'option « ordre aleatoire »
   // ne decide que de l'ordre dans lequel les questions tombent ensuite.
-  const drawn = [...pool].sort(() => Math.random() - 0.5).slice(0, questionCount)
+  const drawn = drawQuestions(
+    pool as { id: string; kind: Question['kind'] }[],
+    questionCount,
+  )
   const ordered = shuffle ? drawn.sort(() => Math.random() - 0.5) : drawn
 
   const { error } = await supabase
@@ -163,8 +168,12 @@ function scoreOf(
     if (kind === 'estimation' && given.kind === 'estimation') {
       return scoreEstimate(given.value, Number(expected))
     }
-    if ((kind === 'classement' || kind === 'frise') && given.kind === 'classement') {
+    if (kind === 'classement' && given.kind === 'classement') {
       return scoreRanking(given.order, expected as string[])
+    }
+    if (kind === 'frise' && given.kind === 'frise') {
+      const target = expected as { slot: number; slots: number }
+      return scoreTimeline(given.slot, target.slot, target.slots)
     }
     if (kind === 'intrus' && given.kind === 'intrus') {
       return scoreOddOneOut(given.choice, String(expected))
@@ -172,13 +181,21 @@ function scoreOf(
     if (kind === 'association' && given.kind === 'association') {
       return scorePairs(given.pairs, expected as Record<string, string>)
     }
-    if (kind === 'carte') {
+    if (kind === 'carte' && given.kind === 'carte') {
       const target = expected as { point: LatLng; maxKm: number }
-      return scoreDistance(
-        given as unknown as LatLng,
-        target.point,
-        target.maxKm ?? 500,
-      )
+      return scoreDistance(given, target.point, target.maxKm ?? 500)
+    }
+    if (kind === 'theme' && given.kind === 'theme') {
+      const target = expected as {
+        max: number
+        levels: Record<string, { accepted: string[]; points: number }>
+      }
+      const level = target.levels[String(given.level)]
+      if (!level) return 0
+      // Le joueur a choisi ce que sa question vaut : une facile juste ne
+      // peut pas rapporter autant qu'une difficile juste, sans quoi le
+      // choix n'en serait plus un.
+      return scoreWritten(given.text, level.accepted) * (level.points / target.max)
     }
   } catch {
     // Une correction mal formee ne doit pas interrompre la partie : la
@@ -230,7 +247,7 @@ export async function gradeAnswers(
  * Qui a repondu, sans dire quoi.
  *
  * La politique RLS interdit toute lecture des reponses avant les resultats,
- * y compris les siennes — faute de comptes, elle ne peut pas distinguer un
+ * y compris les siennes : faute de comptes, elle ne peut pas distinguer un
  * joueur d'un autre. Tout ce dont le client a besoin passe donc par ici,
  * et on ne rend que ce qui ne renseigne sur rien.
  */

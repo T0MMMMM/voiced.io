@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
  *
  * Le rythme n'est pas qu'esthetique : ces 2,4 secondes sont exactement le
  * temps dont la chaine audio a besoin pour se stabiliser apres l'ouverture
- * du micro. Le decompte fait donc deux choses a la fois — il cale celui qui
+ * du micro. Le decompte fait donc deux choses a la fois : il cale celui qui
  * parle, et il laisse le flux devenir exploitable.
  */
 export const COUNTDOWN_STEP_MS = 800
@@ -19,7 +19,7 @@ export const COUNTDOWN_TOTAL_MS = COUNTDOWN_STEP_MS * COUNTDOWN_FROM
  *
  * Sans lui, l'enregistrement démarre pendant qu'on cherche encore sa
  * respiration, et la première syllabe est toujours perdue. Trois temps
- * suffisent à se caler — c'est le seul moment du site où une animation a le
+ * suffisent à se caler : c'est le seul moment du site où une animation a le
  * droit d'occuper tout l'écran.
  */
 export function Countdown({
@@ -37,8 +37,8 @@ export function Countdown({
    *
    * Sans cela, le décompte ne se terminait jamais : `onDone` est recréé à
    * chaque rendu du parent, la jauge de niveau en provoque un toutes les
-   * quatre-vingts millisecondes, et l'effet se nettoyait donc — minuteur
-   * compris — avant d'avoir atteint sa fin.
+   * quatre-vingts millisecondes, et l'effet se nettoyait donc (minuteur
+   * compris) avant d'avoir atteint sa fin.
    */
   const done = useRef(onDone)
   done.current = onDone

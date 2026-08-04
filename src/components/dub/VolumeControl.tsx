@@ -30,7 +30,7 @@ function SpeakerIcon({ muted }: { muted: boolean }) {
  * Il se réduit à une icône tant qu'on ne s'en approche pas : c'est un
  * réglage qu'on touche deux fois par partie, il n'a rien à faire dans la
  * ligne des contrôles qu'on utilise en permanence. La glissière est
- * verticale, comme sur n'importe quel lecteur — et elle sort vers le haut
+ * verticale, comme sur n'importe quel lecteur, et elle sort vers le haut
  * pour ne pas recouvrir l'image.
  */
 export function VolumeControl({

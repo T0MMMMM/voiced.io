@@ -41,10 +41,10 @@ export interface ScoreProps {
  * Pendant l'enregistrement la video est muette et personne n'entend les
  * autres : cette forme d'onde est la seule information de timing qui reste.
  * Elle ne montre que les cinq secondes a venir, la tete de lecture calee a
- * gauche — on lit ce qui arrive, pas ce qui est passe.
+ * gauche : on lit ce qui arrive, pas ce qui est passe.
  *
  * Trois couches, dans cet ordre :
- *   · la zone teintee — exactement ce qui sera enregistre
+ *   · la zone teintee : exactement ce qui sera enregistre
  *   · la bande originale, pleine
  *   · votre doublage par-dessus, en transparence : deux traces sur le meme
  *     axe se comparent d'un coup d'oeil, et un decalage se voit sans qu'on

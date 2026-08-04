@@ -6,7 +6,7 @@ type Size = 'sm' | 'md'
 
 /**
  * `raised` est le défaut : c'est la matière commune à tous les contrôles
- * du site — surface blanche, ombre grise, aucune bordure.
+ * du site : surface blanche, ombre grise, aucune bordure.
  */
 const VARIANTS: Record<Variant, string> = {
   raised:

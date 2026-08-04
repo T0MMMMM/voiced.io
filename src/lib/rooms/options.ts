@@ -3,17 +3,18 @@
  *
  * Ils vivent dans une colonne `jsonb` : ces options changeront souvent et
  * aucune n'a besoin d'etre filtree en SQL. Le prix de cette souplesse est
- * qu'une ligne peut contenir n'importe quoi — une version anterieure, une
+ * qu'une ligne peut contenir n'importe quoi : une version anterieure, une
  * cle supprimee, un type inattendu. `mergeOptions` est la porte qui
  * referme ce risque : tout ce qui entre dans l'application passe par elle.
  */
 
 import type { QuestionKind } from '@/lib/quiz/kinds'
+import { PACE_CHOICES, type Pace } from '@/lib/quiz/timing'
+
+export { PACE_CHOICES, type Pace }
 
 /** Assez pour une soiree ; au-dela, plus personne ne suit. */
 export const MAX_PLAYERS = 8
-
-export type TimerSec = 20 | 30 | 45 | 60
 
 /** Longueur d'une partie de quiz. */
 export type QuestionCount = 10 | 20 | 30
@@ -21,9 +22,9 @@ export type QuestionCount = 10 | 20 | 30
 /**
  * Les formes qu'un salon peut tirer.
  *
- * Seules celles que la banque alimente sont proposees : offrir « Carte »
- * dans le salon alors qu'aucune question n'existe reviendrait a promettre
- * une partie qui ne tomberait jamais.
+ * Seules celles que la banque alimente sont proposees : offrir « Extrait »
+ * dans le salon alors qu'aucune question sonore n'existe reviendrait a
+ * promettre une partie qui ne tomberait jamais.
  */
 export const KIND_CHOICES: { value: QuestionKind; label: string }[] = [
   { value: 'ecrite', label: 'Réponse écrite' },
@@ -33,12 +34,18 @@ export const KIND_CHOICES: { value: QuestionKind; label: string }[] = [
   { value: 'classement', label: 'Classement' },
   { value: 'frise', label: 'Frise' },
   { value: 'association', label: 'Association' },
+  { value: 'carte', label: 'Carte' },
+  { value: 'theme', label: 'Thème au choix' },
   { value: 'petit_bac', label: 'Petit bac' },
 ]
 
 export interface RoomOptions {
-  /** 0 = pas de minuteur. */
-  timerSec: TimerSec
+  /**
+   * Le rythme, et non plus une duree fixe : chaque question tire son temps
+   * de sa forme et de sa difficulte, ce reglage ne fait que l'etirer ou le
+   * resserrer pour toute la table.
+   */
+  pace: Pace
   /** Nombre de questions tirees pour la partie. */
   questionCount: QuestionCount
   /** Formes de questions autorisees dans le tirage. */
@@ -61,22 +68,8 @@ export const COUNT_CHOICES: { value: QuestionCount; label: string }[] = [
   { value: 30, label: 'Longue' },
 ]
 
-/**
- * Il n'y a plus de « sans minuteur ».
- *
- * C'est le temps qui fait avancer la partie : personne ne peut sauter une
- * question, et sans minuteur un joueur qui ne repond pas figerait tout le
- * monde indefiniment.
- */
-export const TIMER_CHOICES: { value: TimerSec; label: string }[] = [
-  { value: 20, label: '20 s' },
-  { value: 30, label: '30 s' },
-  { value: 45, label: '45 s' },
-  { value: 60, label: '60 s' },
-]
-
 export const DEFAULT_OPTIONS: RoomOptions = {
-  timerSec: 30,
+  pace: 'normal',
   questionCount: 20,
   // Toutes les formes par defaut : une premiere partie doit montrer ce que
   // le quiz sait faire, pas la version la plus sage.
@@ -88,7 +81,7 @@ export const DEFAULT_OPTIONS: RoomOptions = {
   allowSteal: false,
 }
 
-const TIMER_VALUES = TIMER_CHOICES.map((choice) => choice.value)
+const PACE_VALUES = PACE_CHOICES.map((choice) => choice.value)
 const COUNT_VALUES = COUNT_CHOICES.map((choice) => choice.value)
 const KIND_VALUES = KIND_CHOICES.map((choice) => choice.value)
 
@@ -102,7 +95,7 @@ const KIND_VALUES = KIND_CHOICES.map((choice) => choice.value)
 export const OPTIONS_BY_GAME: Record<string, (keyof RoomOptions)[]> = {
   quiz: [
     'questionCount',
-    'timerSec',
+    'pace',
     'kinds',
     'shuffle',
     'anonymousGrading',
@@ -110,8 +103,8 @@ export const OPTIONS_BY_GAME: Record<string, (keyof RoomOptions)[]> = {
     'allowHints',
     'allowSteal',
   ],
-  beast: ['timerSec', 'shuffle'],
-  next: ['timerSec'],
+  beast: ['pace', 'shuffle'],
+  next: ['pace'],
   dub: [],
 }
 
@@ -123,10 +116,10 @@ function bool(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback
 }
 
-function timer(value: unknown): TimerSec {
-  return TIMER_VALUES.includes(value as TimerSec)
-    ? (value as TimerSec)
-    : DEFAULT_OPTIONS.timerSec
+function pace(value: unknown): Pace {
+  return PACE_VALUES.includes(value as Pace)
+    ? (value as Pace)
+    : DEFAULT_OPTIONS.pace
 }
 
 /**
@@ -156,7 +149,7 @@ export function mergeOptions(stored: unknown): RoomOptions {
       : {}
 
   return {
-    timerSec: timer(source.timerSec),
+    pace: pace(source.pace),
     questionCount: count(source.questionCount),
     kinds: kindList(source.kinds),
     shuffle: bool(source.shuffle, DEFAULT_OPTIONS.shuffle),

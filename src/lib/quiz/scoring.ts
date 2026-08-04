@@ -3,7 +3,7 @@
  *
  * La machine propose, l'hote dispose. Tout ce qui est objectif est calcule
  * ici pour que l'hote n'ait a trancher que ce qui demande vraiment du
- * jugement — sinon vingt questions a six joueurs font cent vingt
+ * jugement : sinon vingt questions a six joueurs font cent vingt
  * arbitrages a la main, et la correction devient une corvee.
  *
  * Toutes les fonctions rendent une fraction entre 0 et 1, que l'appelant
@@ -17,7 +17,7 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
 /**
  * Reponse ecrite : juste si elle rejoint l'une des variantes acceptees.
  *
- * Une question a rarement une seule formulation valable — « Leonard de
+ * Une question a rarement une seule formulation valable : « Leonard de
  * Vinci », « De Vinci » et « Vinci » designent la meme personne. On liste
  * donc les variantes, et le rapprochement tolere fautes de frappe et
  * accents. L'hote garde le dernier mot sur ce que la machine n'a pas su
@@ -34,7 +34,7 @@ export function scoreWritten(given: string, accepted: string[]): number {
 /**
  * « Citez N » : une fraction par bonne reponse distincte.
  *
- * Les doublons ne comptent qu'une fois — citer quatre fois l'Australie ne
+ * Les doublons ne comptent qu'une fois : citer quatre fois l'Australie ne
  * vaut pas quatre pays. En donner plus que demande ne rapporte rien de
  * plus : on ne recompense pas l'arrosage.
  */
@@ -79,7 +79,7 @@ export function scoreEstimate(given: number, expected: number): number {
 /**
  * Classement : on compte les paires dans le bon ordre relatif.
  *
- * Le tout ou rien serait absurde ici — avoir quatre films sur cinq bien
+ * Le tout ou rien serait absurde ici : avoir quatre films sur cinq bien
  * places doit rapporter beaucoup plus que zero. La distance de Kendall
  * normalisee mesure exactement cela : la proportion de couples dont l'ordre
  * est respecte.
@@ -130,7 +130,7 @@ export function distanceKm(a: LatLng, b: LatLng): number {
 /**
  * Carte : degressif a la distance, nul au-dela du rayon.
  *
- * Le rayon depend de l'echelle de la question — reconnaitre un pays tolere
+ * Le rayon depend de l'echelle de la question : reconnaitre un pays tolere
  * bien plus d'erreur que placer une rue.
  */
 export function scoreDistance(given: LatLng, expected: LatLng, maxKm: number): number {
@@ -139,12 +139,24 @@ export function scoreDistance(given: LatLng, expected: LatLng, maxKm: number): n
 }
 
 /**
- * Frise : c'est un classement, avec des dates a la place des rangs. La
- * meme logique de paires s'applique — seul l'ordre relatif compte, pas la
- * date exacte, qu'on ne demande jamais.
+ * Frise : on place un evenement entre deux reperes deja dates.
+ *
+ * Le voisin immediat rapporte une part : viser le bon siecle et se tromper
+ * d'un cran n'est pas la meme erreur que placer la Revolution avant les
+ * pyramides, et une note tout ou rien confondait les deux.
  */
-export function scoreTimeline(given: string[], expected: string[]): number {
-  return scoreRanking(given, expected)
+const NEIGHBOUR_CREDIT = 0.35
+
+export function scoreTimeline(
+  given: number,
+  expected: number,
+  slots: number,
+): number {
+  if (!Number.isFinite(given) || given < 0 || given >= slots) return 0
+  const gap = Math.abs(Math.round(given) - expected)
+  if (gap === 0) return 1
+  if (gap === 1) return NEIGHBOUR_CREDIT
+  return 0
 }
 
 /** Association : une fraction des paires justes, sans notion d'ordre. */

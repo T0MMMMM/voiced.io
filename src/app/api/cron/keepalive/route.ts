@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
  * Touche la base une fois par jour.
  *
  * Un projet Supabase gratuit est mis en pause apres 7 jours sans activite.
- * Cette requete triviale suffit a le maintenir eveille — sans elle,
+ * Cette requete triviale suffit a le maintenir eveille : sans elle,
  * l'environnement meurt des la premiere semaine calme du developpement.
  *
  * En Phase 2, cette meme route se chargera aussi de supprimer les clips et

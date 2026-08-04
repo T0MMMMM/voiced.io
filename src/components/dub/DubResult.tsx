@@ -25,7 +25,7 @@ export interface DubResultProps {
  *
  * C'est le moment que tout le reste prepare : personne n'a entendu personne
  * pendant la partie, et tout sort d'un coup. L'ecran ne propose donc qu'une
- * chose — appuyer sur lecture — et ne montre le detail qu'apres.
+ * chose, appuyer sur lecture, et ne montre le detail qu'apres.
  */
 export function DubResult({
   room,
@@ -43,7 +43,7 @@ export function DubResult({
    * Les prises sont relues a l'arrivee.
    *
    * Celles recues en props datent du rendu serveur, c'est-a-dire de
-   * l'ouverture de la page — donc d'avant les enregistrements. En basculant
+   * l'ouverture de la page, donc d'avant les enregistrements. En basculant
    * sur le resultat, on heritait de cette photo perimee : une video muette
    * alors que les prises existaient bel et bien.
    */

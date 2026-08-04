@@ -10,7 +10,7 @@ export interface SegmentedOption<T> {
 /**
  * Contrôle segmenté : la pastille glisse d'un choix à l'autre au lieu de
  * disparaître d'un côté pour réapparaître de l'autre. Le déplacement dit
- * qu'on change de valeur sur une même échelle — ce qui est exactement le
+ * qu'on change de valeur sur une même échelle, ce qui est exactement le
  * cas pour une durée de minuteur.
  *
  * La pastille se déplace par translation de sa propre largeur : un

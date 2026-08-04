@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils/cn'
  * glisser-déposer aurait exigé trois implémentations et échouerait sur la
  * première ligne un peu étroite.
  *
- * Chaque paire juste rapporte sa part — en trouver trois sur quatre vaut
+ * Chaque paire juste rapporte sa part : en trouver trois sur quatre vaut
  * bien mieux que rien.
  */
 export function PairsQuestion({

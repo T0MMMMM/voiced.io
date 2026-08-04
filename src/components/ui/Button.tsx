@@ -27,7 +27,7 @@ const SIZES: Record<Size, string> = {
 /**
  * Exposé séparément pour qu'un lien puisse porter exactement la même
  * apparence qu'un bouton, sans dupliquer les classes ni imbriquer un
- * <button> dans un <a> — ce qui serait invalide.
+ * <button> dans un <a>, ce qui serait invalide.
  */
 export function buttonClassName({
   variant = 'primary',

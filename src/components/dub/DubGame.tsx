@@ -190,7 +190,7 @@ export function DubGame({
     //
     // Le segment vise n'est PAS efface ici : c'est `stopRecording` qui en a
     // besoin pour ancrer la prise a son debut. L'effacer avant l'ancrait a
-    // la position courante — c'est-a-dire a la fin du segment, ce qui
+    // la position courante, c'est-a-dire a la fin du segment, ce qui
     // decalait tout le doublage d'une replique.
     if (target.current && recorder.current && time >= target.current.end) {
       stopRef.current()
@@ -319,8 +319,8 @@ export function DubGame({
       stage.current?.playMuted(aim.start)
 
       // La boucle du lecteur declenche l'arret a la fin du segment. Ce
-      // minuteur ne sert que si elle s'interrompt — onglet en arriere-plan,
-      // lecture qui bute sur la fin du fichier — pour qu'un micro ne reste
+      // minuteur ne sert que si elle s'interrompt : onglet en arriere-plan,
+      // lecture qui bute sur la fin du fichier, pour qu'un micro ne reste
       // jamais ouvert.
       guard.current = window.setTimeout(
         () => stopRef.current(),

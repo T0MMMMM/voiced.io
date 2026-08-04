@@ -31,20 +31,20 @@ export default function UiKitchenSink() {
     <main className="mx-auto max-w-3xl space-y-10 p-10">
       <h1 className="text-fg text-2xl font-semibold">Kit UI</h1>
 
-      <Section title="Button — variantes">
+      <Section title="Button : variantes">
         <Button variant="primary">Enregistrer</Button>
         <Button variant="secondary">Rejouer</Button>
         <Button variant="ghost">Annuler</Button>
         <Button variant="danger">Supprimer</Button>
       </Section>
 
-      <Section title="Button — tailles">
+      <Section title="Button : tailles">
         <Button size="sm">Petit</Button>
         <Button size="md">Moyen</Button>
         <Button size="lg">Grand</Button>
       </Section>
 
-      <Section title="Button — états">
+      <Section title="Button : états">
         <Button disabled>Désactivé</Button>
         <Button loading>Chargement</Button>
         <Button variant="secondary" disabled>
@@ -52,7 +52,7 @@ export default function UiKitchenSink() {
         </Button>
       </Section>
 
-      <Section title="Button — pleine largeur">
+      <Section title="Button : pleine largeur">
         <div className="w-full">
           <Button fullWidth>Créer une partie</Button>
         </div>
@@ -78,7 +78,7 @@ export default function UiKitchenSink() {
         </Panel>
       </Section>
 
-      <Section title="Panel — creusé">
+      <Section title="Panel : creusé">
         <Panel sunken className="flex-1">
           <p className="text-muted text-[15px]">Panneau creusé, sans ombre.</p>
         </Panel>

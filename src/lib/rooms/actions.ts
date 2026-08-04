@@ -146,7 +146,7 @@ export async function joinRoom(input: {
 /**
  * Quitte le salon et, si c'etait l'hote, passe l'arbitrage au plus ancien
  * present. Sans ce transfert, une partie de quiz devient incorrigible des
- * que l'hote perd sa connexion — donc inachevable.
+ * que l'hote perd sa connexion, donc inachevable.
  */
 export async function leaveRoom(): Promise<void> {
   const identity = await readIdentity()
@@ -197,7 +197,7 @@ export async function setRoomOptions(
 
   const merged = mergeOptions({ ...mergeOptions(room?.options), ...patch })
 
-  // `Json` exige une signature d'index que `RoomOptions` n'a pas — et ne
+  // `Json` exige une signature d'index que `RoomOptions` n'a pas, et ne
   // doit pas avoir, sinon n'importe quelle cle passerait. L'etalement en
   // objet nu est sur : toutes les valeurs sont des booleens ou des nombres.
   const { error } = await supabase

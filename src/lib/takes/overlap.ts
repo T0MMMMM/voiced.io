@@ -7,7 +7,7 @@
  *
  * Deux prises consecutives se touchent bord a bord : la premiere finit ou
  * la seconde commence. Un test strict les declare pourtant chevauchantes
- * des que l'arithmetique flottante decale la borne d'un cheveu — et
+ * des que l'arithmetique flottante decale la borne d'un cheveu : et
  * enregistrer un segment effaçait celui d'avant. La tolerance ci-dessous
  * regle ce cas, et elle reste tres inferieure a un vrai recouvrement.
  */

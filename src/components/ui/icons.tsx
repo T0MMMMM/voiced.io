@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils/cn'
  * trait, mêmes extrémités arrondies : c'est ce qui les fait lire comme une
  * famille plutôt que comme une collection.
  *
- * Une icône n'apparaît que si elle remplace du texte ou double une action
- * — jamais en décoration à côté d'un libellé.
+ * Une icône n'apparaît que si elle remplace du texte ou double une action,
+ * jamais en décoration à côté d'un libellé.
  */
 type IconProps = { className?: string }
 

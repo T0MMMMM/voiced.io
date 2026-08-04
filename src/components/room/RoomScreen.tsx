@@ -46,7 +46,7 @@ export function RoomScreen({
 }) {
   /**
    * Les questions recues en props datent du rendu serveur, c'est-a-dire de
-   * l'ouverture de la page — donc d'avant le tirage. Sans ce rechargement,
+   * l'ouverture de la page, donc d'avant le tirage. Sans ce rechargement,
    * lancer une partie affichait « aucune question » alors qu'elles venaient
    * d'etre tirees.
    */

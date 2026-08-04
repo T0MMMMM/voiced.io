@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils/cn'
  *
  * Les deux vont ensemble : annoncer qu'une question est difficile sans dire
  * ce qu'elle rapporte laisserait croire à une punition. La couleur suit le
- * feu tricolore — vert, orange, rouge — parce que c'est la seule échelle de
+ * feu tricolore (vert, orange, rouge) parce que c'est la seule échelle de
  * difficulté que tout le monde lit sans légende.
  */
 const TONES: Record<number, string> = {

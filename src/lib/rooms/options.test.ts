@@ -3,7 +3,7 @@ import {
   DEFAULT_OPTIONS,
   KIND_CHOICES,
   mergeOptions,
-  TIMER_CHOICES,
+  PACE_CHOICES,
 } from './options'
 
 describe('mergeOptions', () => {
@@ -12,74 +12,46 @@ describe('mergeOptions', () => {
   })
 
   it('conserve les valeurs connues', () => {
-    expect(mergeOptions({ timerSec: 30, shuffle: true })).toMatchObject({
-      timerSec: 30,
+    expect(mergeOptions({ pace: 'rapide', shuffle: true })).toMatchObject({
+      pace: 'rapide',
       shuffle: true,
     })
   })
 
-  it('complete les cles absentes par leur defaut', () => {
-    const merged = mergeOptions({ timerSec: 15 })
-    expect(merged.anonymousGrading).toBe(DEFAULT_OPTIONS.anonymousGrading)
-    expect(merged.allowBets).toBe(DEFAULT_OPTIONS.allowBets)
-  })
-
-  it('ignore les cles inconnues', () => {
-    const merged = mergeOptions({ couleurPreferee: 'vert', timerSec: 60 })
+  it('ignore une cle inconnue', () => {
+    const merged = mergeOptions({ couleurPreferee: 'vert', pace: 'calme' })
     expect(merged).not.toHaveProperty('couleurPreferee')
-    expect(merged.timerSec).toBe(60)
+    expect(merged.pace).toBe('calme')
   })
 
-  it('rejette une duree de minuteur hors des choix proposes', () => {
-    // Le jsonb accepte n'importe quoi : c'est ici qu'on referme la porte.
-    expect(mergeOptions({ timerSec: 7 }).timerSec).toBe(DEFAULT_OPTIONS.timerSec)
-    expect(mergeOptions({ timerSec: -1 }).timerSec).toBe(DEFAULT_OPTIONS.timerSec)
+  it('retombe sur le defaut devant un rythme inconnu', () => {
+    // La colonne est un jsonb libre : une version anterieure du salon y a
+    // laisse des durees en secondes, qui ne veulent plus rien dire.
+    expect(mergeOptions({ pace: 30 }).pace).toBe(DEFAULT_OPTIONS.pace)
+    expect(mergeOptions({ pace: 'lent' }).pace).toBe(DEFAULT_OPTIONS.pace)
+    expect(mergeOptions({ pace: null }).pace).toBe(DEFAULT_OPTIONS.pace)
   })
 
-  it('ramene les anciens salons sans minuteur a la valeur par defaut', () => {
-    // Des parties ont ete creees quand « aucun » existait encore.
-    expect(mergeOptions({ timerSec: 0 }).timerSec).toBe(DEFAULT_OPTIONS.timerSec)
-  })
-
-  it('rejette un type inattendu', () => {
-    expect(mergeOptions({ shuffle: 'oui' }).shuffle).toBe(DEFAULT_OPTIONS.shuffle)
-    expect(mergeOptions({ timerSec: '30' }).timerSec).toBe(DEFAULT_OPTIONS.timerSec)
-  })
-
-  it('survit a une entree qui n’est pas un objet', () => {
-    // Une colonne jsonb peut contenir null, un nombre ou une chaine.
+  it('resiste a une valeur qui n’est pas un objet', () => {
     expect(mergeOptions(null)).toEqual(DEFAULT_OPTIONS)
-    expect(mergeOptions(undefined)).toEqual(DEFAULT_OPTIONS)
-    expect(mergeOptions('cassé')).toEqual(DEFAULT_OPTIONS)
-    expect(mergeOptions(42)).toEqual(DEFAULT_OPTIONS)
     expect(mergeOptions([1, 2])).toEqual(DEFAULT_OPTIONS)
-  })
-
-  it('ne partage pas de reference avec les defauts', () => {
-    // Sinon muter le resultat contaminerait tous les salons suivants.
-    const merged = mergeOptions({})
-    merged.shuffle = !merged.shuffle
-    expect(DEFAULT_OPTIONS.shuffle).not.toBe(merged.shuffle)
+    expect(mergeOptions('oui')).toEqual(DEFAULT_OPTIONS)
   })
 })
 
-describe('TIMER_CHOICES', () => {
-  it('n’offre plus « aucun minuteur »', () => {
-    // C'est le temps qui fait avancer la partie : personne ne peut sauter
-    // une question, et sans minuteur un joueur qui ne repond pas figerait
-    // tout le monde indefiniment.
-    expect(TIMER_CHOICES.map((choice) => choice.value)).not.toContain(0)
-  })
-
-  it('propose des durees croissantes', () => {
-    const values = TIMER_CHOICES.map((choice) => choice.value)
-    expect([...values].sort((a, b) => a - b)).toEqual(values)
-  })
-
+describe('PACE_CHOICES', () => {
   it('contient la valeur par defaut', () => {
-    expect(TIMER_CHOICES.map((choice) => choice.value)).toContain(
-      DEFAULT_OPTIONS.timerSec,
+    expect(PACE_CHOICES.map((choice) => choice.value)).toContain(
+      DEFAULT_OPTIONS.pace,
     )
+  })
+
+  it('ne propose plus de duree en secondes', () => {
+    // Le temps se deduit de la question : reproposer « 30 s » reintroduirait
+    // le reglage qu'on vient justement de retirer.
+    for (const choice of PACE_CHOICES) {
+      expect(choice.label).not.toMatch(/\d/)
+    }
   })
 })
 
@@ -110,8 +82,8 @@ describe('formes de questions', () => {
   })
 
   it('n’offre aucune forme absente de la banque', () => {
-    const offered = KIND_CHOICES.map((choice) => choice.value)
-    expect(offered).not.toContain('carte')
-    expect(offered).not.toContain('media')
+    // Proposer « Extrait » dans le salon alors qu'aucune question sonore
+    // n'existe reviendrait a promettre une partie qui ne tomberait jamais.
+    expect(KIND_CHOICES.map((choice) => choice.value)).not.toContain('media')
   })
 })

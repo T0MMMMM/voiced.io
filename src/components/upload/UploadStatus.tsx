@@ -3,8 +3,8 @@ import { formatBytes } from '@/lib/clips/validate'
 import { formatDuration } from '@/lib/utils/time'
 
 /**
- * L'état de l'envoi en cours. La progression est réelle — elle vient des
- * évènements de la requête — parce qu'une barre qui avance toute seule
+ * L'état de l'envoi en cours. La progression est réelle : elle vient des
+ * évènements de la requête, parce qu'une barre qui avance toute seule
  * ment sur ce qui reste à attendre.
  */
 export function UploadStatus({

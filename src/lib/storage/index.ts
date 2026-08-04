@@ -2,8 +2,8 @@
  * SEUL point d'accès aux fichiers du projet.
  *
  * Aucun autre module n'importe `supabase.storage`. C'est ce qui rendra la
- * migration vers Cloudflare R2 — prévue quand le gigaoctet gratuit de
- * Supabase sera atteint — possible en réécrivant ce seul fichier.
+ * migration vers Cloudflare R2 : prévue quand le gigaoctet gratuit de
+ * Supabase sera atteint : possible en réécrivant ce seul fichier.
  */
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Bucket } from './paths'

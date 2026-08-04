@@ -16,6 +16,7 @@ export type QuestionKind =
   | 'petit_bac'
   | 'intrus'
   | 'association'
+  | 'theme'
   | 'media'
 
 /** Contenu propre a chaque forme, tel qu'il est stocke en base. */
@@ -46,6 +47,28 @@ export interface PetitBacPayload {
   letter: string
   categories: string[]
 }
+/**
+ * Frise : des reperes deja dates, et un evenement a glisser entre eux.
+ * Les reperes arrivent tries, du plus ancien au plus recent.
+ */
+export interface TimelinePayload {
+  event: string
+  anchors: { label: string; year: number }[]
+}
+export interface MapPayload {
+  /** Le cadrage : le monde entier ne sert a rien pour situer un departement. */
+  region: 'monde' | 'europe' | 'france'
+  /** Ce qu'il faut placer, si l'enonce ne suffit pas. */
+  target?: string
+}
+/**
+ * Theme a difficulte choisie : trois questions du meme sujet, le joueur
+ * decide laquelle il affronte et combien elle vaut.
+ */
+export interface ThemePayload {
+  theme: string
+  levels: { level: number; prompt: string; points: number }[]
+}
 
 export interface Question {
   id: string
@@ -70,6 +93,9 @@ export type AnswerPayload =
   | { kind: 'intrus'; choice: string }
   | { kind: 'association'; pairs: Record<string, string> }
   | { kind: 'petit_bac'; words: Record<string, string> }
+  | { kind: 'frise'; slot: number }
+  | { kind: 'carte'; lat: number; lng: number }
+  | { kind: 'theme'; level: number; text: string }
 
 /**
  * Contrat commun a toutes les formes. `disabled` couvre aussi bien le
@@ -100,7 +126,8 @@ export function isAutoScored(kind: QuestionKind): boolean {
     kind === 'frise' ||
     kind === 'carte' ||
     kind === 'intrus' ||
-    kind === 'association'
+    kind === 'association' ||
+    kind === 'theme'
   )
 }
 
@@ -118,6 +145,7 @@ export const KIND_LABELS: Record<QuestionKind, string> = {
   frise: 'Frise',
   carte: 'Carte',
   petit_bac: 'Petit bac',
+  theme: 'Thème au choix',
   intrus: 'Intrus',
   association: 'Association',
   media: 'Extrait',

@@ -1,4 +1,4 @@
-# Plan d'implémentation — Phases 1 et 2
+# Plan d'implémentation : Phases 1 et 2
 
 **Base :** [PRD.md](PRD.md) · **Mis à jour** 2026-08-03
 
@@ -18,9 +18,9 @@ Le jalon qui compte : **une partie de quiz jouable à quatre, de bout en bout, a
 
 ---
 
-# Phase 1 — Le socle des salons
+# Phase 1 : Le socle des salons
 
-**Objectif.** Quatre personnes rejoignent un salon avec un code, se voient dans le lobby, et l'hôte lance la partie. Aucun jeu derrière — c'est la plomberie dont les trois jeux dépendent.
+**Objectif.** Quatre personnes rejoignent un salon avec un code, se voient dans le lobby, et l'hôte lance la partie. Aucun jeu derrière : c'est la plomberie dont les trois jeux dépendent.
 
 ## Fichiers
 
@@ -47,7 +47,7 @@ app/
 
 ## Tâches
 
-### 1.1 — Migration du socle
+### 1.1 : Migration du socle
 
 ```sql
 alter table public.rooms
@@ -65,7 +65,7 @@ alter table public.rooms add constraint rooms_status_check
 
 `clip_id` devient facultatif : un salon de quiz n'a pas de clip. Regénérer les types après (`npm run db:types`).
 
-### 1.2 — Réglages du salon (pur, TDD)
+### 1.2 : Réglages du salon (pur, TDD)
 
 `lib/rooms/options.ts` :
 
@@ -84,9 +84,9 @@ export const DEFAULT_OPTIONS: RoomOptions
 export function mergeOptions(stored: unknown): RoomOptions
 ```
 
-`mergeOptions` doit survivre à un `jsonb` incomplet, inconnu ou corrompu — c'est le prix de la souplesse du `jsonb`, et c'est exactement ce qu'on teste : clé manquante → valeur par défaut, clé inconnue → ignorée, type inattendu → valeur par défaut.
+`mergeOptions` doit survivre à un `jsonb` incomplet, inconnu ou corrompu : c'est le prix de la souplesse du `jsonb`, et c'est exactement ce qu'on teste : clé manquante → valeur par défaut, clé inconnue → ignorée, type inattendu → valeur par défaut.
 
-### 1.3 — Server actions
+### 1.3 : Server actions
 
 ```ts
 createRoom(input: { game: GameKind; nickname: string; clipId?: string }): Promise<{ code: string; playerId: string }>
@@ -97,30 +97,30 @@ startGame(roomId: string): Promise<void>
 ```
 
 Points de vigilance :
-- `createRoom` retente sur collision de code — 160 000 combinaisons, mais la collision n'est pas impossible.
+- `createRoom` retente sur collision de code : 160 000 combinaisons, mais la collision n'est pas impossible.
 - Le premier joueur devient hôte ; `host_player_id` est posé dans la même transaction.
 - `joinRoom` refuse un salon plein (8), expiré, ou déjà en partie.
 - L'identité du joueur tient dans un cookie `voiced-player` (`{ roomId, playerId }`) : sans compte, c'est ce qui permet de retrouver sa place après un rafraîchissement.
 
-### 1.4 — Store Realtime
+### 1.4 : Store Realtime
 
 `stores/useRoomStore.ts` s'abonne aux changements Postgres de `rooms`, `players`, `answers`. Un seul canal par salon.
 
-Un joueur envoie un battement toutes les 10 s (`last_seen_at`) ; au-delà de 30 s sans signe, il est marqué absent — sans être supprimé, pour qu'il retrouve ses réponses en revenant.
+Un joueur envoie un battement toutes les 10 s (`last_seen_at`) ; au-delà de 30 s sans signe, il est marqué absent, sans être supprimé, pour qu'il retrouve ses réponses en revenant.
 
-### 1.5 — Lobby
+### 1.5 : Lobby
 
 Code à quatre lettres en très grand, en Space Mono, avec copie du lien en un clic. Liste des joueurs, hôte marqué. Réglages visibles de tous mais modifiables par l'hôte seul. Bouton de départ actif à partir de deux joueurs.
 
-### 1.6 — Transfert d'hôte
+### 1.6 : Transfert d'hôte
 
-Si l'hôte quitte, le joueur présent le plus ancien reprend la main. Sans ça, une partie devient incorrigible dès que l'hôte perd sa connexion — ce qui, sur un quiz corrigé à la main, la rend inachevable.
+Si l'hôte quitte, le joueur présent le plus ancien reprend la main. Sans ça, une partie devient incorrigible dès que l'hôte perd sa connexion, ce qui, sur un quiz corrigé à la main, la rend inachevable.
 
 **Fin de phase :** quatre onglets rejoignent le même salon, se voient apparaître et disparaître en direct, et l'hôte lance la partie.
 
 ---
 
-# Phase 2 — Le Quiz jouable
+# Phase 2 : Le Quiz jouable
 
 **Objectif.** Une partie complète : questions, réponses, correction par l'hôte, podium.
 
@@ -150,7 +150,7 @@ app/room/[code]/  play | grade | results
 
 ## Tâches
 
-### 2.1 — Tables et anti-triche
+### 2.1 : Tables et anti-triche
 
 Les trois tables du PRD, plus la politique qui compte :
 
@@ -166,7 +166,7 @@ create policy "reponses privees jusqu'aux resultats" on public.answers
 
 Sans elle, n'importe qui ouvre l'inspecteur et lit les réponses des autres pendant la partie. **À vérifier par une sonde, comme les politiques existantes** : `npm run check:rls` doit tenter la lecture d'une réponse pendant une partie en cours et échouer.
 
-### 2.2 — Contrat commun des formes
+### 2.2 : Contrat commun des formes
 
 ```ts
 export interface QuestionComponentProps<P, A> {
@@ -178,9 +178,9 @@ export interface QuestionComponentProps<P, A> {
 
 Chaque forme est un composant autonome qui ne sait rien du salon, du minuteur ni du score. C'est ce qui permettra d'en ajouter huit en Phase 3 sans toucher au moteur.
 
-### 2.3 — Notation automatique (pur, TDD)
+### 2.3 : Notation automatique (pur, TDD)
 
-`lib/quiz/scoring.ts` — le cœur testable du quiz.
+`lib/quiz/scoring.ts` : le cœur testable du quiz.
 
 ```ts
 scoreEstimate(given: number, expected: number, tolerance: number): number
@@ -193,9 +193,9 @@ Décisions à respecter :
 - **L'estimation est dégressive**, pas binaire : l'écart relatif détermine la fraction de points.
 - **La carte est dégressive à la distance**, avec un plafond au-delà duquel c'est zéro.
 
-### 2.4 — Groupement des réponses écrites (pur, TDD)
+### 2.4 : Groupement des réponses écrites (pur, TDD)
 
-`lib/quiz/similarity.ts` — c'est ce qui rend la correction rapide.
+`lib/quiz/similarity.ts` : c'est ce qui rend la correction rapide.
 
 ```ts
 normalizeAnswer(text: string): string      // minuscules, accents, ponctuation, espaces
@@ -204,13 +204,13 @@ groupAnswers(answers: string[]): Group[]   // regroupe les variantes proches
 
 « Napoléon », « napoleon », « Napoléon Bonaparte » et « napoleon bonaparte » doivent arriver dans le même groupe et se valider d'un seul geste. Distance de Levenshtein sur la forme normalisée, seuil relatif à la longueur.
 
-### 2.5 — Boucle de partie
+### 2.5 : Boucle de partie
 
-`rooms.current_step` porte la question courante ; tous les clients suivent. Le minuteur est calculé à partir d'un `step_started_at` en base et non d'un compte à rebours local — sinon deux joueurs n'ont pas le même temps.
+`rooms.current_step` porte la question courante ; tous les clients suivent. Le minuteur est calculé à partir d'un `step_started_at` en base et non d'un compte à rebours local : sinon deux joueurs n'ont pas le même temps.
 
 Quand tout le monde a répondu, on passe sans attendre le minuteur.
 
-### 2.6 — Écran de correction
+### 2.6 : Écran de correction
 
 L'écran le plus risqué du projet. Exigences :
 
@@ -223,13 +223,13 @@ L'écran le plus risqué du projet. Exigences :
 
 **À chronométrer dès la première version** : vingt questions, six joueurs, moins de cinq minutes. Si on dépasse, l'écran est à revoir avant d'ajouter la moindre forme de question.
 
-### 2.7 — Résultats
+### 2.7 : Résultats
 
-Podium, puis récapitulatif question par question avec les réponses de tous. C'est le moment de révélation : il mérite une orchestration — les scores montent, le podium se pose.
+Podium, puis récapitulatif question par question avec les réponses de tous. C'est le moment de révélation : il mérite une orchestration, les scores montent, le podium se pose.
 
-### 2.8 — Éditeur de quiz
+### 2.8 : Éditeur de quiz
 
-Version minimale : titre, ajout de questions par forme, réordonnancement, enregistrement. Sans lui, il n'y a rien à jouer — c'est une tâche de premier plan, pas une commodité.
+Version minimale : titre, ajout de questions par forme, réordonnancement, enregistrement. Sans lui, il n'y a rien à jouer, c'est une tâche de premier plan, pas une commodité.
 
 **Fin de phase :** quatre personnes jouent un quiz de vingt questions, l'hôte corrige, le podium tombe.
 
@@ -237,4 +237,4 @@ Version minimale : titre, ajout de questions par forme, réordonnancement, enreg
 
 ## Ce que ce plan ne fait pas
 
-Les huit formes de questions supplémentaires, la carte, le petit bac, les paris, le jeu des animaux et le doublage à plusieurs sont hors de ce plan. Ils sont décrits dans le PRD et seront planifiés quand le jalon « une partie jouable » sera atteint — pas avant, parce que jouer révélera des choses qu'aucun plan ne peut deviner.
+Les huit formes de questions supplémentaires, la carte, le petit bac, les paris, le jeu des animaux et le doublage à plusieurs sont hors de ce plan. Ils sont décrits dans le PRD et seront planifiés quand le jalon « une partie jouable » sera atteint, pas avant, parce que jouer révélera des choses qu'aucun plan ne peut deviner.

@@ -6,7 +6,7 @@ import type { QuestionComponentProps, WrittenPayload } from '@/lib/quiz/kinds'
 /**
  * Réponse libre.
  *
- * La forme la plus simple à jouer et la plus coûteuse à corriger — c'est
+ * La forme la plus simple à jouer et la plus coûteuse à corriger : c'est
  * elle qui justifie le regroupement par similitude, sans quoi l'hôte lirait
  * trois fois la même réponse écrite de trois façons.
  */

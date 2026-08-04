@@ -7,7 +7,7 @@
  * distincts, la partie finit dans l'ennui.
  *
  * On regroupe donc les variantes proches pour qu'un seul geste les valide
- * toutes. Le regroupement ne decide jamais si une reponse est juste — il
+ * toutes. Le regroupement ne decide jamais si une reponse est juste : il
  * range, l'hote tranche.
  */
 

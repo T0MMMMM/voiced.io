@@ -10,7 +10,12 @@ import {
   publishResults,
   type PlayerAnswer,
 } from '@/lib/quiz/actions'
-import { isAutoScored, KIND_LABELS, type Question } from '@/lib/quiz/kinds'
+import {
+  DIFFICULTY_LABELS,
+  isAutoScored,
+  KIND_LABELS,
+  type Question,
+} from '@/lib/quiz/kinds'
 import { groupAnswers, type Group } from '@/lib/quiz/similarity'
 import { mergeOptions } from '@/lib/rooms/options'
 import type { Player, Room } from '@/lib/supabase/types'
@@ -26,9 +31,19 @@ function readable(payload: unknown): string {
     if (typeof value.value === 'number') return String(value.value)
     if (Array.isArray(value.order)) return value.order.join(' · ')
     if (Array.isArray(value.items)) {
-      return value.items.filter((item) => String(item).trim()).join(' · ') || '—'
+      return value.items.filter((item) => String(item).trim()).join(' · ') || '(vide)'
     }
     if (typeof value.choice === 'string') return value.choice
+    if (typeof value.slot === 'number') return `Intervalle ${value.slot + 1}`
+    if (typeof value.lat === 'number' && typeof value.lng === 'number') {
+      const ns = value.lat >= 0 ? 'N' : 'S'
+      const ew = value.lng >= 0 ? 'E' : 'O'
+      return `${Math.abs(value.lat).toFixed(1)}° ${ns}, ${Math.abs(value.lng).toFixed(1)}° ${ew}`
+    }
+    if (typeof value.level === 'number') {
+      const label = DIFFICULTY_LABELS[value.level] ?? '?'
+      return `${label} : ${String(value.text ?? '').trim() || '(vide)'}`
+    }
     if (value.pairs && typeof value.pairs === 'object') {
       return Object.entries(value.pairs as Record<string, string>)
         .map(([left, right]) => `${left} → ${right}`)
@@ -41,18 +56,18 @@ function readable(payload: unknown): string {
         Object.entries(value.words as Record<string, string>)
           .filter(([, word]) => String(word).trim())
           .map(([category, word]) => `${category} : ${word}`)
-          .join(' · ') || '—'
+          .join(' · ') || '(vide)'
       )
     }
   }
-  return '—'
+  return '(vide)'
 }
 
 /**
  * L'écran de correction.
  *
  * C'est l'écran le plus risqué du projet : mal fait, il transforme une
- * bonne partie en quart d'heure pénible. Trois choses le rendent rapide —
+ * bonne partie en quart d'heure pénible. Trois choses le rendent rapide :
  * les variantes d'une même réponse arrivent groupées et se valident d'un
  * geste, les formes notées automatiquement arrivent déjà tranchées, et
  * tout se pilote au clavier.

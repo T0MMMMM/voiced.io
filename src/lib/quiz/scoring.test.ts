@@ -87,16 +87,33 @@ describe('scoreRanking', () => {
 })
 
 describe('scoreTimeline', () => {
-  it('note comme un classement : seul l’ordre compte', () => {
-    const evenements = ['revolution', 'empire', 'republique']
-    expect(scoreTimeline(evenements, evenements)).toBe(1)
-    expect(scoreTimeline([...evenements].reverse(), evenements)).toBe(0)
+  it('donne tout pour le bon intervalle', () => {
+    expect(scoreTimeline(2, 2, 5)).toBe(1)
+  })
+
+  it('donne une part au voisin immédiat', () => {
+    // Viser le bon siècle et se tromper d'un cran n'est pas la même erreur
+    // que placer la Révolution avant les pyramides.
+    const voisin = scoreTimeline(3, 2, 5)
+    expect(voisin).toBeGreaterThan(0)
+    expect(voisin).toBeLessThan(1)
+    expect(scoreTimeline(1, 2, 5)).toBe(voisin)
+  })
+
+  it('ne donne rien au-delà du voisin', () => {
+    expect(scoreTimeline(0, 3, 5)).toBe(0)
+  })
+
+  it('ne donne rien pour un intervalle inexistant', () => {
+    expect(scoreTimeline(9, 2, 5)).toBe(0)
+    expect(scoreTimeline(-1, 2, 5)).toBe(0)
+    expect(scoreTimeline(Number.NaN, 2, 5)).toBe(0)
   })
 })
 
 describe('distanceKm', () => {
   it('mesure une distance connue', () => {
-    // Paris — Marseille, environ 660 km a vol d'oiseau.
+    // Paris : Marseille, environ 660 km a vol d'oiseau.
     const km = distanceKm({ lat: 48.857, lng: 2.352 }, { lat: 43.296, lng: 5.37 })
     expect(km).toBeGreaterThan(620)
     expect(km).toBeLessThan(700)

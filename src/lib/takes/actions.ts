@@ -33,10 +33,10 @@ const STALE_LOCK_SEC = 90
  *
  * Le verrou vit en base : c'est la seule facon que tous les ecrans voient
  * le meme etat, et la condition fait partie de l'UPDATE, ce qui rend la
- * prise atomique — deux joueurs qui cliquent en meme temps, un seul passe.
+ * prise atomique : deux joueurs qui cliquent en meme temps, un seul passe.
  *
- * Trois cas l'accordent : personne ne le tient, vous le teniez deja — une
- * tentative precedente a pu echouer sans le rendre —, ou il est trop vieux
+ * Trois cas l'accordent : personne ne le tient, vous le teniez deja, une
+ * tentative precedente a pu echouer sans le rendre : , ou il est trop vieux
  * pour etre encore serieux.
  */
 export async function claimMicrophone(
@@ -86,7 +86,7 @@ export async function saveTake(form: FormData): Promise<void> {
 
   // Refaire une reprise remplace la precedente au lieu de s'empiler
   // dessus : sans cela, cinq essais donnent cinq voix superposees. On ne
-  // remplace que SES propres prises — deux joueurs peuvent legitimement
+  // remplace que SES propres prises : deux joueurs peuvent legitimement
   // parler par-dessus le meme passage.
   if (playerId) {
     const { data: overlapping } = await supabase
@@ -137,7 +137,7 @@ export async function saveTake(form: FormData): Promise<void> {
 
   if (error) {
     // Sans ce nettoyage, le fichier resterait dans le bucket sans aucune
-    // ligne pour le retrouver — donc sans aucun moyen de le supprimer.
+    // ligne pour le retrouver, donc sans aucun moyen de le supprimer.
     await remove('takes', [path]).catch(() => {})
     throw new Error(`Impossible d’enregistrer la prise : ${error.message}`)
   }

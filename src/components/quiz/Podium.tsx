@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils/cn'
  *
  * C'est le moment que toute la partie prépare : personne n'a vu les
  * réponses des autres, et tout tombe d'un coup. Les scores montent en
- * s'ouvrant, du dernier au premier — l'ordre du dévoilement fait le
+ * s'ouvrant, du dernier au premier : l'ordre du dévoilement fait le
  * suspense, pas un effet.
  */
 export function Podium({ room, youId }: { room: Room; youId: string | null }) {

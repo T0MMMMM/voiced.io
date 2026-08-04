@@ -12,7 +12,7 @@ export interface LiveClockHandle {
  *
  * Elle s'écrit directement dans le DOM : passer par l'état React ferait
  * soixante rendus par seconde pour six chiffres. La chasse fixe et les
- * chiffres tabulaires sont indispensables — sans eux la ligne tremble à
+ * chiffres tabulaires sont indispensables : sans eux la ligne tremble à
  * chaque changement de chiffre, ce qui se voit énormément à cette cadence.
  */
 export const LiveClock = forwardRef<LiveClockHandle, { duration: number }>(

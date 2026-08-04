@@ -14,26 +14,34 @@ import {
   KIND_CHOICES,
   mergeOptions,
   optionsFor,
-  TIMER_CHOICES,
+  PACE_CHOICES,
   type RoomOptions,
 } from '@/lib/rooms/options'
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
 
 /** Reglages a plusieurs valeurs : ils s'affichent en controle segmente. */
-type ScaleKey = 'timerSec' | 'questionCount'
-/** Les formes ont leur propre controle : ni echelle, ni interrupteur. */
+type ScaleKey = 'pace' | 'questionCount'
+/** Les formes ont leur propre controle, ni echelle, ni interrupteur. */
 type ToggleKey = Exclude<keyof RoomOptions, ScaleKey | 'kinds'>
 
 interface Scale {
   key: ScaleKey
   legend: string
-  choices: readonly { value: number; label: string }[]
+  hint?: string
+  choices: readonly { value: string | number; label: string }[]
 }
 
 const SCALES: Scale[] = [
   { key: 'questionCount', legend: 'Longueur', choices: COUNT_CHOICES },
-  { key: 'timerSec', legend: 'Minuteur', choices: TIMER_CHOICES },
+  {
+    key: 'pace',
+    legend: 'Rythme',
+    // On ne regle plus une duree : chaque question tire son temps de sa
+    // forme et de sa difficulte, et ce reglage ne fait que l'etirer.
+    hint: 'Le temps s’adapte à chaque question',
+    choices: PACE_CHOICES,
+  },
 ]
 
 const LABELS: Record<ToggleKey, { label: string; hint: string }> = {
@@ -103,7 +111,7 @@ export function RoomLobby({
 
   const toggles = available.filter(
     (key): key is ToggleKey =>
-      key !== 'timerSec' && key !== 'questionCount' && key !== 'kinds',
+      key !== 'pace' && key !== 'questionCount' && key !== 'kinds',
   )
 
   /**
@@ -211,6 +219,11 @@ export function RoomLobby({
                   <div key={scale.key}>
                     <legend className="text-fg mb-2 text-[15px] font-medium">
                       {scale.legend}
+                      {scale.hint && (
+                        <span className="text-faint ml-2 text-[13px] font-normal">
+                          {scale.hint}
+                        </span>
+                      )}
                     </legend>
                     <Segmented
                       label={scale.legend}

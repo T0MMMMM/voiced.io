@@ -2,7 +2,7 @@ export type GameId = 'quiz' | 'dub' | 'beast' | 'next'
 
 /**
  * Metadonnees serialisables. Elles traversent la frontiere serveur/client :
- * la fonction de trace, elle, ne le peut pas — d'ou `getShape`, que le
+ * la fonction de trace, elle, ne le peut pas : d'ou `getShape`, que le
  * composant client importe de son cote.
  */
 export interface Game {
@@ -27,7 +27,7 @@ export const FLOOR = 0.06
  * Hauteur du trace apres la coupure de « La suite ». Ce n'est pas zero :
  * la ligne continue jusqu'au bout comme sur les autres pistes, mais plate.
  * Un trace qui disparaitrait laisserait croire a un defaut d'affichage,
- * alors qu'une ligne plate dit exactement la bonne chose — le son s'arrete,
+ * alors qu'une ligne plate dit exactement la bonne chose : le son s'arrete,
  * la piste continue, et c'est a vous de la remplir.
  */
 export const CUT_LINE = 0.05

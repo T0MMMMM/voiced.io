@@ -19,7 +19,7 @@ const GRAIN = Array.from(
 
 /**
  * État de départ de la piste de référence, à l'instant zéro du champ.
- * Déterministe, donc identique côté serveur et côté client — et la boucle
+ * Déterministe, donc identique côté serveur et côté client, et la boucle
  * reprend exactement là où le rendu initial s'est arrêté, sans saut.
  */
 const REFERENCE = Array.from({ length: BAR_COUNT }, (_, i) => amplitudeAt(i, 0))
@@ -36,7 +36,7 @@ const REVEAL_MS = 900
  *
  * La piste du haut joue en continu : un champ d'onde la traverse dans les
  * deux sens, et deux barres voisines lisent deux points proches de la même
- * courbe — c'est cette continuité qui fait une vague plutôt qu'un
+ * courbe : c'est cette continuité qui fait une vague plutôt qu'un
  * scintillement.
  *
  * Celle du bas est la vôtre, et elle n'existe que là où vous passez : c'est

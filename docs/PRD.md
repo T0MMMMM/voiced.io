@@ -1,4 +1,4 @@
-# voiced.io — PRD
+# voiced.io : PRD
 
 **Version** 2.0 · **Date** 2026-08-03 · **Statut** En construction, Phase 0 livrée
 
@@ -10,13 +10,13 @@
 
 voiced.io réunit des amis autour d'un code à quatre lettres, sans compte et sans installation, pour jouer à des jeux qui se corrigent et se découvrent **ensemble, à la fin**.
 
-Trois jeux au lancement, une seule mécanique commune : chacun joue de son côté sur son écran, personne ne voit ni n'entend ce que font les autres pendant la partie, et **tout se révèle d'un coup au moment du résultat**. C'est ce décalage qui fait le plaisir — la salle attend, puis découvre.
+Trois jeux au lancement, une seule mécanique commune : chacun joue de son côté sur son écran, personne ne voit ni n'entend ce que font les autres pendant la partie, et **tout se révèle d'un coup au moment du résultat**. C'est ce décalage qui fait le plaisir, la salle attend, puis découvre.
 
 ### Les trois jeux
 
 | Jeu | Ce qu'on y fait | Statut |
 |---|---|---|
-| **Quiz** | Des questions de culture générale de sept formes différentes, corrigées à la main par l'hôte à la fin | À construire — c'est le jeu de tête |
+| **Quiz** | Des questions de culture générale de sept formes différentes, corrigées à la main par l'hôte à la fin | À construire : c'est le jeu de tête |
 | **Doublage** | On double un clip d'anime en direct, chacun son tour au micro | Écran solo livré |
 | **Cri de la bête** | Un son, un animal à deviner | À construire |
 
@@ -40,7 +40,7 @@ Enregistrement audio depuis mobile · voix générées par IA · modération aut
 
 ### Question ouverte
 
-Le nom **voiced.io** décrit un site de voix. Si le quiz devient effectivement le jeu de tête, le nom porte à faux. À trancher avant toute communication publique — pas avant.
+Le nom **voiced.io** décrit un site de voix. Si le quiz devient effectivement le jeu de tête, le nom porte à faux. À trancher avant toute communication publique, pas avant.
 
 ---
 
@@ -61,10 +61,10 @@ Trois décisions permettent de s'en passer :
 | Besoin | Service | Quota gratuit | Contrainte à gérer |
 |---|---|---|---|
 | Site + routes API | Vercel Hobby | 100 Go/mois | Usage non commercial |
-| Base de données | Supabase Postgres | 500 Mo | Pause après 7 j d'inactivité — traitée par un cron |
+| Base de données | Supabase Postgres | 500 Mo | Pause après 7 j d'inactivité : traitée par un cron |
 | Synchro des salons | Supabase Realtime | 200 connexions, 2 M messages/mois | Confortable |
 | Fichiers | Supabase Storage | 1 Go, 5 Go egress/mois | **La vraie limite** |
-| Traitement vidéo | Aucun serveur | — | ffmpeg.wasm côté client |
+| Traitement vidéo | Aucun serveur | Néant | ffmpeg.wasm côté client |
 
 ### Garde-fous de stockage
 
@@ -75,17 +75,17 @@ Le gigaoctet est la ressource rare, et le quiz l'aggrave : chaque question à im
 - **Les médias de questions sont compressés à l'import** : images en WebP ≤ 200 Ko, extraits sonores en Opus ≤ 15 s. Une banque de 500 questions illustrées tient alors dans 100 Mo.
 - **Limite à l'import** : 50 Mo et 3 minutes par clip vidéo.
 
-**Porte de sortie :** Cloudflare R2 (10 Go, egress gratuit). Tout accès fichier passe par `lib/storage/index.ts` — quatre fonctions, un seul fichier à réécrire le jour venu.
+**Porte de sortie :** Cloudflare R2 (10 Go, egress gratuit). Tout accès fichier passe par `lib/storage/index.ts`, quatre fonctions, un seul fichier à réécrire le jour venu.
 
 ---
 
 ## 3. Direction visuelle
 
-Fond crème, contrôles en relief, le vert comme unique couleur, noir franc sur la typographie. **L'élévation remplace la bordure** : un contrôle se lit parce qu'il flotte au-dessus du fond, pas parce qu'on l'a encadré. Les champs de saisie font l'inverse — ils sont creusés : on entre dans un champ, on presse un bouton.
+Fond crème, contrôles en relief, le vert comme unique couleur, noir franc sur la typographie. **L'élévation remplace la bordure** : un contrôle se lit parce qu'il flotte au-dessus du fond, pas parce qu'on l'a encadré. Les champs de saisie font l'inverse, ils sont creusés : on entre dans un champ, on presse un bouton.
 
 Pas de barre de navigation. Seuls le logo et la bascule de thème flottent au-dessus de la page.
 
-### Tokens — `styles/theme.css`
+### Tokens : `styles/theme.css`
 
 Seul fichier du projet autorisé à contenir des couleurs. Le thème sombre ne fait que redéfinir ces variables : aucun `dark:` dans un composant.
 
@@ -103,13 +103,13 @@ Le rouge d'enregistrement est la seule couleur chaude du système : il ne doit j
 
 ### Typographie
 
-**Space Grotesk** porte tout le texte — ses formes géométriques un peu bancales lui donnent une voix. **Space Mono**, sa sœur du même dessinateur, ne sert qu'aux timecodes, compteurs, codes de salon et libellés de piste (classe `.eyebrow`).
+**Space Grotesk** porte tout le texte : ses formes géométriques un peu bancales lui donnent une voix. **Space Mono**, sa sœur du même dessinateur, ne sert qu'aux timecodes, compteurs, codes de salon et libellés de piste (classe `.eyebrow`).
 
 ### Règles de retenue
 
 Une seule couleur d'accent visible par écran · aucun dégradé, aucune ombre décorative · l'espace fait la séparation, pas les traits · une icône seulement si elle remplace du texte · mouvement à 200 ms, `ease-out`, sur `opacity` et `transform` uniquement.
 
-### Accessibilité — exigence de premier rang
+### Accessibilité : exigence de premier rang
 
 - Tout écran de jeu est **entièrement pilotable au clavier**, et ses raccourcis sont **affichés à l'écran** : un raccourci qu'on ne peut pas découvrir n'existe pas.
 - Aucun état n'est signalé par la seule couleur. L'enregistrement, par exemple, se lit à la fois par un point, un libellé et un compteur.
@@ -136,7 +136,7 @@ app/
 ├─ page.tsx                    accueil
 ├─ create/page.tsx             import d'un clip
 ├─ dub/[clipId]/page.tsx       doublage (solo, provisoire)
-├─ room/[code]/page.tsx        salon — aiguille vers le jeu choisi
+├─ room/[code]/page.tsx        salon : aiguille vers le jeu choisi
 ├─ quiz/edit/                  éditeur de questions (hôte)
 └─ api/cron/keepalive/
 
@@ -206,7 +206,7 @@ answers (
 )
 ```
 
-**Pourquoi `payload` et `answer` en `jsonb`** : sept formes de questions aux structures incompatibles. Onze tables, ou une colonne souple. La souplesse gagne tant que rien n'a besoin d'être filtré en SQL — et rien n'en a besoin, on lit toujours par question.
+**Pourquoi `payload` et `answer` en `jsonb`** : sept formes de questions aux structures incompatibles. Onze tables, ou une colonne souple. La souplesse gagne tant que rien n'a besoin d'être filtré en SQL, et rien n'en a besoin, on lit toujours par question.
 
 **Pourquoi `auto_score` et `final_score` séparés** : la machine propose, l'hôte dispose. On garde la note automatique pour pouvoir montrer à l'hôte ce qui a été calculé, et pour mesurer plus tard la fiabilité du calcul.
 
@@ -227,11 +227,11 @@ takes (id, room_id, player_id, storage_path, mime_type,
 beasts (id, name, sound_path, image_path, difficulty int, credit text)
 ```
 
-Le jeu tire au sort dans cette table ; les réponses passent par `answers` avec `kind = 'media'`. Aucun mécanisme spécifique à construire — c'est un quiz à une seule forme de question, ce qui en fait le premier client du moteur de quiz et un bon banc d'essai.
+Le jeu tire au sort dans cette table ; les réponses passent par `answers` avec `kind = 'media'`. Aucun mécanisme spécifique à construire : c'est un quiz à une seule forme de question, ce qui en fait le premier client du moteur de quiz et un bon banc d'essai.
 
 ### Sécurité
 
-RLS active partout. Sans comptes, le modèle est : **la clé publique lit, elle n'écrit jamais**. Toutes les écritures passent par des server actions en `service_role`. La lecture large est indispensable — Realtime ne délivre que ce que le client peut voir.
+RLS active partout. Sans comptes, le modèle est : **la clé publique lit, elle n'écrit jamais**. Toutes les écritures passent par des server actions en `service_role`. La lecture large est indispensable, Realtime ne délivre que ce que le client peut voir.
 
 **Une exception à traiter** : les réponses des autres joueurs ne doivent pas être lisibles pendant la partie, sinon il suffit d'ouvrir l'inspecteur pour tricher. La table `answers` reçoit donc une politique qui ne laisse lire que ses propres réponses tant que `rooms.status <> 'results'`.
 
@@ -248,44 +248,44 @@ COMPOSITION → PARTIE → CORRECTION → RÉSULTATS
    (hôte)     (tous)     (hôte)       (tous)
 ```
 
-La correction est un moment de jeu à part entière, pas une corvée administrative : tout le monde regarde l'hôte trancher, les réponses drôles sortent, on conteste. L'écran de correction doit donc être **projetable** — lisible de loin, une question à la fois.
+La correction est un moment de jeu à part entière, pas une corvée administrative : tout le monde regarde l'hôte trancher, les réponses drôles sortent, on conteste. L'écran de correction doit donc être **projetable**, lisible de loin, une question à la fois.
 
 ### Les formes de questions
 
 | Forme | Ce que fait le joueur | Notation |
 |---|---|---|
 | **Écrite** | Tape une réponse libre | Manuelle. L'hôte voit les réponses groupées par similitude pour trancher vite |
-| **Estimation** | Donne un nombre | **Auto** — le plus proche marque, dégressif ensuite |
-| **Classement** | Ordonne une liste (films les plus vus, pays les plus peuplés…) | **Auto** — points par paire correctement ordonnée, pas tout ou rien |
-| **Frise** | Place des évènements sur une ligne du temps | **Auto** — même logique de paires que le classement |
-| **Carte** | Pose un point sur une carte | **Auto** — score dégressif selon la distance en kilomètres |
-| **Petit bac** | Une lettre, des catégories, un mot par catégorie | Manuelle, mais **les doublons entre joueurs sont détectés automatiquement** |
-| **Thème à difficulté** | Choisit son thème et son niveau ; le niveau fixe la mise | Selon la forme sous-jacente |
+| **Estimation** | Donne un nombre | **Auto** : le plus proche marque, dégressif ensuite |
+| **Classement** | Ordonne une liste (films les plus vus, pays les plus peuplés…) | **Auto** : points par paire correctement ordonnée, pas tout ou rien |
+| **Frise** | Situe un évènement entre des repères déjà datés, en cliquant sur l'intervalle | **Auto** : tout pour le bon intervalle, une part pour le voisin immédiat |
+| **Carte** | Pose un point sur une carte | **Auto** : score dégressif selon la distance en kilomètres |
+| **Petit bac** | Une lettre, des catégories, un mot par catégorie | Manuelle, toujours. Une seule par partie : une minute à remplir et une minute à corriger, deux et la table décroche |
+| **Thème à difficulté** | Voit le sujet, pas la question, et choisit facile, moyen ou difficile avant de la découvrir | **Auto** : la note est mise à l'échelle du niveau choisi, et le choix est définitif |
 
 ### Formes supplémentaires proposées
 
 Elles répondent à la demande « des idées qui changent des questions de base ». Chacune est activable ou non dans le salon.
 
-- **Indices dégressifs** — la question s'ouvre sur un indice, d'autres tombent toutes les dix secondes, et la valeur baisse à chaque indice. Répondre tôt paie. Crée une vraie tension collective.
-- **Intrus** — cinq éléments, un ne va pas avec les autres. Rapide à composer, rapide à jouer, et l'explication de l'hôte fait souvent débat.
-- **Association** — relier deux colonnes (pays/capitale, acteur/film). **Auto**, points par paire juste.
-- **Dévoilement** — une image très zoomée qui se dézoome progressivement, ou floue qui se précise. Même tension que les indices, en visuel.
-- **Extrait sonore** — un son à identifier. **C'est la brique qui fait exister « Cri de la bête »** : le jeu des animaux n'est qu'un quiz à cette seule forme. Réutilise toute l'infrastructure audio déjà écrite pour le doublage.
-- **Pari** — avant de répondre, chacun mise entre 1 et 3 sur sa confiance. Se combine avec n'importe quelle autre forme et change complètement le rythme d'une fin de partie.
-- **Question volée** — celui qui passe laisse la main ; les autres peuvent tenter pour la moitié des points.
-- **Les questions des joueurs** — chacun soumet une question pendant le lobby, le jeu les pose ensuite. Le contenu se fabrique tout seul, et c'est souvent le meilleur.
+- **Indices dégressifs** : la question s'ouvre sur un indice, d'autres tombent toutes les dix secondes, et la valeur baisse à chaque indice. Répondre tôt paie. Crée une vraie tension collective.
+- **Intrus** : cinq éléments, un ne va pas avec les autres. Rapide à composer, rapide à jouer, et l'explication de l'hôte fait souvent débat.
+- **Association** : relier deux colonnes (pays/capitale, acteur/film). **Auto**, points par paire juste.
+- **Dévoilement** : une image très zoomée qui se dézoome progressivement, ou floue qui se précise. Même tension que les indices, en visuel.
+- **Extrait sonore** : un son à identifier. **C'est la brique qui fait exister « Cri de la bête »** : le jeu des animaux n'est qu'un quiz à cette seule forme. Réutilise toute l'infrastructure audio déjà écrite pour le doublage.
+- **Pari**, avant de répondre, chacun mise entre 1 et 3 sur sa confiance. Se combine avec n'importe quelle autre forme et change complètement le rythme d'une fin de partie.
+- **Question volée**, celui qui passe laisse la main ; les autres peuvent tenter pour la moitié des points.
+- **Les questions des joueurs** : chacun soumet une question pendant le lobby, le jeu les pose ensuite. Le contenu se fabrique tout seul, et c'est souvent le meilleur.
 
 ### Réglages du salon
 
 Tout est activable ou désactivable par l'hôte, en `rooms.options` :
 
 - quelles formes de questions sont autorisées
-- minuteur par question (aucun, 15 s, 30 s, 60 s)
+- le rythme (tranquille, normal, rapide). Ce n'est plus une durée : chaque question tire son temps de sa forme et de sa difficulté, et le rythme ne fait qu'étirer ou resserrer l'ensemble. Trente secondes noyaient une question à un mot et étranglaient un petit bac à quatre catégories
 - paris activés
 - indices dégressifs activés
 - vol de question activé
 - ordre des questions aléatoire ou fixe
-- réponses anonymes pendant la correction (l'hôte ne voit pas qui a écrit quoi — corrige les biais entre amis)
+- réponses anonymes pendant la correction (l'hôte ne voit pas qui a écrit quoi : corrige les biais entre amis)
 
 Ce dernier réglage mérite d'exister : quand l'hôte sait qui a répondu, il est plus indulgent avec certains. L'anonymat pendant la correction rend l'arbitrage plus juste et le résultat plus crédible.
 
@@ -295,7 +295,7 @@ C'est l'écran que je considère le plus risqué du projet : mal fait, il transf
 
 Ce qui le rend rapide :
 - **Une question à la fois**, en grand, projetable.
-- **Réponses groupées par similitude** — « Napoléon », « napoleon », « Napoléon Bonaparte » arrivent ensemble et se valident d'un seul geste.
+- **Réponses groupées par similitude** : « Napoléon », « napoleon », « Napoléon Bonaparte » arrivent ensemble et se valident d'un seul geste.
 - **Tout au clavier** : `J` juste, `F` faux, `→` question suivante, `Z` annuler.
 - **Les formes auto-notées arrivent pré-corrigées**, l'hôte se contente de confirmer ou de rectifier.
 - **Barre d'avancement** : on doit voir qu'on approche de la fin.
@@ -304,11 +304,11 @@ Ce qui le rend rapide :
 
 ## 7. Le Doublage
 
-On importe un clip (ou on en prend un dans la banque), on ouvre un salon, tout le monde voit le même écran. N'importe qui pose la tête de lecture et lance un enregistrement — **un seul micro à la fois**, le verrou vit en base. Personne n'entend les autres pendant la partie : **on découvre toutes les voix d'un coup à la fin**.
+On importe un clip (ou on en prend un dans la banque), on ouvre un salon, tout le monde voit le même écran. N'importe qui pose la tête de lecture et lance un enregistrement : **un seul micro à la fois**, le verrou vit en base. Personne n'entend les autres pendant la partie : **on découvre toutes les voix d'un coup à la fin**.
 
 ### La partition
 
-Pendant l'enregistrement, la vidéo est muette — sinon le micro reprend la bande originale. La forme d'onde est donc **la seule information de timing disponible**. Elle se lit comme une partition, en avance :
+Pendant l'enregistrement, la vidéo est muette : sinon le micro reprend la bande originale. La forme d'onde est donc **la seule information de timing disponible**. Elle se lit comme une partition, en avance :
 
 - derrière la tête de lecture, ce qui est joué s'estompe
 - les **2,5 secondes qui arrivent** sont mises en avant : on voit sa réplique venir
@@ -336,11 +336,11 @@ Le travail réel est éditorial : constituer la banque de sons, avec leur proven
 
 ## 9. Phases et tâches
 
-### ✅ Phase 0 — Fondations (livrée)
+### ✅ Phase 0 : Fondations (livrée)
 
 Échafaudage Next.js 15 + TypeScript strict + Vitest · tokens de design et thème clair/sombre sans clignotement · Space Grotesk et Space Mono · 10 primitives d'interface et vitrine `/dev/ui` · schéma Supabase, RLS et sonde de sécurité · buckets et adaptateur de stockage · clients et types générés · cron de maintien · page d'accueil.
 
-### 🔶 Phase 1 — Le socle des salons (en cours)
+### 🔶 Phase 1 : Le socle des salons (en cours)
 
 C'est le prérequis des trois jeux. Rien d'autre ne peut avancer sans lui.
 
@@ -353,35 +353,35 @@ C'est le prérequis des trois jeux. Rien d'autre ne peut avancer sans lui.
 | 1.5 | Transfert d'hôte si l'hôte quitte |
 | 1.6 | Expiration des salons par le cron quotidien |
 
-### Phase 2 — Le Quiz, socle jouable
+### Phase 2 : Le Quiz, socle jouable
 
 | # | Tâche |
 |---|---|
 | 2.1 | Tables `quizzes`, `questions`, `answers` + RLS anti-triche sur `answers` |
 | 2.2 | Moteur de questions : composant par forme, contrat commun `{ payload, onAnswer }` |
 | 2.3 | Forme **écrite** (la plus simple, valide le cycle complet) |
-| 2.4 | Forme **estimation** — première notation automatique |
-| 2.5 | Forme **classement** — notation par paires |
+| 2.4 | Forme **estimation** : première notation automatique |
+| 2.5 | Forme **classement** : notation par paires |
 | 2.6 | Boucle de partie : question courante, minuteur, attente des joueurs |
 | 2.7 | Écran de correction de l'hôte, groupement par similitude, tout au clavier |
 | 2.8 | Écran de résultats et podium |
 | 2.9 | Éditeur de quiz minimal pour l'hôte |
 
-### Phase 3 — Les formes riches
+### Phase 3 : Les formes riches
 
 | # | Tâche |
 |---|---|
-| 3.1 | **Frise** — placement d'évènements, notation par paires |
-| 3.2 | **Carte** — fond de carte libre, notation à la distance |
-| 3.3 | **Petit bac** — lettre tirée, catégories, détection automatique des doublons |
-| 3.4 | **Thème à difficulté** — choix du thème et de la mise |
-| 3.5 | **Extrait sonore** et **image** — réutilise l'adaptateur de stockage |
-| 3.6 | **Indices dégressifs** et **dévoilement** |
-| 3.7 | **Intrus** et **association** |
-| 3.8 | **Paris** et **question volée** |
-| 3.9 | Réglages du salon : activer/désactiver chaque forme et chaque option |
+| 3.1 | ✅ **Frise** : un évènement à situer entre des repères datés, le voisin immédiat rapporte une part |
+| 3.2 | ✅ **Carte** : fond Natural Earth livré avec le code, notation dégressive à la distance |
+| 3.3 | ✅ **Petit bac** : lettre tirée, catégories, une seule par partie |
+| 3.4 | ✅ **Thème à difficulté** : le sujet s'annonce, le joueur choisit son niveau et sa mise |
+| 3.5 | ✅ **Intrus** et **association** |
+| 3.6 | ✅ Réglages du salon : chaque forme s'active ou se coupe, le rythme remplace le minuteur |
+| 3.7 | **Extrait sonore** et **image** : réutilise l'adaptateur de stockage |
+| 3.8 | **Indices dégressifs** et **dévoilement** |
+| 3.9 | **Paris** et **question volée** |
 
-### Phase 4 — Cri de la bête
+### Phase 4 : Cri de la bête
 
 | # | Tâche |
 |---|---|
@@ -390,7 +390,7 @@ C'est le prérequis des trois jeux. Rien d'autre ne peut avancer sans lui.
 | 4.3 | Banque initiale : 60 sons avec provenance et droits vérifiés |
 | 4.4 | Écran de révélation : son, image, nom |
 
-### Phase 5 — Le Doublage à plusieurs
+### Phase 5 : Le Doublage à plusieurs
 
 | # | Tâche |
 |---|---|
@@ -401,7 +401,7 @@ C'est le prérequis des trois jeux. Rien d'autre ne peut avancer sans lui.
 | 5.5 | Export MP4 via `ffmpeg.wasm`, sans réencodage vidéo |
 | 5.6 | Banque de clips prêts à doubler |
 
-### Phase 6 — Finition
+### Phase 6 : Finition
 
 États vides et messages d'erreur · première visite · audit d'accessibilité complet · détection mobile · signalement de contenu · pages légales · test à blanc avec des joueurs extérieurs.
 

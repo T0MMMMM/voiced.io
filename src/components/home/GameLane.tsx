@@ -34,7 +34,7 @@ function Chevron() {
  * Une piste de la console : un jeu, sa silhouette sonore, son état.
  *
  * Au survol, la piste passe au premier plan et le curseur y creuse une
- * bosse — comme si on parlait dedans. Les trois autres restent en retrait :
+ * bosse, comme si on parlait dedans. Les trois autres restent en retrait :
  * une seule voix à la fois, c'est aussi la règle du produit.
  */
 export function GameLane({ game }: { game: Game }) {

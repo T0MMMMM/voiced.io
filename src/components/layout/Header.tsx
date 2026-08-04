@@ -3,9 +3,9 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils/cn'
 
 /**
- * Pas de barre de navigation : ni fond, ni bordure, ni ombre sur l'en-tête
+ * Pas de barre de navigation, ni fond, ni bordure, ni ombre sur l'en-tête
  * lui-même. Seuls les deux contrôles flottent au-dessus de la page, et
- * c'est leur relief qui les détache — pas un bandeau.
+ * c'est leur relief qui les détache, pas un bandeau.
  */
 export function Header({
   children,

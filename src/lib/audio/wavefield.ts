@@ -3,7 +3,7 @@
  *
  * Le piege d'une piste animee est de faire osciller chaque barre pour elle
  * meme : on obtient un scintillement, pas une vague. Ici l'amplitude est
- * une fonction *continue* de la position — deux barres voisines lisent deux
+ * une fonction *continue* de la position : deux barres voisines lisent deux
  * points proches de la meme courbe, donc leurs hauteurs se ressemblent
  * forcement. C'est cette continuite qui fait la vague.
  *
@@ -23,7 +23,7 @@ type Wave = { length: number; speed: number; weight: number }
 /**
  * Trois ondes suffisent : au-dela, les vagues se croisent trop et le trace
  * redevient du bruit. Les longueurs sont choisies pour qu'on en compte deux
- * a quatre sur la largeur de la piste — assez pour voir le mouvement
+ * a quatre sur la largeur de la piste : assez pour voir le mouvement
  * traverser, pas assez pour qu'il s'emmele.
  */
 const CARRIER: Wave[] = [
@@ -57,7 +57,7 @@ export function amplitudeAt(index: number, t: number): number {
   const x = index * SPACING
 
   // La valeur absolue donne au trace des pics francs et des creux proches
-  // de zero, comme une vraie forme d'onde — une sinusoide signee ondulerait
+  // de zero, comme une vraie forme d'onde : une sinusoide signee ondulerait
   // mollement autour du milieu.
   const carrier = Math.abs(sum(CARRIER, x, t)) / CARRIER_SUM
 

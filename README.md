@@ -27,14 +27,14 @@ npm run dev
 
 ## Repères
 
-- **`styles/theme.css`** — toutes les couleurs du projet. Aucune valeur hexadécimale ailleurs, aucune variante `dark:` dans un composant : le thème sombre ne fait que redéfinir des variables CSS.
-- **`lib/storage/index.ts`** — seul point d'accès aux fichiers. Aucun import direct de `supabase.storage` ailleurs, ce qui permettra de migrer vers Cloudflare R2 en réécrivant ce seul fichier.
-- **`/dev/ui`** — vitrine de toutes les primitives d'interface, dans tous leurs états. Sert de vérification visuelle à chaque ajout de composant.
-- **`supabase/migrations/`** — schéma versionné.
+- **`styles/theme.css`** : toutes les couleurs du projet. Aucune valeur hexadécimale ailleurs, aucune variante `dark:` dans un composant : le thème sombre ne fait que redéfinir des variables CSS.
+- **`lib/storage/index.ts`** : seul point d'accès aux fichiers. Aucun import direct de `supabase.storage` ailleurs, ce qui permettra de migrer vers Cloudflare R2 en réécrivant ce seul fichier.
+- **`/dev/ui`** : vitrine de toutes les primitives d'interface, dans tous leurs états. Sert de vérification visuelle à chaque ajout de composant.
+- **`supabase/migrations/`** : schéma versionné.
 
 ## Modèle de sécurité
 
-Il n'y a pas de comptes utilisateurs avant la Phase 3. La clé publique peut **lire** toutes les tables — c'est indispensable, sinon la synchronisation temps réel entre les deux joueurs ne reçoit rien — mais ne peut **rien écrire**. Toutes les écritures passent par des server actions utilisant la clé secrète, qui contourne RLS et applique les règles métier en TypeScript.
+Il n'y a pas de comptes utilisateurs avant la Phase 3. La clé publique peut **lire** toutes les tables : c'est indispensable, sinon la synchronisation temps réel entre les deux joueurs ne reçoit rien, mais ne peut **rien écrire**. Toutes les écritures passent par des server actions utilisant la clé secrète, qui contourne RLS et applique les règles métier en TypeScript.
 
 Limite assumée : deviner un identifiant permet de lire une partie. Acceptable pour un jeu entre amis, sans donnée personnelle, avec des salons qui expirent en 24 h.
 

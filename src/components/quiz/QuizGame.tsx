@@ -6,7 +6,10 @@ import { ListQuestion } from '@/components/quiz/kinds/ListQuestion'
 import { OddOneOutQuestion } from '@/components/quiz/kinds/OddOneOutQuestion'
 import { PairsQuestion } from '@/components/quiz/kinds/PairsQuestion'
 import { PetitBacQuestion } from '@/components/quiz/kinds/PetitBacQuestion'
+import { MapQuestion } from '@/components/quiz/kinds/MapQuestion'
 import { RankingQuestion } from '@/components/quiz/kinds/RankingQuestion'
+import { ThemeQuestion } from '@/components/quiz/kinds/ThemeQuestion'
+import { TimelineQuestion } from '@/components/quiz/kinds/TimelineQuestion'
 import { WrittenQuestion } from '@/components/quiz/kinds/WrittenQuestion'
 import { QuestionMeta } from '@/components/quiz/QuestionMeta'
 import { Button, Panel } from '@/components/ui'
@@ -27,10 +30,14 @@ import {
   type PairsPayload,
   type PetitBacPayload,
   type Question,
+  type MapPayload,
   type RankingPayload,
+  type ThemePayload,
+  type TimelinePayload,
   type WrittenPayload,
 } from '@/lib/quiz/kinds'
 import { mergeOptions } from '@/lib/rooms/options'
+import { secondsFor } from '@/lib/quiz/timing'
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
 
@@ -51,29 +58,53 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
 
   const [answer, setAnswer] = useState<AnswerPayload | null>(null)
   const [sent, setSent] = useState(false)
-  const [answered, setAnswered] = useState<string[]>([])
-  const [remaining, setRemaining] = useState(Number.POSITIVE_INFINITY)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   /**
-   * Derniere etape depuis laquelle on a declenche un passage.
+   * Combien de temps cette question-ci merite.
    *
-   * Sans ce garde, valider sautait deux questions : au moment ou l'etape
-   * change, la liste « qui a repondu » porte encore les reponses de la
-   * question precedente, et l'ecran conclut aussitot que tout le monde a
-   * repondu a la nouvelle.
+   * Le salon ne choisit plus une duree mais un rythme : trente secondes
+   * noyaient une question a un mot et etranglaient un petit bac.
    */
-  const advancedFrom = useRef<number | null>(null)
+  const durationSec = question
+    ? secondsFor(question.kind, question.difficulty, options.pace)
+    : 0
+
+  /**
+   * Les repondants, avec la question dont ils viennent.
+   *
+   * C'est ce couple qui corrige le double saut. Une liste seule survivait a
+   * un changement de question : au rendu ou l'etape avance, elle portait
+   * encore les reponses de la precedente, l'ecran concluait que tout le
+   * monde avait deja repondu et sautait aussitot la suivante. Une reponse
+   * qui ne dit pas de quelle question elle parle ne peut rien decider.
+   */
+  const [replies, setReplies] = useState<{ questionId: string; ids: string[] }>({
+    questionId: '',
+    ids: [],
+  })
+  const answered = replies.questionId === question?.id ? replies.ids : []
+
+  /**
+   * Le temps restant, avec le depart dont il vient.
+   *
+   * Meme piege que ci-dessus : un compte a rebours tombe a zero restait a
+   * zero le temps d'un rendu apres le changement de question, ce qui
+   * relancait immediatement un passage.
+   */
+  const [clock, setClock] = useState<{ startedAt: string; left: number }>({
+    startedAt: '',
+    left: 0,
+  })
+  const remaining =
+    clock.startedAt === room.step_started_at ? clock.left : durationSec
 
   // Chaque question repart de zero, et sa reponse deja envoyee est relue :
   // rafraichir sa page ne doit rien faire perdre.
   useEffect(() => {
     setAnswer(null)
     setSent(false)
-    // On efface aussi les repondants : les garder ferait croire que la
-    // nouvelle question a deja recu toutes les reponses.
-    setAnswered([])
     if (!question || !youId) return
 
     void myAnswer(room.id, youId, question.id).then((stored) => {
@@ -87,7 +118,13 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
   // Qui a repondu, sans jamais dire quoi.
   useEffect(() => {
     if (!question) return
-    const poll = () => void answeredPlayers(room.id, question.id).then(setAnswered)
+    const questionId = question.id
+
+    const poll = () =>
+      void answeredPlayers(room.id, questionId).then((ids) =>
+        setReplies({ questionId, ids }),
+      )
+
     poll()
     const timer = window.setInterval(poll, 2500)
     return () => window.clearInterval(timer)
@@ -98,12 +135,13 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
    * compte a rebours local : deux joueurs n'auraient pas le meme temps.
    */
   useEffect(() => {
-    if (!room.step_started_at) return
+    const startedAtIso = room.step_started_at
+    if (!startedAtIso) return
 
-    const startedAt = new Date(room.step_started_at).getTime()
+    const startedAt = new Date(startedAtIso).getTime()
     const tick = () => {
-      const left = options.timerSec * 1000 - (Date.now() - startedAt)
-      setRemaining(Math.max(0, left / 1000))
+      const left = durationSec * 1000 - (Date.now() - startedAt)
+      setClock({ startedAt: startedAtIso, left: Math.max(0, left / 1000) })
     }
 
     tick()
@@ -111,7 +149,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
     // rafraichissement a la seconde la ferait sauter par paliers.
     const timer = window.setInterval(tick, 100)
     return () => window.clearInterval(timer)
-  }, [options.timerSec, room.step_started_at, step])
+  }, [durationSec, room.step_started_at])
 
   const send = useCallback(async () => {
     if (!question || !youId || !answer) return
@@ -133,27 +171,48 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
   }, [room.id, youId, question, answer])
 
   /**
+   * Question deja quittee, pour ne pas ecrire deux fois la meme transition
+   * pendant le court instant ou l'ecriture est en vol.
+   */
+  const leaving = useRef<string | null>(null)
+
+  /**
    * C'est le temps qui fait avancer la partie, plus un bouton.
    *
-   * Un seul client declenche le passage — celui de l'hote — sinon six
+   * Un seul client declenche le passage, celui de l'hote : sinon six
    * navigateurs ecriraient la meme transition en meme temps. Les autres la
    * recoivent par le temps reel, comme tout le reste.
    */
   useEffect(() => {
     if (!isHost || !question) return
-    if (advancedFrom.current === step) return
+    if (leaving.current === question.id) return
+    // Le passage se decide sur des donnees qui portent leur question : rien
+    // de ce qui vient de la precedente ne peut declencher celui-ci.
+    if (replies.questionId !== question.id) return
+    if (clock.startedAt !== room.step_started_at) return
 
-    const everyoneAnswered = players.length > 0 && answered.length >= players.length
-    if (remaining > 0 && !everyoneAnswered) return
+    const everyoneAnswered = players.length > 0 && replies.ids.length >= players.length
+    if (clock.left > 0 && !everyoneAnswered) return
 
-    advancedFrom.current = step
+    leaving.current = question.id
     const action =
       step >= questions.length - 1 ? startGrading(room.id) : advanceQuiz(room.id, step + 1)
     void action.catch(() => {
-      // Une transition refusee sera retentee a la prochaine image : inutile
-      // d'alarmer, la partie n'est pas bloquee pour autant.
+      // Une transition refusee doit rester rejouable, sinon la partie se
+      // fige sur une question au premier hoquet reseau.
+      leaving.current = null
     })
-  }, [isHost, question, remaining, answered.length, players.length, room.id, step, questions.length])
+  }, [
+    isHost,
+    question,
+    clock,
+    replies,
+    players.length,
+    room.id,
+    room.step_started_at,
+    step,
+    questions.length,
+  ])
 
   if (!question) {
     return (
@@ -187,7 +246,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
                 remaining <= 5 ? 'bg-rec' : 'bg-accent',
               )}
               style={{
-                width: `${Math.max(0, Math.min(100, (remaining / options.timerSec) * 100))}%`,
+                width: `${Math.max(0, Math.min(100, (remaining / durationSec) * 100))}%`,
               }}
             />
           </div>
@@ -264,10 +323,34 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
             onChange={setAnswer}
           />
         )}
-        {(question.kind === 'classement' || question.kind === 'frise') && (
+        {question.kind === 'classement' && (
           <RankingQuestion
             payload={question.payload as RankingPayload}
             value={answer?.kind === 'classement' ? answer : null}
+            disabled={locked}
+            onChange={setAnswer}
+          />
+        )}
+        {question.kind === 'frise' && (
+          <TimelineQuestion
+            payload={question.payload as TimelinePayload}
+            value={answer?.kind === 'frise' ? answer : null}
+            disabled={locked}
+            onChange={setAnswer}
+          />
+        )}
+        {question.kind === 'carte' && (
+          <MapQuestion
+            payload={question.payload as MapPayload}
+            value={answer?.kind === 'carte' ? answer : null}
+            disabled={locked}
+            onChange={setAnswer}
+          />
+        )}
+        {question.kind === 'theme' && (
+          <ThemeQuestion
+            payload={question.payload as ThemePayload}
+            value={answer?.kind === 'theme' ? answer : null}
             disabled={locked}
             onChange={setAnswer}
           />

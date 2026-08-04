@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react'
  *
  * Elle ne porte aucune information : son seul rôle est de faire réagir le
  * fond au geste, pour que la page paraisse à l'écoute avant même qu'on ait
- * cliqué. Le retard (interpolation à 8 % par image) est délibéré — un suivi
+ * cliqué. Le retard (interpolation à 8 % par image) est délibéré : un suivi
  * au pixel près paraîtrait mécanique là où la traîne paraît attentive.
  */
 export function CursorGlow() {

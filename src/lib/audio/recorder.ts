@@ -41,7 +41,7 @@ export function pickMimeType(
  * l'instant ou le navigateur le rend : la chaine de traitement met des
  * centaines de millisecondes a se stabiliser, et les premiers echantillons
  * sortent quasi muets. Ouvrir le micro au moment de capturer revient donc a
- * perdre le debut de chaque prise — invisible sur une longue replique,
+ * perdre le debut de chaque prise : invisible sur une longue replique,
  * fatal sur une replique d'une seconde.
  *
  * On ouvre pendant le decompte, et on capture une fois le flux chaud.
@@ -114,7 +114,7 @@ export async function openMicrophone(): Promise<MicrophoneHandle> {
  * Niveau d'entree instantane, entre 0 et 1.
  *
  * Il ne decore pas : il repond a la seule question qu'on se pose quand une
- * prise sort muette — est-ce que le micro capte quelque chose ?
+ * prise sort muette : est-ce que le micro capte quelque chose ?
  */
 export function meterFor(stream: MediaStream): {
   read: () => number

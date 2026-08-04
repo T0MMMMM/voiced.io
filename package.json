@@ -12,7 +12,8 @@
     "test:run": "vitest run",
     "seed:questions": "dotenv -e .env.local -- node scripts/seed-questions.mjs",
     "check:rls": "dotenv -e .env.local -- tsx scripts/check-rls.ts",
-    "db:types": "supabase gen types typescript --project-id kqqatnhniuqqujhrfqsf > src/types/db.ts"
+    "db:types": "supabase gen types typescript --project-id kqqatnhniuqqujhrfqsf > src/types/db.ts",
+    "build:world": "node scripts/build-world.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
@@ -41,9 +42,11 @@
     "jsdom": "^30.0.1",
     "supabase": "^2.111.0",
     "tailwindcss": "^4",
+    "topojson-client": "^3.1.0",
     "tsx": "^4.23.1",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "world-atlas": "^2.0.2"
   }
 }

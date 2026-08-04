@@ -53,14 +53,14 @@ describe('mouvement', () => {
   })
 
   it('n’a aucune zone morte : chaque barre bouge sur quatre secondes', () => {
-    // La propriete qui compte n'est pas que tout bouge au meme instant —
+    // La propriete qui compte n'est pas que tout bouge au meme instant :
     // avec des vagues larges, certaines zones passent par un noeud. C'est
     // qu'aucune portion de la piste ne reste figee.
     //
     // La fenetre couvre quatre secondes : la composante la plus lente du
     // champ a une periode voisine, et juger sur moins reviendrait a juger
     // une vague sur une fraction de sa course. Le minimum mesure est de
-    // 0,21 — le seuil garde donc de la marge tout en attrapant un vrai gel.
+    // 0,21 : le seuil garde donc de la marge tout en attrapant un vrai gel.
     const samples = Array.from({ length: 49 }, (_, k) => frame(5 + k / 12))
 
     for (let i = 0; i < BARS; i++) {

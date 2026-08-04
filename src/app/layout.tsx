@@ -7,7 +7,7 @@ import './globals.css'
 /**
  * Space Grotesk porte tout le texte : ses formes géométriques un peu
  * bancales lui donnent une voix, ce qui convient à un produit sur la voix.
- * Space Mono est sa sœur du même dessinateur — l'appairage est délibéré,
+ * Space Mono est sa sœur du même dessinateur : l'appairage est délibéré,
  * elle ne sert qu'aux timecodes, aux compteurs et aux libellés de piste.
  */
 const spaceGrotesk = Space_Grotesk({

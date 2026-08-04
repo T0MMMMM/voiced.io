@@ -35,7 +35,7 @@ export default async function RoomPage({
           Aucun salon ne porte ce code.
         </h1>
         <p className="text-muted mt-4 text-[17px]">
-          Il a peut-être expiré — les salons ne vivent que vingt-quatre heures.
+          Il a peut-être expiré : les salons ne vivent que vingt-quatre heures.
         </p>
         <Link href="/join" className={`${buttonClassName()} mt-8`}>
           Saisir un autre code

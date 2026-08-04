@@ -10,7 +10,7 @@ export interface Identity {
 
 /**
  * Sans comptes, c'est ce cookie qui fait qu'on retrouve sa place apres un
- * rafraichissement — et ses reponses avec. Un seul salon a la fois : en
+ * rafraichissement, et ses reponses avec. Un seul salon a la fois : en
  * rejoindre un autre remplace le precedent, ce qui correspond a l'usage.
  */
 export async function readIdentity(): Promise<Identity | null> {

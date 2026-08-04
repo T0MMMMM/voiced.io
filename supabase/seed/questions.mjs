@@ -6,17 +6,17 @@
  * se listent naturellement.
  *
  * Quatre règles de rédaction tenues partout :
- *   · l'énoncé se comprend à la première lecture — une question qu'il faut
+ *   · l'énoncé se comprend à la première lecture : une question qu'il faut
  *     relire est déjà ratée, même si la réponse est connue ;
  *   · toute réponse écrite porte ses variantes acceptées, sans quoi la
  *     machine ne peut rien noter et l'hôte arbitre tout ;
  *   · une estimation ne porte jamais sur un chiffre invérifiable, sinon la
  *     partie tourne à la dispute ;
  *   · une question « citez N » a toujours bien plus de réponses valables
- *     que le nombre demandé — sinon ce n'est plus une liste, c'est un piège.
+ *     que le nombre demandé : sinon ce n'est plus une liste, c'est un piège.
  *
  * La difficulté est annoncée au joueur : 1 vert, 2 orange, 3 rouge. La
- * majorité est verte à dessein — on joue entre amis, pas à un concours.
+ * majorité est verte à dessein : on joue entre amis, pas à un concours.
  */
 
 /**
@@ -64,24 +64,77 @@ const association = (theme, difficulty, prompt, pairs) => ({
 })
 
 /**
- * Frise : un classement dans le temps. Le moteur le note comme un
- * classement — seul l'ordre compte, jamais la date exacte.
+ * Frise chronologique : des reperes deja dates, et un evenement a situer
+ * entre eux. L'intervalle attendu se deduit de l'annee, il n'est jamais
+ * ecrit a la main : une frise dont la reponse se saisit a cote finit
+ * fausse au premier repere ajoute.
+ *
+ * Les reperes s'ecrivent `[libelle, annee]`, une annee negative valant
+ * avant Jesus-Christ.
  */
-const frise = (theme, difficulty, prompt, order) => ({
-  theme, kind: 'frise', prompt, difficulty, points: POINTS[difficulty],
-  hint: null,
+const frise = (theme, difficulty, event, year, anchors) => {
+  const sorted = [...anchors].sort((a, b) => a[1] - b[1])
+  const slot = sorted.filter(([, at]) => at < year).length
+
+  return {
+    theme, kind: 'frise',
+    prompt: `Placez cet événement sur la frise : ${event}`,
+    difficulty, points: POINTS[difficulty], hint: null,
+    payload: {
+      event,
+      anchors: sorted.map(([label, at]) => ({ label, year: at })),
+    },
+    answer: { slot, slots: sorted.length + 1 },
+  }
+}
+
+/**
+ * Carte : un point a poser. Le rayon tolere suit l'echelle de la question,
+ * situer un pays sur un planisphere pardonnant bien plus d'erreur que
+ * placer une ville francaise.
+ */
+const carte = (theme, difficulty, target, region, lat, lng, maxKm) => ({
+  theme, kind: 'carte',
+  prompt: `Placez ${target} sur la carte`,
+  difficulty, points: POINTS[difficulty], hint: null,
+  payload: { region, target },
+  answer: { point: { lat, lng }, maxKm },
+})
+
+/**
+ * Theme a difficulte choisie : trois questions du meme sujet, et c'est le
+ * joueur qui decide laquelle il affronte. `levels` s'ecrit du plus facile
+ * au plus difficile, et le bareme suit ce choix.
+ */
+const themeAuChoix = (theme, levels) => ({
+  theme, kind: 'theme',
+  prompt: `Thème au choix : ${theme.toLowerCase()}`,
+  // La difficulte affichee est celle du pari, pas celle de la question :
+  // c'est le joueur qui la fixe juste apres.
+  difficulty: 2, points: 3, hint: null,
   payload: {
-    items: [...order].reverse(),
-    topLabel: 'Le plus ancien',
-    bottomLabel: 'Le plus récent',
+    theme,
+    levels: levels.map(([prompt], index) => ({
+      level: index + 1,
+      prompt,
+      points: index + 1,
+    })),
   },
-  answer: order,
+  answer: {
+    max: 3,
+    levels: Object.fromEntries(
+      levels.map(([, accepted], index) => [
+        index + 1,
+        { accepted, points: index + 1 },
+      ]),
+    ),
+  },
 })
 
 /** Petit bac : une lettre, des categories. Corrige a la main, toujours. */
 const petitBac = (theme, difficulty, letter, categories) => ({
   theme, kind: 'petit_bac',
-  prompt: `Petit bac — lettre ${letter}`,
+  prompt: `Petit bac, lettre ${letter}`,
   difficulty, points: POINTS[difficulty], hint: null,
   payload: { letter, categories },
   answer: null,
@@ -474,20 +527,270 @@ export const QUESTIONS = [
     'Le Penseur': 'Rodin', 'Guernica': 'Picasso',
   }),
 
-  // ═══ Frises ═══════════════════════════════════════════════════════════
-  frise('Histoire', 1, 'Replacez ces événements dans l’ordre chronologique',
-    ['Construction des pyramides', 'Empire romain', 'Moyen Âge',
-      'Révolution française', 'Premier pas sur la Lune']),
-  frise('Histoire', 2, 'Replacez ces guerres dans l’ordre chronologique',
-    ['Guerre de Cent Ans', 'Guerre de Trente Ans', 'Guerres napoléoniennes',
-      'Première Guerre mondiale', 'Guerre du Golfe']),
-  frise('Technologie', 1, 'Replacez ces inventions dans l’ordre chronologique',
-    ['Roue', 'Imprimerie', 'Ampoule électrique', 'Ordinateur', 'Internet']),
-  frise('Cinéma', 2, 'Replacez ces films dans l’ordre de sortie',
-    ['Blanche-Neige', 'Le Roi Lion', 'Toy Story', 'Shrek', 'Frozen']),
-  frise('Sciences', 2, 'Replacez ces découvertes dans l’ordre chronologique',
-    ['Loi de la gravitation', 'Théorie de l’évolution', 'Relativité',
-      'Structure de l’ADN', 'Séquençage du génome humain']),
+  // ═══ Frises chronologiques ════════════════════════════════════════════
+  // Un evenement a situer entre des reperes deja dates : la question
+  // devient « avant ou apres ? », ce qui se joue en un clic et se sait
+  // bien mieux qu'une date exacte.
+  frise('Histoire', 1, 'La chute de l’Empire romain d’Occident', 476, [
+    ['Construction de la pyramide de Khéops', -2560],
+    ['Mort de Jules César', -44],
+    ['Couronnement de Charlemagne', 800],
+    ['Découverte de l’Amérique', 1492],
+    ['Révolution française', 1789],
+  ]),
+  frise('Histoire', 1, 'La Révolution française', 1789, [
+    ['Première croisade', 1096],
+    ['Imprimerie de Gutenberg', 1450],
+    ['Louis XIV monte sur le trône', 1643],
+    ['Première Guerre mondiale', 1914],
+    ['Chute du mur de Berlin', 1989],
+  ]),
+  frise('Histoire', 2, 'L’invention de l’imprimerie par Gutenberg', 1450, [
+    ['Chute de l’Empire romain d’Occident', 476],
+    ['Couronnement de Charlemagne', 800],
+    ['Découverte de l’Amérique', 1492],
+    ['Révolution française', 1789],
+    ['Premier pas sur la Lune', 1969],
+  ]),
+  frise('Histoire', 2, 'La chute du mur de Berlin', 1989, [
+    ['Première Guerre mondiale', 1914],
+    ['Seconde Guerre mondiale', 1939],
+    ['Premier homme dans l’espace', 1961],
+    ['Attentats du 11 septembre', 2001],
+    ['Pandémie de Covid-19', 2020],
+  ]),
+  frise('Technologie', 2, 'La première automobile à essence', 1886, [
+    ['Machine à vapeur de Watt', 1769],
+    ['Première photographie', 1826],
+    ['Première ampoule électrique', 1879],
+    ['Premier vol des frères Wright', 1903],
+    ['Premier ordinateur ENIAC', 1945],
+  ]),
+  frise('Technologie', 2, 'La création du Web', 1989, [
+    ['Invention du transistor', 1947],
+    ['Premier microprocesseur', 1971],
+    ['Sortie de Windows 95', 1995],
+    ['Création de Facebook', 2004],
+    ['Sortie du premier iPhone', 2007],
+  ]),
+  frise('Cinéma', 1, 'La sortie du premier Star Wars', 1977, [
+    ['Première projection des frères Lumière', 1895],
+    ['Premier film parlant', 1927],
+    ['Blanche-Neige et les Sept Nains', 1937],
+    ['Jurassic Park', 1993],
+    ['Avatar', 2009],
+  ]),
+  frise('Sciences', 2, 'La théorie de la relativité d’Einstein', 1905, [
+    ['Loi de la gravitation de Newton', 1687],
+    ['Théorie de l’évolution de Darwin', 1859],
+    ['Découverte de la pénicilline', 1928],
+    ['Structure de l’ADN', 1953],
+    ['Séquençage du génome humain', 2003],
+  ]),
+  frise('Sport', 2, 'Les premiers Jeux olympiques modernes', 1896, [
+    ['Révolution française', 1789],
+    ['Inauguration de la tour Eiffel', 1889],
+    ['Première Coupe du monde de football', 1930],
+    ['Première Coupe du monde de rugby', 1987],
+    ['Jeux olympiques de Paris', 2024],
+  ]),
+  frise('Jeux vidéo', 2, 'La sortie de la première PlayStation', 1994, [
+    ['Sortie de Pong', 1972],
+    ['Sortie de la NES', 1983],
+    ['Sortie du Game Boy', 1989],
+    ['Sortie de la Wii', 2006],
+    ['Sortie de la Switch', 2017],
+  ]),
+
+  // ═══ Cartes ═══════════════════════════════════════════════════════════
+  // Le rayon tolere suit l'echelle : mille kilometres sur un planisphere
+  // valent cent cinquante sur la France.
+  carte('Géographie', 1, 'Paris', 'europe', 48.86, 2.35, 400),
+  carte('Géographie', 1, 'l’Italie', 'europe', 42.8, 12.6, 500),
+  carte('Géographie', 2, 'Madrid', 'europe', 40.42, -3.7, 400),
+  carte('Géographie', 2, 'Berlin', 'europe', 52.52, 13.4, 400),
+  carte('Géographie', 3, 'Athènes', 'europe', 37.98, 23.73, 400),
+  carte('Géographie', 1, 'le Brésil', 'monde', -10, -52, 1600),
+  carte('Géographie', 1, 'l’Australie', 'monde', -25, 134, 1600),
+  carte('Géographie', 2, 'le Japon', 'monde', 36.2, 138.2, 1200),
+  carte('Géographie', 2, 'l’Égypte', 'monde', 26.8, 30.8, 1200),
+  carte('Géographie', 2, 'l’Inde', 'monde', 22.5, 79, 1400),
+  carte('Géographie', 3, 'Madagascar', 'monde', -19, 46.7, 1100),
+  carte('Géographie', 3, 'New York', 'monde', 40.71, -74.01, 900),
+  carte('Géographie', 3, 'Moscou', 'monde', 55.75, 37.62, 1000),
+  carte('Géographie', 1, 'Marseille', 'france', 43.3, 5.37, 160),
+  carte('Géographie', 2, 'Bordeaux', 'france', 44.84, -0.58, 160),
+  carte('Géographie', 2, 'Strasbourg', 'france', 48.58, 7.75, 160),
+  carte('Géographie', 1, 'la Corse', 'france', 42.15, 9.1, 160),
+  carte('Géographie', 3, 'Clermont-Ferrand', 'france', 45.78, 3.08, 160),
+
+  // ═══ Thèmes à difficulté choisie ══════════════════════════════════════
+  // Le joueur voit le sujet, pas la question, et décide de ce qu'il risque.
+  themeAuChoix('Cinéma', [
+    ['Quel réalisateur a tourné E.T. et Jurassic Park ?',
+      ['Spielberg', 'Steven Spielberg']],
+    ['Quel acteur incarne Jack dans Titanic ?',
+      ['Leonardo DiCaprio', 'DiCaprio', 'Leonardo Di Caprio']],
+    ['Quel est le premier long métrage d’animation de Disney ?',
+      ['Blanche-Neige', 'Blanche-Neige et les Sept Nains']],
+  ]),
+  themeAuChoix('Géographie', [
+    ['Quelle est la capitale du Portugal ?', ['Lisbonne']],
+    ['Quel est le plus long fleuve d’Afrique ?', ['Nil', 'Le Nil']],
+    ['Quelle est la capitale du Kazakhstan ?',
+      ['Astana', 'Noursoultan', 'Nur-Sultan']],
+  ]),
+  themeAuChoix('Musique', [
+    ['Quel groupe britannique a chanté « Hey Jude » ?',
+      ['Les Beatles', 'Beatles']],
+    ['Quel compositeur autrichien a écrit La Flûte enchantée ?', ['Mozart']],
+    ['Quel groupe suédois a remporté l’Eurovision en 1974 ?', ['ABBA']],
+  ]),
+  themeAuChoix('Sport', [
+    ['Combien de joueurs une équipe de football aligne-t-elle sur le terrain ?',
+      ['11', 'onze']],
+    ['Dans quel sport frappe-t-on un volant ?', ['Badminton']],
+    ['Quel pays a remporté la Coupe du monde de football 2010 ?', ['Espagne']],
+  ]),
+  themeAuChoix('Sciences', [
+    ['Quelle planète est la plus proche du Soleil ?', ['Mercure']],
+    ['Quel gaz les plantes absorbent-elles pour grandir ?',
+      ['Dioxyde de carbone', 'CO2', 'Gaz carbonique']],
+    ['Quel élément chimique porte le symbole K ?', ['Potassium']],
+  ]),
+  themeAuChoix('Histoire', [
+    ['Quel empereur français a été vaincu à Waterloo ?',
+      ['Napoléon', 'Napoléon Bonaparte', 'Napoléon Ier']],
+    ['En quelle année la Seconde Guerre mondiale s’est-elle terminée ?',
+      ['1945']],
+    ['Quel roi de France a fait construire le château de Versailles ?',
+      ['Louis XIV', 'Louis 14']],
+  ]),
+  themeAuChoix('Animaux', [
+    ['Quel est le plus grand animal terrestre ?',
+      ['Éléphant', 'Éléphant d’Afrique']],
+    ['Quel est le seul mammifère capable de voler ?',
+      ['Chauve-souris', 'La chauve-souris']],
+    ['Combien de cœurs possède une pieuvre ?', ['3', 'Trois']],
+  ]),
+  themeAuChoix('Jeux vidéo', [
+    ['Quel plombier moustachu est la mascotte de Nintendo ?', ['Mario']],
+    ['Quel studio développe la série The Legend of Zelda ?', ['Nintendo']],
+    ['Quel jeu vidéo est le plus vendu de tous les temps ?', ['Minecraft']],
+  ]),
+
+  // ═══ Animaux ══════════════════════════════════════════════════════════
+  ecrite('Animaux', 1, 'Quel est l’animal terrestre le plus rapide ?', ['Guépard']),
+  ecrite('Animaux', 1, 'Combien de pattes a une araignée ?', ['8', 'Huit']),
+  ecrite('Animaux', 1, 'Quel est le plus grand animal du monde ?',
+    ['Baleine bleue', 'Rorqual bleu', 'La baleine bleue']),
+  ecrite('Animaux', 1, 'De quelle couleur est le sang d’une pieuvre ?', ['Bleu']),
+  ecrite('Animaux', 1, 'Quel oiseau est le plus grand du monde ?', ['Autruche']),
+  ecrite('Animaux', 2, 'Quel mammifère est le seul à voler vraiment ?',
+    ['Chauve-souris']),
+  ecrite('Animaux', 2, 'Quel mammifère australien pond des œufs ?',
+    ['Ornithorynque']),
+  ecrite('Animaux', 2, 'Comment appelle-t-on un animal qui ne mange que des plantes ?',
+    ['Herbivore']),
+  ecrite('Animaux', 3, 'Quel animal a la plus longue gestation ?',
+    ['Éléphant', 'L’éléphant']),
+  liste('Animaux', 1, 'Citez 3 animaux de la savane africaine', 3, [
+    'Lion', 'Éléphant', 'Girafe', 'Zèbre', 'Hippopotame', 'Rhinocéros',
+    'Guépard', 'Gnou', 'Hyène', 'Babouin', 'Crocodile', 'Autruche',
+    'Léopard', 'Buffle', 'Antilope', 'Suricate',
+  ]),
+  liste('Animaux', 1, 'Citez 3 animaux marins', 3, [
+    'Dauphin', 'Baleine', 'Requin', 'Orque', 'Phoque', 'Méduse', 'Pieuvre',
+    'Tortue', 'Morse', 'Raie', 'Otarie', 'Narval', 'Hippocampe', 'Corail',
+    'Étoile de mer', 'Crabe', 'Homard', 'Thon', 'Sardine',
+  ]),
+  liste('Animaux', 2, 'Citez 4 races de chiens', 4, [
+    'Labrador', 'Berger allemand', 'Caniche', 'Bouledogue', 'Chihuahua',
+    'Husky', 'Beagle', 'Teckel', 'Golden retriever', 'Dalmatien',
+    'Rottweiler', 'Boxer', 'Border collie', 'Yorkshire', 'Cocker',
+    'Saint-bernard', 'Berger australien', 'Shiba', 'Carlin',
+  ]),
+  liste('Animaux', 2, 'Citez 3 animaux qui hibernent', 3, [
+    'Marmotte', 'Ours', 'Hérisson', 'Loir', 'Chauve-souris', 'Écureuil',
+    'Tortue', 'Grenouille', 'Serpent', 'Escargot', 'Blaireau', 'Lérot',
+    'Crapaud', 'Hamster',
+  ]),
+  estimation('Animaux', 1, 'Combien d’années vit un éléphant en moyenne ?', 65, 'ans'),
+  estimation('Animaux', 2, 'Combien de dents a un chien adulte ?', 42, 'dents'),
+  estimation('Animaux', 2, 'Quelle vitesse de pointe atteint le guépard ?', 110, 'km/h'),
+  estimation('Animaux', 3, 'Combien d’espèces d’oiseaux existe-t-il environ ?',
+    11000, 'espèces'),
+  intrus('Animaux', 1, 'Lequel n’est pas un félin ?',
+    ['Lion', 'Tigre', 'Hyène', 'Léopard', 'Jaguar'], 'Hyène'),
+  intrus('Animaux', 1, 'Lequel n’est pas un oiseau ?',
+    ['Manchot', 'Autruche', 'Chauve-souris', 'Kiwi', 'Émeu'], 'Chauve-souris'),
+  intrus('Animaux', 2, 'Lequel n’est pas un reptile ?',
+    ['Crocodile', 'Iguane', 'Salamandre', 'Tortue', 'Cobra'], 'Salamandre'),
+  association('Animaux', 1, 'Reliez chaque animal à son cri', {
+    'Chien': 'Aboiement', 'Cheval': 'Hennissement', 'Vache': 'Meuglement',
+    'Loup': 'Hurlement',
+  }),
+  association('Animaux', 2, 'Reliez chaque animal à sa famille', {
+    'Dauphin': 'Mammifère', 'Grenouille': 'Amphibien', 'Requin': 'Poisson',
+    'Tortue': 'Reptile',
+  }),
+  classement('Animaux', 1, 'Classez ces animaux du plus rapide au plus lent',
+    ['Faucon pèlerin', 'Guépard', 'Cheval', 'Humain', 'Escargot'],
+    'Le plus rapide', 'Le plus lent'),
+  classement('Animaux', 2, 'Classez ces animaux du plus lourd au plus léger',
+    ['Baleine bleue', 'Éléphant d’Afrique', 'Hippopotame', 'Cheval', 'Chien'],
+    'Le plus lourd', 'Le plus léger'),
+
+  // ═══ Jeux vidéo ═══════════════════════════════════════════════════════
+  ecrite('Jeux vidéo', 1, 'Dans quel jeu construit-on un monde fait de cubes ?',
+    ['Minecraft']),
+  ecrite('Jeux vidéo', 1, 'Quel hérisson bleu est la mascotte de Sega ?', ['Sonic']),
+  ecrite('Jeux vidéo', 1, 'Quel jeu de blocs qui tombent vient de Russie ?',
+    ['Tetris']),
+  ecrite('Jeux vidéo', 1, 'Quelle princesse Link cherche-t-il à sauver ?', ['Zelda']),
+  ecrite('Jeux vidéo', 2, 'Quelle entreprise japonaise a créé la PlayStation ?',
+    ['Sony']),
+  ecrite('Jeux vidéo', 2, 'Quel studio a créé la série Grand Theft Auto ?',
+    ['Rockstar', 'Rockstar Games']),
+  ecrite('Jeux vidéo', 2, 'En quelle année la Nintendo Switch est-elle sortie ?',
+    ['2017']),
+  ecrite('Jeux vidéo', 2, 'Quel Pokémon porte le numéro 1 du Pokédex ?',
+    ['Bulbizarre']),
+  ecrite('Jeux vidéo', 3, 'Quel jeu de 2017 a lancé la mode de la « battle royale » ?',
+    ['PUBG', 'PlayerUnknown’s Battlegrounds', 'Battlegrounds'],
+    'Il a précédé Fortnite de quelques mois'),
+  liste('Jeux vidéo', 1, 'Citez 3 consoles de salon', 3, [
+    'PlayStation', 'Xbox', 'Nintendo Switch', 'Wii', 'GameCube',
+    'Nintendo 64', 'Mega Drive', 'Super Nintendo', 'Dreamcast', 'PlayStation 2',
+    'Atari 2600', 'NES', 'Wii U', 'PlayStation 5', 'Xbox 360',
+  ]),
+  liste('Jeux vidéo', 2, 'Citez 3 jeux de la série Mario', 3, [
+    'Mario Kart', 'Super Mario Bros', 'Mario Party', 'Super Mario Odyssey',
+    'Mario Tennis', 'Super Mario 64', 'Super Mario Galaxy', 'Paper Mario',
+    'Mario Maker', 'Super Mario Sunshine', 'Mario Golf', 'Super Mario World',
+  ]),
+  liste('Jeux vidéo', 2, 'Citez 4 Pokémon', 4, [
+    'Pikachu', 'Bulbizarre', 'Salamèche', 'Carapuce', 'Évoli', 'Rondoudou',
+    'Miaouss', 'Ronflex', 'Dracaufeu', 'Mewtwo', 'Mew', 'Magicarpe',
+    'Léviator', 'Tortank', 'Florizarre', 'Roucool', 'Rattata', 'Aspicot',
+  ]),
+  estimation('Jeux vidéo', 3, 'Combien de millions d’exemplaires de Minecraft ont été vendus ?',
+    300, 'millions'),
+  intrus('Jeux vidéo', 1, 'Laquelle n’est pas une console Nintendo ?',
+    ['Game Boy', 'Wii', 'Dreamcast', 'Switch', 'GameCube'], 'Dreamcast'),
+  intrus('Jeux vidéo', 2, 'Lequel n’est pas un personnage de l’univers Mario ?',
+    ['Luigi', 'Yoshi', 'Kirby', 'Bowser', 'Peach'], 'Kirby'),
+  association('Jeux vidéo', 1, 'Reliez chaque jeu à son studio', {
+    'Minecraft': 'Mojang', 'The Legend of Zelda': 'Nintendo',
+    'Fortnite': 'Epic Games', 'The Witcher': 'CD Projekt',
+  }),
+  association('Jeux vidéo', 2, 'Reliez chaque console à son constructeur', {
+    'Switch': 'Nintendo', 'PlayStation 5': 'Sony',
+    'Xbox Series X': 'Microsoft', 'Dreamcast': 'Sega',
+  }),
+  classement('Jeux vidéo', 2, 'Classez ces consoles de la plus ancienne à la plus récente',
+    ['NES', 'Game Boy', 'PlayStation', 'Wii', 'Nintendo Switch'],
+    'La plus ancienne', 'La plus récente'),
 
   // ═══ Petit bac ════════════════════════════════════════════════════════
   petitBac('Petit bac', 1, 'B', ['Un pays', 'Un animal', 'Un aliment', 'Un métier']),

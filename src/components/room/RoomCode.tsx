@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils/cn'
  * fixe et l'interlettrage généreux : quatre consonnes bien détachées se
  * dictent sans se tromper.
  *
- * C'est le code lui-même qu'on clique pour le copier — la cible la plus
+ * C'est le code lui-même qu'on clique pour le copier : la cible la plus
  * évidente de l'écran est aussi la plus grande. La petite icône en bas à
  * droite ne fait que signaler que c'est possible.
  */

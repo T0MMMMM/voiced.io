@@ -20,7 +20,7 @@ function initials(nickname: string): string {
  * occupés. On voit d'un coup d'œil qu'on attend encore quelqu'un, ce qui
  * est exactement la question qu'on se pose dans un lobby.
  *
- * Les joueurs ne sont pas distingués par une couleur — la palette n'en a
+ * Les joueurs ne sont pas distingués par une couleur : la palette n'en a
  * qu'une, et huit teintes inventées la casseraient. Ils le sont par leurs
  * initiales ; seuls l'hôte et vous-même portez une marque.
  */

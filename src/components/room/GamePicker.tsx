@@ -27,7 +27,7 @@ function Chevron({ direction }: { direction: 'left' | 'right' }) {
  *
  * Une liste de quatre entrées obligeait à lire quatre lignes pour en
  * retenir une. Ici le salon affiche le jeu retenu, en grand, et les flèches
- * font défiler les autres — c'est un choix, pas un inventaire.
+ * font défiler les autres : c'est un choix, pas un inventaire.
  */
 export function GamePicker({
   game,

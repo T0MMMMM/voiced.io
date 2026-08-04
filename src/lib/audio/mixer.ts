@@ -3,7 +3,7 @@
  * a leur place.
  *
  * On ne fabrique jamais de fichier. Ecouter un doublage complet, c'est
- * planifier des sources audio aux bons instants — instantane, gratuit, et
+ * planifier des sources audio aux bons instants : instantane, gratuit, et
  * refaire une prise ne demande aucun recalcul.
  */
 
@@ -26,8 +26,8 @@ export interface Cue {
 /**
  * Ce qu'il faut declencher, et quand, pour une lecture demarrant a `fromSec`.
  *
- * Trois cas : la prise est deja finie — on l'ignore ; elle est en cours — on
- * la demarre aussitot mais en plein milieu ; elle arrive — on la programme.
+ * Trois cas : la prise est deja finie, on l'ignore ; elle est en cours, on
+ * la demarre aussitot mais en plein milieu ; elle arrive : on la programme.
  */
 export function cuesFor(tracks: Track[], fromSec: number): Cue[] {
   const cues: Cue[] = []
@@ -68,7 +68,7 @@ export class DubMixer {
    * Charge les prises et rend le compte de ce qui est reellement lisible.
    *
    * Une prise qui ne se decode pas ne doit pas empecher d'entendre les
-   * autres — mais le silence total doit pouvoir s'expliquer. L'appelant a
+   * autres : mais le silence total doit pouvoir s'expliquer. L'appelant a
    * besoin de savoir combien ont ete perdues pour le dire.
    */
   async load(

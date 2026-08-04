@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { createBrowserClient } from '@/lib/supabase/client'
 import type { Player, Room } from '@/lib/supabase/types'
 
-/** Au-dela, un joueur est considere absent — sans etre supprime. */
+/** Au-dela, un joueur est considere absent : sans etre supprime. */
 export const ABSENT_AFTER_MS = 30_000
 
 interface RoomState {
@@ -30,9 +30,9 @@ export function isAbsent(player: Player, now: number = Date.now()): boolean {
  * Deux precautions rendent la connexion sure face au double montage des
  * effets en developpement :
  *
- *   · un jeton de session — apres chaque `await`, une tentative dont le
+ *   · un jeton de session : apres chaque `await`, une tentative dont le
  *     jeton n'est plus le courant abandonne et nettoie derriere elle ;
- *   · un nom de canal unique par tentative — sans lui, deux connexions
+ *   · un nom de canal unique par tentative : sans lui, deux connexions
  *     concurrentes recuperent le meme canal, et ajouter des ecouteurs a
  *     un canal deja abonne est refuse par Realtime.
  */

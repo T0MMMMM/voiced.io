@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────
-   voiced.io — tokens de design
+   voiced.io : tokens de design
 
    SEUL fichier du projet autorisé à contenir des valeurs de couleur.
    Le thème sombre ne fait que redéfinir ces variables : aucun composant
@@ -7,7 +7,7 @@
 
    Direction : fond crème, contrôles en relief, le vert comme unique
    couleur, noir franc sur la typographie. L'élévation remplace la
-   bordure — un contrôle se lit parce qu'il flotte au-dessus du fond,
+   bordure : un contrôle se lit parce qu'il flotte au-dessus du fond,
    pas parce qu'on l'a encadré.
    ───────────────────────────────────────────────────────────── */
 
@@ -19,7 +19,7 @@
   --border:         #EBE2D2;
   --border-strong:  #C7D9C4;
 
-  /* Texte — le noir franc porte l'identité */
+  /* Texte : le noir franc porte l'identité */
   --text:           #0A0A0A;
   --text-muted:     #5E5B54;
   --text-faint:     #918D85;
@@ -42,7 +42,7 @@
   --wave-self:      #7A9B7A;
   --playhead:       #0A0A0A;
 
-  /* Identité joueur — vert contre noir : la distinction la plus nette
+  /* Identité joueur, vert contre noir : la distinction la plus nette
      possible sans introduire de couleur étrangère à la palette. */
   --player-1:       #7A9B7A;
   --player-2:       #2E2C28;
@@ -51,7 +51,7 @@
   --radius:         12px;
   --radius-lg:      20px;
 
-  /* Élévation : la signature des contrôles. Deux ombres superposées —
+  /* Élévation : la signature des contrôles. Deux ombres superposées,
      une courte et nette qui pose l'objet, une large et diffuse qui le
      décolle du fond. */
   --shadow:         0 1px 1px rgb(24 20 12 / 0.04), 0 2px 6px rgb(24 20 12 / 0.07);

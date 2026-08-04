@@ -12,7 +12,7 @@ import type { ListPayload, QuestionComponentProps } from '@/lib/quiz/kinds'
  * découper une phrase pour deviner combien de réponses elle contient est
  * une source d'erreurs qu'on peut simplement ne pas créer.
  *
- * Chaque case juste rapporte sa part — en trouver trois sur quatre vaut
+ * Chaque case juste rapporte sa part : en trouver trois sur quatre vaut
  * bien mieux que rien.
  */
 export function ListQuestion({
