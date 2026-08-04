@@ -161,6 +161,7 @@ export type Database = {
       questions: {
         Row: {
           answer: Json | null
+          difficulty: number
           hint: string | null
           id: string
           idx: number
@@ -173,6 +174,7 @@ export type Database = {
         }
         Insert: {
           answer?: Json | null
+          difficulty?: number
           hint?: string | null
           id?: string
           idx: number
@@ -185,6 +187,7 @@ export type Database = {
         }
         Update: {
           answer?: Json | null
+          difficulty?: number
           hint?: string | null
           id?: string
           idx?: number

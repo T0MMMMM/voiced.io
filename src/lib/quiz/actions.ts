@@ -75,7 +75,7 @@ export async function loadQuestions(ids: string[]): Promise<Question[]> {
   const supabase = createServiceClient()
   const { data } = await supabase
     .from('questions')
-    .select('id, idx, kind, prompt, hint, points, payload')
+    .select('id, idx, kind, prompt, hint, points, difficulty, payload')
     .in('id', ids)
 
   const byId = new Map((data ?? []).map((question) => [question.id, question]))
@@ -91,6 +91,7 @@ export async function loadQuestions(ids: string[]): Promise<Question[]> {
       prompt: question.prompt,
       hint: question.hint,
       points: question.points,
+      difficulty: question.difficulty,
       payload: question.payload,
     }))
 }

@@ -11,7 +11,7 @@
 /** Assez pour une soiree ; au-dela, plus personne ne suit. */
 export const MAX_PLAYERS = 8
 
-export type TimerSec = 0 | 15 | 30 | 60
+export type TimerSec = 20 | 30 | 45 | 60
 
 /** Longueur d'une partie de quiz. */
 export type QuestionCount = 10 | 20 | 30
@@ -39,10 +39,17 @@ export const COUNT_CHOICES: { value: QuestionCount; label: string }[] = [
   { value: 30, label: 'Longue' },
 ]
 
+/**
+ * Il n'y a plus de « sans minuteur ».
+ *
+ * C'est le temps qui fait avancer la partie : personne ne peut sauter une
+ * question, et sans minuteur un joueur qui ne repond pas figerait tout le
+ * monde indefiniment.
+ */
 export const TIMER_CHOICES: { value: TimerSec; label: string }[] = [
-  { value: 0, label: 'Aucun' },
-  { value: 15, label: '15 s' },
+  { value: 20, label: '20 s' },
   { value: 30, label: '30 s' },
+  { value: 45, label: '45 s' },
   { value: 60, label: '60 s' },
 ]
 

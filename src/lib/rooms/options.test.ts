@@ -31,6 +31,11 @@ describe('mergeOptions', () => {
     expect(mergeOptions({ timerSec: -1 }).timerSec).toBe(DEFAULT_OPTIONS.timerSec)
   })
 
+  it('ramene les anciens salons sans minuteur a la valeur par defaut', () => {
+    // Des parties ont ete creees quand « aucun » existait encore.
+    expect(mergeOptions({ timerSec: 0 }).timerSec).toBe(DEFAULT_OPTIONS.timerSec)
+  })
+
   it('rejette un type inattendu', () => {
     expect(mergeOptions({ shuffle: 'oui' }).shuffle).toBe(DEFAULT_OPTIONS.shuffle)
     expect(mergeOptions({ timerSec: '30' }).timerSec).toBe(DEFAULT_OPTIONS.timerSec)
@@ -54,8 +59,16 @@ describe('mergeOptions', () => {
 })
 
 describe('TIMER_CHOICES', () => {
-  it('propose « aucun » en premier', () => {
-    expect(TIMER_CHOICES[0]?.value).toBe(0)
+  it('n’offre plus « aucun minuteur »', () => {
+    // C'est le temps qui fait avancer la partie : personne ne peut sauter
+    // une question, et sans minuteur un joueur qui ne repond pas figerait
+    // tout le monde indefiniment.
+    expect(TIMER_CHOICES.map((choice) => choice.value)).not.toContain(0)
+  })
+
+  it('propose des durees croissantes', () => {
+    const values = TIMER_CHOICES.map((choice) => choice.value)
+    expect([...values].sort((a, b) => a - b)).toEqual(values)
   })
 
   it('contient la valeur par defaut', () => {

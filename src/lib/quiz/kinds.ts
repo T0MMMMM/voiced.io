@@ -50,6 +50,8 @@ export interface Question {
   prompt: string
   hint: string | null
   points: number
+  /** 1 facile, 2 moyen, 3 difficile. */
+  difficulty: number
   payload: unknown
   /** Jamais envoye au navigateur pendant la partie. */
   answer?: unknown
@@ -94,6 +96,12 @@ export function isAutoScored(kind: QuestionKind): boolean {
     kind === 'intrus' ||
     kind === 'association'
   )
+}
+
+export const DIFFICULTY_LABELS: Record<number, string> = {
+  1: 'Facile',
+  2: 'Moyen',
+  3: 'Difficile',
 }
 
 export const KIND_LABELS: Record<QuestionKind, string> = {

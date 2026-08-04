@@ -48,6 +48,7 @@ async function main() {
     prompt: question.prompt,
     hint: question.hint,
     points: question.points,
+    difficulty: question.difficulty,
     payload: question.payload,
     answer: question.answer,
   }))
@@ -61,9 +62,11 @@ async function main() {
 
   const themes = new Map()
   const kinds = new Map()
+  const levels = new Map()
   for (const question of QUESTIONS) {
     themes.set(question.theme, (themes.get(question.theme) ?? 0) + 1)
     kinds.set(question.kind, (kinds.get(question.kind) ?? 0) + 1)
+    levels.set(question.difficulty, (levels.get(question.difficulty) ?? 0) + 1)
   }
 
   console.log(`\n${rows.length} questions versées.\n`)
