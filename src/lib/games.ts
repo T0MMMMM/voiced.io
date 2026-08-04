@@ -14,8 +14,17 @@ export interface Game {
 
 export type ShapeFn = (index: number, total: number) => number
 
-/** Une piste n'est jamais tout a fait plate, sauf quand c'est le propos. */
+/** Une piste n'est jamais tout a fait plate. */
 export const FLOOR = 0.06
+
+/**
+ * Hauteur du trace apres la coupure de « La suite ». Ce n'est pas zero :
+ * la ligne continue jusqu'au bout comme sur les autres pistes, mais plate.
+ * Un trace qui disparaitrait laisserait croire a un defaut d'affichage,
+ * alors qu'une ligne plate dit exactement la bonne chose — le son s'arrete,
+ * la piste continue, et c'est a vous de la remplir.
+ */
+export const CUT_LINE = 0.05
 
 const wrap = (value: number) => FLOOR + (1 - FLOOR) * Math.min(Math.max(value, 0), 1)
 
@@ -46,7 +55,7 @@ const SHAPES: Record<GameId, ShapeFn> = {
   // Le trace s'arrete net a mi-parcours. C'est litteralement la regle du
   // jeu : le son se coupe, et c'est a vous d'inventer la suite.
   next: (i, total) => {
-    if (i / total > 0.52) return 0
+    if (i / total > 0.52) return CUT_LINE
     return wrap(
       (0.5 + 0.5 * Math.abs(Math.sin(i * 0.9 + Math.cos(i * 0.35)))) *
         (0.6 + 0.4 * Math.abs(Math.sin(i * 0.14))),

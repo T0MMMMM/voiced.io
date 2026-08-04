@@ -31,6 +31,19 @@ const REFERENCE = Array.from({ length: BAR_COUNT }, (_, i) => {
 })
 
 /**
+ * Durée de l'entrée des barres. Tant qu'elle dure, l'animation CSS pilote
+ * la transformation : la boucle ne doit pas écrire par-dessus, sinon les
+ * deux se disputent la même propriété et le tracé tremble.
+ */
+const REVEAL_MS = 1250
+
+/** Cadence propre à chaque barre : sans elle, la piste respirerait d'un bloc. */
+const SHIMMER = Array.from({ length: BAR_COUNT }, (_, i) => ({
+  speed: 1.1 + 0.9 * Math.abs(Math.sin(i * 1.77)),
+  phase: i * 0.83,
+}))
+
+/**
  * Le geste signature du site.
  *
  * La piste du haut est la réplique d'origine : figée, elle ne dépend de
@@ -43,6 +56,7 @@ const REFERENCE = Array.from({ length: BAR_COUNT }, (_, i) => {
  */
 export function VoiceField() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const refBars = useRef<(HTMLDivElement | null)[]>([])
   const selfBars = useRef<(HTMLDivElement | null)[]>([])
   const amplitudes = useRef<number[]>(Array<number>(BAR_COUNT).fill(FLOOR))
 
@@ -54,6 +68,7 @@ export function VoiceField() {
     let pointerX = 0.5
     let intensity = 0
     let frame = 0
+    const started = performance.now()
 
     function handlePointer(event: PointerEvent) {
       const container = containerRef.current
@@ -72,7 +87,24 @@ export function VoiceField() {
       intensity = 0
     }
 
-    function tick() {
+    function tick(now: number) {
+      const t = now / 1000
+
+      // La piste du haut joue toute seule : une onde d'activité la
+      // traverse lentement de gauche à droite pendant que chaque barre
+      // frémit à sa propre cadence. C'est un clip qui tourne en boucle,
+      // pas un graphique figé.
+      const revealed = now - started > REVEAL_MS
+      for (let i = 0; revealed && i < BAR_COUNT; i++) {
+        const travel = 0.42 + 0.58 * (0.5 + 0.5 * Math.sin(i * 0.075 - t * 0.85))
+        const shimmer =
+          0.72 + 0.28 * Math.sin(t * (SHIMMER[i]?.speed ?? 1) + (SHIMMER[i]?.phase ?? 0))
+        const amplitude = FLOOR + ((REFERENCE[i] ?? FLOOR) - FLOOR) * travel * shimmer
+
+        const bar = refBars.current[i]
+        if (bar) bar.style.transform = `scaleY(${amplitude.toFixed(4)})`
+      }
+
       const current = amplitudes.current
 
       for (let i = 0; i < BAR_COUNT; i++) {
@@ -106,13 +138,16 @@ export function VoiceField() {
     <div ref={containerRef} className="w-full select-none" aria-hidden="true">
       <div className="mb-2.5 flex items-end justify-between">
         <span className="eyebrow text-faint">L’original</span>
-        <span className="eyebrow text-faint tnum">00:11.80</span>
+        <span className="eyebrow text-faint">En lecture</span>
       </div>
 
       <div className="flex h-16 items-end gap-[3px] sm:h-24">
         {REFERENCE.map((amplitude, i) => (
           <div
             key={i}
+            ref={(el) => {
+              refBars.current[i] = el
+            }}
             className="bg-wave-ref h-full flex-1 origin-bottom rounded-full"
             style={{
               transform: `scaleY(${amplitude.toFixed(4)})`,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FLOOR, GAMES, getShape, type Game } from './games'
+import { CUT_LINE, FLOOR, GAMES, getShape, type Game } from './games'
 
 const BARS = 56
 const trace = (game: Game) =>
@@ -46,9 +46,19 @@ describe('« La suite » s’arrête net', () => {
     expect(Math.max(...spoken)).toBeGreaterThan(0.5)
   })
 
-  it('tombe à zéro après la coupure, et y reste', () => {
-    // C'est la regle du jeu rendue visible : le son se coupe.
-    expect(amplitudes.slice(cut + 1).every((a) => a === 0)).toBe(true)
+  it('se poursuit en ligne plate après la coupure', () => {
+    // La regle du jeu rendue visible : le son se coupe, la piste continue.
+    const tail = amplitudes.slice(cut + 1)
+    expect(tail.every((a) => a === CUT_LINE)).toBe(true)
+  })
+
+  it('trace une ligne bien plus basse que la parole qui precede', () => {
+    const spoken = Math.max(...amplitudes.slice(0, cut))
+    expect(CUT_LINE).toBeLessThan(spoken / 4)
+  })
+
+  it('reste visible : la ligne n’est pas nulle', () => {
+    expect(CUT_LINE).toBeGreaterThan(0)
   })
 })
 

@@ -20,7 +20,7 @@
  * l'attaquer avec la cle anon, puis nettoie derriere lui.
  */
 import { createClient } from '@supabase/supabase-js'
-import { generateRoomCode } from '../lib/utils/id'
+import { generateRoomCode } from '../src/lib/utils/id'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -38,15 +38,7 @@ const service = createClient(url, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
-const TABLES = [
-  'clips',
-  'characters',
-  'scenes',
-  'rooms',
-  'players',
-  'assignments',
-  'takes',
-] as const
+const TABLES = ['clips', 'rooms', 'players', 'takes'] as const
 
 const PROBE_TITLE = 'rls-probe-jetable'
 
