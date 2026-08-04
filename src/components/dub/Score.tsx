@@ -1,56 +1,75 @@
 'use client'
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import type { Segment } from '@/lib/audio/segments'
+import type { Segment } from '@/lib/audio/breakpoints'
 import { cn } from '@/lib/utils/cn'
 import { clamp } from '@/lib/utils/time'
 
-/** Fenêtre visible : cinq secondes de part et d'autre du moment présent. */
-export const WINDOW_SEC = 10
+/** Ce qu'on voit devant soi. Au-dela, on ne lit plus, on contemple. */
+export const WINDOW_SEC = 5
 
-/** Fenêtre de préparation, en secondes, mise en avant devant la tête de lecture. */
-const LOOKAHEAD_SEC = 2.5
+/** Distance de prise d'un point de coupe, en secondes. */
+const GRAB_SEC = 0.18
+
+export interface DubTrack {
+  startSec: number
+  durationSec: number
+  peaks: number[]
+}
 
 export interface ScoreHandle {
-  /** Fait défiler la partition sans repasser par React : 60 images par seconde. */
+  /** Fait defiler la partition sans repasser par React : 60 images par seconde. */
   setTime: (time: number) => void
 }
 
 export interface ScoreProps {
   peaks: number[]
   duration: number
+  breakpoints: number[]
   segments: Segment[]
+  dubTracks: DubTrack[]
   recording?: boolean
   onSeek: (time: number) => void
+  onMoveBreakpoint: (index: number, time: number) => void
+  onCommitBreakpoints: () => void
   className?: string
 }
 
 /**
  * La partition.
  *
- * Pendant l'enregistrement la vidéo est muette et personne n'entend les
+ * Pendant l'enregistrement la video est muette et personne n'entend les
  * autres : cette forme d'onde est la seule information de timing qui reste.
+ * Elle ne montre que les cinq secondes a venir, la tete de lecture calee a
+ * gauche — on lit ce qui arrive, pas ce qui est passe.
  *
- * Elle défile sous une tête de lecture fixe au centre, et ne montre que
- * cinq secondes de part et d'autre. Afficher tout le clip d'un coup
- * revenait à ne rien montrer : à cette échelle, une réplique fait deux
- * pixels. Ici, on lit ce qui arrive.
- *
- *   · à gauche du centre : ce qui est joué, estompé
- *   · les 2,5 secondes qui suivent : mises en avant, la réplique arrive
- *   · les traits verticaux : les débuts et fins de répliques détectés
- *
- * La tête de lecture étant fixe, les calques le sont aussi : seul le tracé
- * bouge, redessiné à chaque image sur la centaine de barres visibles.
+ * Trois couches, dans cet ordre :
+ *   · la zone teintee — exactement ce qui sera enregistre
+ *   · la bande originale, pleine
+ *   · votre doublage par-dessus, en transparence : deux traces sur le meme
+ *     axe se comparent d'un coup d'oeil, et un decalage se voit sans qu'on
+ *     ait besoin de reecouter
  */
 export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
-  { peaks, duration, segments, recording = false, onSeek, className },
+  {
+    peaks,
+    duration,
+    breakpoints,
+    segments,
+    dubTracks,
+    recording = false,
+    onSeek,
+    onMoveBreakpoint,
+    onCommitBreakpoints,
+    className,
+  },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sizeRef = useRef({ width: 0, height: 0 })
   const timeRef = useRef(0)
+  const dragRef = useRef<number | null>(null)
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -64,44 +83,83 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
     if (!context) return
 
     const styles = getComputedStyle(host)
-    const waveColor = styles.getPropertyValue('--wave-ref').trim()
-    const markColor = styles.getPropertyValue('--border-strong').trim()
+    const color = (name: string) => styles.getPropertyValue(name).trim()
 
     const ratio = window.devicePixelRatio || 1
     context.setTransform(ratio, 0, 0, ratio, 0, 0)
     context.clearRect(0, 0, width, height)
 
-    const from = timeRef.current - WINDOW_SEC / 2
+    const from = timeRef.current
     const pxPerSec = width / WINDOW_SEC
+    const at = (time: number) => (time - from) * pxPerSec
     const middle = height / 2
 
-    // Les frontières de répliques, sous le tracé : ce sont elles qui
-    // disent où l'enregistrement s'arrêtera tout seul.
-    context.fillStyle = markColor
-    for (const segment of segments) {
-      for (const edge of [segment.start, segment.end]) {
-        const x = (edge - from) * pxPerSec
-        if (x < -2 || x > width + 2) continue
-        context.fillRect(Math.round(x), 0, 1, height)
-      }
+    // 1. Ce qui sera enregistre. La teinte ne decore pas : elle delimite.
+    const current = segments.find(
+      (segment) => from >= segment.start && from < segment.end,
+    )
+    if (current) {
+      context.fillStyle = color('--accent-soft')
+      const left = Math.max(0, at(current.start))
+      context.fillRect(left, 0, Math.min(width, at(current.end)) - left, height)
     }
 
+    // 2. Les points de coupe, sous les traces pour ne pas les hacher.
+    context.fillStyle = color('--border-strong')
+    for (const point of breakpoints) {
+      const x = at(point)
+      if (x < -2 || x > width + 2) continue
+      context.fillRect(Math.round(x), 0, 1, height)
+      context.beginPath()
+      context.roundRect(Math.round(x) - 4, 0, 9, 7, 3)
+      context.fill()
+    }
+
+    // 3. La bande originale.
     if (peaks.length > 0) {
       const bucketSec = duration / peaks.length
       const first = Math.max(0, Math.floor(from / bucketSec))
       const last = Math.min(peaks.length, Math.ceil((from + WINDOW_SEC) / bucketSec))
       const barWidth = Math.max(1.5, bucketSec * pxPerSec - 1)
 
-      context.fillStyle = waveColor
+      context.fillStyle = color('--wave-ref')
       for (let i = first; i < last; i++) {
-        const x = (i * bucketSec - from) * pxPerSec
-        const barHeight = Math.max(2, (peaks[i] ?? 0) * (height - 10))
+        const barHeight = Math.max(2, (peaks[i] ?? 0) * (height - 12))
+        context.beginPath()
+        context.roundRect(
+          at(i * bucketSec),
+          middle - barHeight / 2,
+          barWidth,
+          barHeight,
+          barWidth / 2,
+        )
+        context.fill()
+      }
+    }
+
+    // 4. Le doublage par-dessus, en transparence et sur le meme axe : c'est
+    //    la superposition qui rend un decalage visible sans reecouter.
+    context.globalAlpha = 0.62
+    context.fillStyle = color('--wave-self')
+    for (const track of dubTracks) {
+      if (track.peaks.length === 0) continue
+      if (track.startSec > from + WINDOW_SEC) continue
+      if (track.startSec + track.durationSec < from) continue
+
+      const bucketSec = track.durationSec / track.peaks.length
+      const barWidth = Math.max(1.5, bucketSec * pxPerSec - 1)
+
+      for (let i = 0; i < track.peaks.length; i++) {
+        const x = at(track.startSec + i * bucketSec)
+        if (x < -barWidth || x > width) continue
+        const barHeight = Math.max(2, (track.peaks[i] ?? 0) * (height - 12))
         context.beginPath()
         context.roundRect(x, middle - barHeight / 2, barWidth, barHeight, barWidth / 2)
         context.fill()
       }
     }
-  }, [peaks, duration, segments])
+    context.globalAlpha = 1
+  }, [peaks, duration, breakpoints, segments, dubTracks])
 
   const measure = useCallback(() => {
     const canvas = canvasRef.current
@@ -122,8 +180,7 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
     const observer = new ResizeObserver(measure)
     if (hostRef.current) observer.observe(hostRef.current)
 
-    // Le thème change les couleurs sans changer la taille : il faut aussi
-    // repeindre quand l'attribut bascule.
+    // Le theme change les couleurs sans changer la taille.
     const themeObserver = new MutationObserver(draw)
     themeObserver.observe(document.documentElement, {
       attributes: true,
@@ -143,54 +200,71 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
     },
   }))
 
-  function seekFromPointer(clientX: number) {
+  function timeAt(clientX: number): number {
     const host = hostRef.current
-    if (!host) return
+    if (!host) return timeRef.current
     const rect = host.getBoundingClientRect()
-    // Cliquer déplace d'autant de secondes qu'on s'écarte du centre.
-    const offsetSec = ((clientX - rect.left) / rect.width - 0.5) * WINDOW_SEC
-    onSeek(clamp(timeRef.current + offsetSec, 0, duration))
+    const offset = ((clientX - rect.left) / rect.width) * WINDOW_SEC
+    return clamp(timeRef.current + offset, 0, duration)
+  }
+
+  function handleDown(event: React.PointerEvent) {
+    if (recording) return
+    const time = timeAt(event.clientX)
+
+    // Attraper un point l'emporte sur deplacer la lecture : viser un trait
+    // de deux pixels demande deja assez de precision.
+    const index = breakpoints.findIndex(
+      (point) => Math.abs(point - time) <= GRAB_SEC,
+    )
+
+    if (index >= 0) {
+      dragRef.current = index
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } else {
+      onSeek(time)
+    }
   }
 
   return (
     <div
       ref={hostRef}
-      onPointerDown={(event) => seekFromPointer(event.clientX)}
+      onPointerDown={handleDown}
+      onPointerMove={(event) => {
+        if (dragRef.current !== null) {
+          onMoveBreakpoint(dragRef.current, timeAt(event.clientX))
+        }
+      }}
+      onPointerUp={() => {
+        if (dragRef.current !== null) {
+          dragRef.current = null
+          onCommitBreakpoints()
+        }
+      }}
       className={cn(
-        'rounded-token bg-sunken border-default relative h-28 w-full cursor-pointer overflow-hidden border sm:h-36',
+        'rounded-token bg-sunken border-default relative h-28 w-full overflow-hidden border select-none sm:h-36',
+        recording ? 'cursor-default' : 'cursor-pointer',
         className,
       )}
     >
-      {/* La fenêtre de préparation, juste devant la tête de lecture. */}
-      <div
-        aria-hidden="true"
-        className="bg-accent-soft pointer-events-none absolute inset-y-0 left-1/2 z-0"
-        style={{ width: `${(LOOKAHEAD_SEC / WINDOW_SEC) * 100}%` }}
-      />
-
       <canvas
         ref={canvasRef}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-10 size-full"
+        className="pointer-events-none absolute inset-0 size-full"
       />
 
-      {/* Ce qui est joué s'estompe. La tête étant fixe, c'est exactement la
-          moitié gauche — plus rien à déplacer. */}
-      <div
-        aria-hidden="true"
-        className="bg-bg/55 pointer-events-none absolute inset-y-0 left-0 z-20 w-1/2"
-      />
-
+      {/* La tete de lecture est calee a gauche : tout ce qui est a droite
+          reste a jouer, ce qui est le seul renseignement utile ici. */}
       <div
         aria-hidden="true"
         className={cn(
-          'pointer-events-none absolute inset-y-0 left-1/2 z-30 -ml-px w-0.5',
+          'pointer-events-none absolute inset-y-0 left-0 z-10 w-0.5',
           recording ? 'bg-rec' : 'bg-playhead',
         )}
       >
         <span
           className={cn(
-            'absolute -top-px left-1/2 size-2.5 -translate-x-1/2 rounded-full',
+            'absolute -top-px left-0 size-2.5 rounded-full',
             recording ? 'bg-rec' : 'bg-playhead',
           )}
         />

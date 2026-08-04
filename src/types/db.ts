@@ -99,6 +99,7 @@ export type Database = {
       }
       rooms: {
         Row: {
+          breakpoints: Json
           clip_id: string | null
           code: string
           created_at: string
@@ -113,6 +114,7 @@ export type Database = {
           step_started_at: string | null
         }
         Insert: {
+          breakpoints?: Json
           clip_id?: string | null
           code: string
           created_at?: string
@@ -127,6 +129,7 @@ export type Database = {
           step_started_at?: string | null
         }
         Update: {
+          breakpoints?: Json
           clip_id?: string | null
           code?: string
           created_at?: string

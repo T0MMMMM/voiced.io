@@ -224,6 +224,25 @@ export async function setRoomClip(roomId: string, clipId: string): Promise<void>
   if (error) throw new Error(`Impossible d’attacher le clip : ${error.message}`)
 }
 
+/** Les points de coupe vivent dans le salon : tous les ecrans les partagent. */
+export async function setBreakpoints(
+  roomId: string,
+  points: number[],
+): Promise<void> {
+  const clean = [...new Set(points.filter(Number.isFinite))]
+    .map((point) => Number(point.toFixed(3)))
+    .sort((a, b) => a - b)
+    .slice(0, 200)
+
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('rooms')
+    .update({ breakpoints: clean })
+    .eq('id', roomId)
+
+  if (error) throw new Error(`Découpage non enregistré : ${error.message}`)
+}
+
 export async function startGame(roomId: string): Promise<void> {
   const supabase = createServiceClient()
   const { error } = await supabase

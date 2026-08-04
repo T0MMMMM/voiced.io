@@ -16,6 +16,8 @@ export interface SavedTake {
   startSec: number
   durationMs: number
   url: string
+  /** Spectre de la prise, pour la superposer a la bande originale. */
+  peaks: number[]
 }
 
 /**
@@ -50,6 +52,7 @@ export async function saveTake(form: FormData): Promise<void> {
   const durationMs = Number(form.get('durationMs') ?? 0)
   const offsetMs = Number(form.get('offsetMs') ?? 0)
   const audio = form.get('audio')
+  const rawPeaks = String(form.get('peaks') ?? '[]')
 
   if (!(audio instanceof File) || audio.size === 0) {
     throw new Error('Enregistrement vide.')
@@ -105,6 +108,7 @@ export async function saveTake(form: FormData): Promise<void> {
     start_sec: Number(startSec.toFixed(3)),
     duration_ms: Math.round(durationMs),
     offset_ms: Math.round(offsetMs),
+    peaks: safePeaks(rawPeaks),
   })
 
   if (error) {
@@ -112,6 +116,20 @@ export async function saveTake(form: FormData): Promise<void> {
     // ligne pour le retrouver — donc sans aucun moyen de le supprimer.
     await remove('takes', [path]).catch(() => {})
     throw new Error(`Impossible d’enregistrer la prise : ${error.message}`)
+  }
+}
+
+/** Le spectre arrive du navigateur : on ne stocke que ce qui a la bonne forme. */
+function safePeaks(raw: string): number[] {
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+      .map((value) => Math.min(1, Math.max(0, value)))
+      .slice(0, 600)
+  } catch {
+    return []
   }
 }
 
@@ -135,7 +153,7 @@ export async function listTakes(roomId: string): Promise<SavedTake[]> {
 
   const { data: takes } = await supabase
     .from('takes')
-    .select('id, player_id, storage_path, start_sec, duration_ms')
+    .select('id, player_id, storage_path, start_sec, duration_ms, peaks')
     .eq('room_id', roomId)
     .order('start_sec')
 
@@ -156,6 +174,7 @@ export async function listTakes(roomId: string): Promise<SavedTake[]> {
       startSec: Number(take.start_sec),
       durationMs: take.duration_ms,
       url: await getUrl('takes', take.storage_path),
+      peaks: Array.isArray(take.peaks) ? (take.peaks as number[]) : [],
     })),
   )
 }

@@ -13,15 +13,16 @@ export interface TransportProps {
   onPlayPause: () => void
   onRecord: () => void
   onRestart: () => void
-  onSkip: (seconds: number) => void
+  onBreakpoint: () => void
+  onStep: (direction: 1 | -1) => void
 }
 
 /** Un raccourci n'est utile que s'il est écrit quelque part. */
 const SHORTCUTS: [key: string, action: string][] = [
-  ['R', 'doubler la réplique suivante'],
-  ['⇧ R', 'enregistrer librement'],
   ['Espace', 'lire ou mettre en pause'],
-  ['← →', 'reculer ou avancer de 2 s'],
+  ['B', 'poser une coupe à cet instant'],
+  ['R', 'doubler le segment courant'],
+  ['← →', 'segment précédent ou suivant'],
   ['Début', 'revenir au début'],
 ]
 
@@ -45,7 +46,8 @@ export function Transport({
   onPlayPause,
   onRecord,
   onRestart,
-  onSkip,
+  onBreakpoint,
+  onStep,
 }: TransportProps) {
   const locked = blockedBy !== null
 
@@ -73,7 +75,7 @@ export function Transport({
           </>
         ) : (
           <span className="text-faint">
-            Appuyez sur R : la réplique suivante se coupe toute seule
+            Appuyez sur R : le segment courant se coupe tout seul
           </span>
         )}
       </p>
@@ -91,6 +93,28 @@ export function Transport({
           disabled={recording}
         >
           <PlayIcon playing={playing} />
+        </IconButton>
+
+        <IconButton
+          label="Poser une coupe à cet instant"
+          onClick={onBreakpoint}
+          disabled={recording}
+        >
+          <svg viewBox="0 0 20 20" className="size-5" fill="none" aria-hidden="true">
+            <path
+              d="M10 2.5v15"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <path
+              d="M5.5 6.5 10 2.5l4.5 4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </IconButton>
 
         {/* Le seul élément appuyé de l'écran. Tout le reste se tait autour. */}
@@ -118,8 +142,8 @@ export function Transport({
         </button>
 
         <IconButton
-          label="Reculer de 2 secondes"
-          onClick={() => onSkip(-2)}
+          label="Segment précédent"
+          onClick={() => onStep(-1)}
           disabled={recording}
         >
           <svg viewBox="0 0 20 20" className="size-5" fill="currentColor" aria-hidden="true">
@@ -128,8 +152,8 @@ export function Transport({
         </IconButton>
 
         <IconButton
-          label="Avancer de 2 secondes"
-          onClick={() => onSkip(2)}
+          label="Segment suivant"
+          onClick={() => onStep(1)}
           disabled={recording}
         >
           <svg viewBox="0 0 20 20" className="size-5" fill="currentColor" aria-hidden="true">
