@@ -172,8 +172,8 @@ function scoreOf(
       return scoreRanking(given.order, expected as string[])
     }
     if (kind === 'frise' && given.kind === 'frise') {
-      const target = expected as { slot: number; slots: number }
-      return scoreTimeline(given.slot, target.slot, target.slots)
+      const target = expected as { year: number; maxGap: number; exact?: number }
+      return scoreTimeline(given.year, target.year, target.maxGap, target.exact ?? 0)
     }
     if (kind === 'intrus' && given.kind === 'intrus') {
       return scoreOddOneOut(given.choice, String(expected))

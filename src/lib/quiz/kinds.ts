@@ -48,12 +48,14 @@ export interface PetitBacPayload {
   categories: string[]
 }
 /**
- * Frise : des reperes deja dates, et un evenement a glisser entre eux.
- * Les reperes arrivent tries, du plus ancien au plus recent.
+ * Frise : un axe du temps qu'on parcourt pour designer une annee. Les
+ * reperes servent d'echelle, sans quoi un axe nu ne veut rien dire.
  */
 export interface TimelinePayload {
   event: string
-  anchors: { label: string; year: number }[]
+  from: number
+  to: number
+  marks?: { label: string; year: number }[]
 }
 export interface MapPayload {
   /** Le cadrage : le monde entier ne sert a rien pour situer un departement. */
@@ -93,7 +95,7 @@ export type AnswerPayload =
   | { kind: 'intrus'; choice: string }
   | { kind: 'association'; pairs: Record<string, string> }
   | { kind: 'petit_bac'; words: Record<string, string> }
-  | { kind: 'frise'; slot: number }
+  | { kind: 'frise'; year: number }
   | { kind: 'carte'; lat: number; lng: number }
   | { kind: 'theme'; level: number; text: string }
 

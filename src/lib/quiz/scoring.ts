@@ -139,24 +139,31 @@ export function scoreDistance(given: LatLng, expected: LatLng, maxKm: number): n
 }
 
 /**
- * Frise : on place un evenement entre deux reperes deja dates.
+ * Frise : on fait glisser un curseur sur un axe du temps pour designer une
+ * annee.
  *
- * Le voisin immediat rapporte une part : viser le bon siecle et se tromper
- * d'un cran n'est pas la meme erreur que placer la Revolution avant les
- * pyramides, et une note tout ou rien confondait les deux.
+ * La note est degressive a l'ecart, comme une estimation, mais en annees
+ * plutot qu'en pourcentage : se tromper de dix ans sur 1789 et se tromper
+ * de dix ans sur 1969 sont la meme erreur, alors que l'ecart relatif les
+ * separerait.
+ *
+ * `exact` est la tolerance qui vaut encore tous les points, `maxGap`
+ * l'ecart au-dela duquel la reponse ne vaut plus rien. Les deux dependent
+ * de la question, dater un evenement antique tolerant bien plus qu'une
+ * sortie de film.
  */
-const NEIGHBOUR_CREDIT = 0.35
-
 export function scoreTimeline(
   given: number,
   expected: number,
-  slots: number,
+  maxGap: number,
+  exact = 0,
 ): number {
-  if (!Number.isFinite(given) || given < 0 || given >= slots) return 0
-  const gap = Math.abs(Math.round(given) - expected)
-  if (gap === 0) return 1
-  if (gap === 1) return NEIGHBOUR_CREDIT
-  return 0
+  if (!Number.isFinite(given) || maxGap <= exact) return 0
+
+  const gap = Math.abs(given - expected)
+  if (gap <= exact) return 1
+
+  return clamp01(1 - (gap - exact) / (maxGap - exact))
 }
 
 /** Association : une fraction des paires justes, sans notion d'ordre. */

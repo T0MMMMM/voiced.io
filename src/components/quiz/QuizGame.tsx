@@ -12,7 +12,7 @@ import { ThemeQuestion } from '@/components/quiz/kinds/ThemeQuestion'
 import { TimelineQuestion } from '@/components/quiz/kinds/TimelineQuestion'
 import { WrittenQuestion } from '@/components/quiz/kinds/WrittenQuestion'
 import { QuestionMeta } from '@/components/quiz/QuestionMeta'
-import { Button, Panel } from '@/components/ui'
+import { Panel } from '@/components/ui'
 import { CheckIcon } from '@/components/ui/icons'
 import {
   advanceQuiz,
@@ -57,9 +57,18 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
   const isHost = you?.is_host ?? false
 
   const [answer, setAnswer] = useState<AnswerPayload | null>(null)
-  const [sent, setSent] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  /**
+   * Ce qui est deja parti au serveur, sous sa forme serialisee.
+   *
+   * Il n'y a plus de bouton de validation : c'est le temps qui arrete la
+   * question, et la reponse doit donc etre enregistree au fil de la
+   * saisie. Cette reference evite de reecrire la meme reponse a chaque
+   * frappe.
+   */
+  const stored = useRef('')
 
   /**
    * Combien de temps cette question-ci merite.
@@ -99,19 +108,21 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
   })
   const remaining =
     clock.startedAt === room.step_started_at ? clock.left : durationSec
+  const timeUp = remaining <= 0
 
   // Chaque question repart de zero, et sa reponse deja envoyee est relue :
   // rafraichir sa page ne doit rien faire perdre.
   useEffect(() => {
     setAnswer(null)
-    setSent(false)
+    setSaved(false)
+    stored.current = ''
     if (!question || !youId) return
 
-    void myAnswer(room.id, youId, question.id).then((stored) => {
-      if (stored) {
-        setAnswer(stored as AnswerPayload)
-        setSent(true)
-      }
+    void myAnswer(room.id, youId, question.id).then((previous) => {
+      if (!previous) return
+      setAnswer(previous as AnswerPayload)
+      stored.current = JSON.stringify(previous)
+      setSaved(true)
     })
   }, [room.id, youId, question])
 
@@ -153,7 +164,11 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
 
   const send = useCallback(async () => {
     if (!question || !youId || !answer) return
-    setBusy(true)
+
+    const body = JSON.stringify(answer)
+    if (body === stored.current) return
+
+    stored.current = body
     setError(null)
     try {
       await submitAnswer({
@@ -162,13 +177,42 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
         questionId: question.id,
         payload: answer,
       })
-      setSent(true)
+      setSaved(true)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Réponse non envoyée.')
-    } finally {
-      setBusy(false)
+      // La prochaine frappe reessaiera : on oublie ce qui n'est pas passe.
+      stored.current = ''
+      setSaved(false)
+      setError(cause instanceof Error ? cause.message : 'Réponse non enregistrée.')
     }
   }, [room.id, youId, question, answer])
+
+  /**
+   * L'enregistrement suit la saisie, avec un temps mort.
+   *
+   * Une demi-seconde sans rien taper suffit : ecrire a chaque lettre
+   * multiplierait les ecritures pour rien, et attendre davantage risquerait
+   * de perdre les derniers mots au moment ou le temps tombe.
+   */
+  useEffect(() => {
+    if (!answer || timeUp) return
+
+    // Une reponse relue depuis le serveur est deja a jour : l'annoncer en
+    // cours d'enregistrement laisserait le message tourner indefiniment.
+    if (JSON.stringify(answer) === stored.current) {
+      setSaved(true)
+      return
+    }
+
+    setSaved(false)
+    const timer = window.setTimeout(() => void send(), 500)
+    return () => window.clearTimeout(timer)
+  }, [answer, timeUp, send])
+
+  // Le temps est ecoule : ce qui n'est pas encore parti part maintenant,
+  // sans attendre le temps mort.
+  useEffect(() => {
+    if (timeUp) void send()
+  }, [timeUp, send])
 
   /**
    * Question deja quittee, pour ne pas ecrire deux fois la meme transition
@@ -191,8 +235,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
     if (replies.questionId !== question.id) return
     if (clock.startedAt !== room.step_started_at) return
 
-    const everyoneAnswered = players.length > 0 && replies.ids.length >= players.length
-    if (clock.left > 0 && !everyoneAnswered) return
+    if (clock.left > 0) return
 
     leaving.current = question.id
     const action =
@@ -206,8 +249,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
     isHost,
     question,
     clock,
-    replies,
-    players.length,
+    replies.questionId,
     room.id,
     room.step_started_at,
     step,
@@ -222,8 +264,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
     )
   }
 
-  const timeUp = remaining <= 0
-  const locked = sent || timeUp || busy
+  const locked = timeUp
 
   return (
     <div className="space-y-8">
@@ -362,21 +403,23 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
       </Panel>
 
       <div className="flex flex-col items-center gap-3">
-        {sent ? (
-          <p className="text-accent flex items-center gap-2 text-[15px] font-medium">
-            <CheckIcon className="size-4" />
-            Réponse envoyée
-          </p>
-        ) : (
-          <Button
-            size="lg"
-            loading={busy}
-            disabled={!answer || timeUp}
-            onClick={() => void send()}
-          >
-            {timeUp ? 'Temps écoulé' : 'Valider ma réponse'}
-          </Button>
-        )}
+        {/* Plus rien a valider : l'etat dit simplement ou en est la
+            reponse, pour qu'on sache qu'elle compte sans avoir a cliquer. */}
+        <p
+          className={cn(
+            'flex items-center gap-2 text-[15px]',
+            saved ? 'text-accent font-medium' : 'text-faint',
+          )}
+        >
+          {saved && <CheckIcon className="size-4" />}
+          {timeUp
+            ? 'Temps écoulé'
+            : saved
+              ? 'Réponse enregistrée'
+              : answer
+                ? 'Enregistrement…'
+                : 'Votre réponse s’enregistre toute seule'}
+        </p>
 
         {/* On voit qui a repondu, jamais ce qu'ils ont repondu. */}
         <p className="text-faint text-[13px]">
@@ -402,8 +445,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
       </div>
 
       <p className="text-faint text-center text-[13px]">
-        La question suivante arrive à la fin du temps, ou dès que tout le
-        monde a répondu.
+        La question suivante arrive à la fin du temps.
       </p>
 
       {error && (

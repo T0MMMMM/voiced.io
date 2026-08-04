@@ -257,9 +257,9 @@ La correction est un moment de jeu à part entière, pas une corvée administrat
 | **Écrite** | Tape une réponse libre | Manuelle. L'hôte voit les réponses groupées par similitude pour trancher vite |
 | **Estimation** | Donne un nombre | **Auto** : le plus proche marque, dégressif ensuite |
 | **Classement** | Ordonne une liste (films les plus vus, pays les plus peuplés…) | **Auto** : points par paire correctement ordonnée, pas tout ou rien |
-| **Frise** | Situe un évènement entre des repères déjà datés, en cliquant sur l'intervalle | **Auto** : tout pour le bon intervalle, une part pour le voisin immédiat |
+| **Frise** | Fait glisser un curseur sur un axe du temps jusqu'à l'année voulue. **Toutes les questions de date passent par elle** | **Auto** : dégressif à l'écart en années, avec une tolérance propre à chaque question |
 | **Carte** | Pose un point sur une carte | **Auto** : score dégressif selon la distance en kilomètres |
-| **Petit bac** | Une lettre, des catégories, un mot par catégorie | Manuelle, toujours. Une seule par partie : une minute à remplir et une minute à corriger, deux et la table décroche |
+| **Petit bac** | Une lettre, six catégories, un mot par catégorie | Manuelle, toujours. Une seule par partie : une minute à remplir et une minute à corriger, deux et la table décroche |
 | **Thème à difficulté** | Voit le sujet, pas la question, et choisit facile, moyen ou difficile avant de la découvrir | **Auto** : la note est mise à l'échelle du niveau choisi, et le choix est définitif |
 
 ### Formes supplémentaires proposées
@@ -285,6 +285,8 @@ Tout est activable ou désactivable par l'hôte, en `rooms.options` :
 - indices dégressifs activés
 - vol de question activé
 - ordre des questions aléatoire ou fixe
+Il n'y a plus de bouton de validation : la réponse s'enregistre au fil de la saisie et c'est le minuteur qui la fige. Un bouton n'ajoutait qu'un geste de plus à rater, et laissait perdre la réponse de qui oubliait de cliquer.
+
 - réponses anonymes pendant la correction (l'hôte ne voit pas qui a écrit quoi : corrige les biais entre amis)
 
 Ce dernier réglage mérite d'exister : quand l'hôte sait qui a répondu, il est plus indulgent avec certains. L'anonymat pendant la correction rend l'arbitrage plus juste et le résultat plus crédible.

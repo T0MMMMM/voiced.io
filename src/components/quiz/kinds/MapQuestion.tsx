@@ -5,14 +5,18 @@ import type { MapPayload, QuestionComponentProps } from '@/lib/quiz/kinds'
 import { cn } from '@/lib/utils/cn'
 
 /**
- * Le cadrage, en degrés : longitude à gauche, latitude en haut, puis la
- * largeur et la hauteur. Montrer le monde entier pour situer un département
- * français ne demanderait pas une connaissance, mais une souris précise.
+ * Le cadrage, en degrés : longitude à gauche, latitude la plus au nord,
+ * puis la largeur et la hauteur. Montrer le monde entier pour situer un
+ * département français ne demanderait pas une connaissance mais une souris
+ * précise.
+ *
+ * Le planisphère s'arrête à 58° sud : l'Antarctique occupait un quart de
+ * l'image pour rien et repoussait tout le reste vers le haut.
  */
-const FRAMES: Record<MapPayload['region'], { box: string; ratio: number }> = {
-  monde: { box: '-180 -83 360 155', ratio: 360 / 155 },
-  europe: { box: '-13 -72 56 39', ratio: 56 / 39 },
-  france: { box: '-5.6 -51.6 15.6 10.8', ratio: 15.6 / 10.8 },
+const FRAMES: Record<MapPayload['region'], { x: number; y: number; w: number; h: number }> = {
+  monde: { x: -180, y: -80, w: 360, h: 138 },
+  europe: { x: -13, y: -72, w: 56, h: 39 },
+  france: { x: -5.6, y: -51.6, w: 15.6, h: 10.8 },
 }
 
 /**
@@ -59,6 +63,13 @@ export function MapQuestion({
 
   const frame = FRAMES[payload.region] ?? FRAMES.monde
 
+  /**
+   * Tout ce qui se dessine se mesure en degrés, donc à l'échelle du
+   * cadrage. Une taille fixe donnait un point invisible sur le planisphère
+   * et un pâté sur la France.
+   */
+  const unit = frame.w / 100
+
   function place(event: React.MouseEvent<SVGSVGElement>) {
     if (disabled) return
     const element = svg.current
@@ -88,11 +99,11 @@ export function MapQuestion({
 
       <div
         className="bg-sunken rounded-token relative overflow-hidden"
-        style={{ aspectRatio: frame.ratio }}
+        style={{ aspectRatio: frame.w / frame.h }}
       >
         <svg
           ref={svg}
-          viewBox={frame.box}
+          viewBox={`${frame.x} ${frame.y} ${frame.w} ${frame.h}`}
           onClick={place}
           className={cn(
             'h-full w-full',
@@ -104,9 +115,8 @@ export function MapQuestion({
           <g
             fill="var(--accent-soft)"
             stroke="var(--accent)"
-            strokeWidth={frame.ratio > 5 ? 0.15 : 0.04}
+            strokeWidth={unit * 0.08}
             strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
           >
             {paths.map((path, index) => (
               <path key={index} d={path} />
@@ -117,17 +127,12 @@ export function MapQuestion({
             <g transform={`translate(${point.lng} ${-point.lat})`}>
               {/* Le halo se voit sur la terre comme sur la mer ; un simple
                   point se perdait dans le vert des continents. */}
+              <circle r={unit * 3.2} fill="var(--rec)" opacity="0.22" />
               <circle
-                r={frame.ratio > 5 ? 5 : 0.5}
-                fill="var(--rec)"
-                opacity="0.25"
-                className="origin-center"
-              />
-              <circle
-                r={frame.ratio > 5 ? 2 : 0.2}
+                r={unit * 1.3}
                 fill="var(--rec)"
                 stroke="var(--surface)"
-                strokeWidth={frame.ratio > 5 ? 0.6 : 0.06}
+                strokeWidth={unit * 0.4}
               />
             </g>
           )}

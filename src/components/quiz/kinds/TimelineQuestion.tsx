@@ -1,126 +1,193 @@
 'use client'
 
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { QuestionComponentProps, TimelinePayload } from '@/lib/quiz/kinds'
 import { cn } from '@/lib/utils/cn'
+
+/** Une année négative se lit « avant Jésus-Christ », jamais « -2560 ». */
+function readYear(year: number): string {
+  const rounded = Math.round(year)
+  return rounded < 0 ? `${Math.abs(rounded)} av. J.-C.` : String(rounded)
+}
 
 /**
  * La frise chronologique.
  *
- * Ce n'est pas un classement déguisé : des repères sont déjà datés et
- * posés sur l'axe, et il n'y a qu'un événement à situer entre eux. La
- * question devient « avant ou après la Révolution ? » plutôt que « remets
- * ces cinq choses dans l'ordre », ce qui est à la fois plus rapide à jouer
- * et plus proche de ce qu'on sait vraiment d'une date.
+ * Toutes les questions de date passent par elle : on fait glisser un
+ * curseur sur un axe du temps plutôt que de taper une année au clavier.
+ * Taper « 1789 » est un examen ; faire glisser jusqu'à tomber entre deux
+ * repères est un jeu, et c'est le geste qui donne envie de discuter avec
+ * la table pendant qu'on cherche.
  *
- * L'axe descend, du plus ancien au plus récent : les repères portent des
- * titres, et une frise horizontale les aurait écrasés les uns sur les
- * autres dès le premier écran étroit.
+ * Les repères datés restent affichés sous l'axe. Ils ne sont pas là pour
+ * décorer : sans eux, un axe nu de mille ans ne veut rien dire, et on
+ * répondrait au hasard.
  *
- * Se tromper d'un cran rapporte une part : viser le bon siècle n'est pas
- * la même erreur que tout renverser.
+ * La note est dégressive à l'écart en années. Tomber à cinq ans près
+ * rapporte presque tout, ce qui récompense le raisonnement même sans la
+ * date exacte en tête.
  */
 export function TimelineQuestion({
   payload,
   value,
   disabled,
   onChange,
-}: QuestionComponentProps<TimelinePayload, { kind: 'frise'; slot: number }>) {
-  const [slot, setSlot] = useState<number | null>(value?.slot ?? null)
+}: QuestionComponentProps<TimelinePayload, { kind: 'frise'; year: number }>) {
+  const middle = Math.round((payload.from + payload.to) / 2)
+  const [year, setYear] = useState<number>(value?.year ?? middle)
+  const [touched, setTouched] = useState(value != null)
+  const track = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setSlot(value?.slot ?? null)
-  }, [payload.event, value?.slot])
+    setYear(value?.year ?? Math.round((payload.from + payload.to) / 2))
+    setTouched(value != null)
+  }, [payload.from, payload.to, value])
 
-  function place(index: number) {
-    if (disabled) return
-    setSlot(index)
-    onChange({ kind: 'frise', slot: index })
+  const span = Math.max(1, payload.to - payload.from)
+  const ratio = (year - payload.from) / span
+
+  function commit(next: number) {
+    const clamped = Math.min(payload.to, Math.max(payload.from, Math.round(next)))
+    setYear(clamped)
+    setTouched(true)
+    onChange({ kind: 'frise', year: clamped })
   }
 
-  /** Un intervalle avant le premier repère, un après le dernier. */
-  const slots = payload.anchors.length + 1
+  /** Une position à l'écran devient une année sur l'axe. */
+  function yearAt(clientX: number): number {
+    const rect = track.current?.getBoundingClientRect()
+    if (!rect || rect.width === 0) return year
+    const part = (clientX - rect.left) / rect.width
+    return payload.from + part * span
+  }
 
-  function Slot({ index }: { index: number }) {
-    const chosen = slot === index
+  function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (disabled) return
+    // La capture suit le doigt même quand il sort de la piste : sans elle,
+    // glisser un peu trop haut lâchait le curseur en pleine course.
+    event.currentTarget.setPointerCapture(event.pointerId)
+    commit(yearAt(event.clientX))
+  }
 
-    return (
-      <li>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => place(index)}
-          aria-label={`Placer « ${payload.event} » à la position ${index + 1} sur ${slots}`}
-          className={cn(
-            'group flex w-full items-center gap-3 py-1 text-left',
-            disabled && 'cursor-default',
-          )}
-        >
-          {/* La pastille tient la place du repère sur l'axe : sans elle,
-              l'intervalle choisi flotterait à côté de la ligne. */}
-          <span className="flex w-9 shrink-0 justify-center">
-            <span
-              className={cn(
-                'size-3 rounded-full border-2 transition-[background-color,border-color,transform] duration-200',
-                chosen
-                  ? 'bg-accent border-accent scale-125'
-                  : 'border-[var(--border)] bg-transparent group-hover:border-[var(--accent)]',
-              )}
-            />
-          </span>
+  function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (disabled || !event.currentTarget.hasPointerCapture(event.pointerId)) return
+    commit(yearAt(event.clientX))
+  }
 
-          <span
-            className={cn(
-              'rounded-token flex-1 border border-dashed px-3 py-2 text-[15px]',
-              'transition-[background-color,border-color,color] duration-200',
-              chosen
-                ? 'bg-accent-soft border-accent text-fg border-solid font-medium'
-                : 'text-faint border-[var(--border)]',
-              !chosen && !disabled && 'group-hover:text-muted',
-            )}
-          >
-            {chosen ? payload.event : 'Placer ici'}
-          </span>
-        </button>
-      </li>
-    )
+  function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (disabled) return
+    // Le pas au clavier suit l'échelle : un axe de mille ans ne se parcourt
+    // pas année par année, et un axe de trente ans ne se règle pas par dix.
+    const step = span > 400 ? 10 : 1
+    const jump = span > 400 ? 100 : 10
+
+    const moves: Record<string, number> = {
+      ArrowLeft: -step,
+      ArrowRight: step,
+      ArrowDown: -step,
+      ArrowUp: step,
+      PageDown: -jump,
+      PageUp: jump,
+    }
+
+    if (event.key === 'Home') return void (event.preventDefault(), commit(payload.from))
+    if (event.key === 'End') return void (event.preventDefault(), commit(payload.to))
+
+    const move = moves[event.key]
+    if (move === undefined) return
+    event.preventDefault()
+    commit(year + move)
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-muted text-[15px]">
-        Où placer{' '}
-        <span className="text-fg font-medium">« {payload.event} »</span> sur la
-        frise ?
-      </p>
+    <div className="space-y-5">
+      <div className="text-center">
+        <p className="text-muted text-[15px]">{payload.event}</p>
+        <p
+          className={cn(
+            'tnum mt-1 text-[clamp(2rem,6vw,3rem)] leading-none font-medium tracking-[-0.03em]',
+            touched ? 'text-fg' : 'text-faint',
+          )}
+        >
+          {readYear(year)}
+        </p>
+      </div>
 
-      {/* La ligne de temps court derrière les pastilles : c'est elle qui
-          fait lire l'ensemble comme une frise et non comme une liste. */}
-      <ol className="relative space-y-1">
+      {/* La piste occupe toute la largeur : c'est elle qu'on vise, pas la
+          poignée, sinon le geste demanderait de la précision au pixel. */}
+      <div
+        ref={track}
+        role="slider"
+        tabIndex={disabled ? -1 : 0}
+        aria-label={`Année pour : ${payload.event}`}
+        aria-valuemin={payload.from}
+        aria-valuemax={payload.to}
+        aria-valuenow={year}
+        aria-valuetext={readYear(year)}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onKeyDown={onKeyDown}
+        className={cn(
+          'relative h-16 touch-none select-none',
+          'focus-visible:outline-accent focus-visible:outline-2 focus-visible:outline-offset-4',
+          'rounded-token',
+          disabled ? 'cursor-default' : 'cursor-ew-resize',
+        )}
+      >
         <span
           aria-hidden="true"
-          className="absolute top-2 bottom-2 left-[1.125rem] w-px bg-[var(--border)]"
+          className="bg-sunken absolute top-1/2 right-0 left-0 h-2 -translate-y-1/2 rounded-full"
+        />
+        <span
+          aria-hidden="true"
+          className="bg-accent absolute top-1/2 left-0 h-2 -translate-y-1/2 rounded-full"
+          style={{ width: `${Math.max(0, Math.min(100, ratio * 100))}%` }}
         />
 
-        <Slot index={0} />
+        {/* Les graduations donnent l'échelle ; sans elles, la poignée
+            glisse dans le vide. */}
+        {payload.marks?.map((mark) => {
+          const at = ((mark.year - payload.from) / span) * 100
+          if (at < 0 || at > 100) return null
 
-        {payload.anchors.map((anchor, index) => (
-          <Fragment key={anchor.label}>
-            <li className="flex items-center gap-3 py-1">
-              <span className="flex w-9 shrink-0 justify-center">
-                <span className="bg-fg relative size-2.5 rounded-full" />
-              </span>
-              <span className="flex flex-1 flex-wrap items-baseline gap-x-2.5">
-                <span className="tnum text-accent text-[13px] font-semibold">
-                  {anchor.year < 0 ? `${Math.abs(anchor.year)} av. J.-C.` : anchor.year}
-                </span>
-                <span className="text-fg text-[15px]">{anchor.label}</span>
-              </span>
+          return (
+            <span
+              key={mark.label}
+              aria-hidden="true"
+              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={{ left: `${at}%` }}
+            >
+              <span className="bg-surface border-default block size-1.5 rounded-full border" />
+            </span>
+          )
+        })}
+
+        <span
+          aria-hidden="true"
+          className={cn(
+            'bg-surface shadow-token absolute top-1/2 size-7 -translate-x-1/2 -translate-y-1/2 rounded-full',
+            'border-accent border-2 transition-transform duration-150',
+            !disabled && 'hover:scale-110',
+          )}
+          style={{ left: `${Math.max(0, Math.min(100, ratio * 100))}%` }}
+        />
+      </div>
+
+      <div className="text-faint tnum flex justify-between text-[13px]">
+        <span>{readYear(payload.from)}</span>
+        <span>{readYear(payload.to)}</span>
+      </div>
+
+      {payload.marks && payload.marks.length > 0 && (
+        <ul className="text-faint flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13px]">
+          {payload.marks.map((mark) => (
+            <li key={mark.label}>
+              <span className="tnum text-accent">{readYear(mark.year)}</span>{' '}
+              {mark.label}
             </li>
-            <Slot index={index + 1} />
-          </Fragment>
-        ))}
-      </ol>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

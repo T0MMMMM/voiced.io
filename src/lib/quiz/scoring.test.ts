@@ -87,27 +87,43 @@ describe('scoreRanking', () => {
 })
 
 describe('scoreTimeline', () => {
-  it('donne tout pour le bon intervalle', () => {
-    expect(scoreTimeline(2, 2, 5)).toBe(1)
+  it('donne tout pour l’année exacte', () => {
+    expect(scoreTimeline(1789, 1789, 60)).toBe(1)
   })
 
-  it('donne une part au voisin immédiat', () => {
-    // Viser le bon siècle et se tromper d'un cran n'est pas la même erreur
-    // que placer la Révolution avant les pyramides.
-    const voisin = scoreTimeline(3, 2, 5)
-    expect(voisin).toBeGreaterThan(0)
-    expect(voisin).toBeLessThan(1)
-    expect(scoreTimeline(1, 2, 5)).toBe(voisin)
+  it('donne tout dans la tolérance annoncée', () => {
+    // Dater un évènement antique à dix ans près est une bonne réponse ;
+    // exiger l'année pile en ferait une loterie.
+    expect(scoreTimeline(-2550, -2560, 500, 50)).toBe(1)
   })
 
-  it('ne donne rien au-delà du voisin', () => {
-    expect(scoreTimeline(0, 3, 5)).toBe(0)
+  it('décroît avec l’écart en années', () => {
+    const proche = scoreTimeline(1795, 1789, 60)
+    const loin = scoreTimeline(1830, 1789, 60)
+    expect(proche).toBeGreaterThan(loin)
+    expect(loin).toBeGreaterThan(0)
   })
 
-  it('ne donne rien pour un intervalle inexistant', () => {
-    expect(scoreTimeline(9, 2, 5)).toBe(0)
-    expect(scoreTimeline(-1, 2, 5)).toBe(0)
-    expect(scoreTimeline(Number.NaN, 2, 5)).toBe(0)
+  it('mesure en années, pas en pourcentage', () => {
+    // Dix ans d'écart valent la même chose sur 1789 que sur 1969, alors
+    // que l'écart relatif les séparerait.
+    expect(scoreTimeline(1799, 1789, 60)).toBeCloseTo(
+      scoreTimeline(1979, 1969, 60),
+      10,
+    )
+  })
+
+  it('ne donne rien au-delà de l’écart maximal', () => {
+    expect(scoreTimeline(1900, 1789, 60)).toBe(0)
+    expect(scoreTimeline(1600, 1789, 60)).toBe(0)
+  })
+
+  it('note pareil en avance et en retard', () => {
+    expect(scoreTimeline(1799, 1789, 60)).toBe(scoreTimeline(1779, 1789, 60))
+  })
+
+  it('ne donne rien pour une année absente', () => {
+    expect(scoreTimeline(Number.NaN, 1789, 60)).toBe(0)
   })
 })
 

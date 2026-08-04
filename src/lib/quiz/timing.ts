@@ -29,15 +29,15 @@ const BASE: Record<QuestionKind, number> = {
   intrus: 18,
   estimation: 22,
   media: 25,
-  frise: 28,
+  frise: 26,
   carte: 30,
   liste: 32,
   theme: 34,
   classement: 38,
   association: 42,
-  // Quatre categories a remplir : c'est la seule forme ou le temps de
-  // saisie depasse largement le temps de reflexion.
-  petit_bac: 70,
+  // Six categories a remplir : c'est la seule forme ou le temps de saisie
+  // depasse largement le temps de reflexion.
+  petit_bac: 90,
 }
 
 /** Ce qu'un cran de difficulte ajoute, en secondes. */

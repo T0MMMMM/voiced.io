@@ -64,27 +64,32 @@ const association = (theme, difficulty, prompt, pairs) => ({
 })
 
 /**
- * Frise chronologique : des reperes deja dates, et un evenement a situer
- * entre eux. L'intervalle attendu se deduit de l'annee, il n'est jamais
- * ecrit a la main : une frise dont la reponse se saisit a cote finit
- * fausse au premier repere ajoute.
+ * Frise chronologique : un axe qu'on parcourt jusqu'a l'annee voulue.
+ * C'est par elle que passent toutes les questions de date.
+ *
+ * `gap` est l'ecart en annees au-dela duquel la reponse ne vaut plus rien,
+ * `exact` la tolerance qui vaut encore tous les points. Les deux dependent
+ * du sujet : dater les pyramides a cinquante ans pres est excellent, dater
+ * un film a cinquante ans pres ne veut rien dire.
  *
  * Les reperes s'ecrivent `[libelle, annee]`, une annee negative valant
- * avant Jesus-Christ.
+ * avant Jesus-Christ. Ils donnent l'echelle : sans eux, un axe nu de mille
+ * ans se joue au hasard.
  */
-const frise = (theme, difficulty, event, year, anchors) => {
-  const sorted = [...anchors].sort((a, b) => a[1] - b[1])
-  const slot = sorted.filter(([, at]) => at < year).length
+const frise = (theme, difficulty, event, year, options) => {
+  const { from, to, gap, exact = 0, marks = [] } = options
 
   return {
     theme, kind: 'frise',
-    prompt: `Placez cet événement sur la frise : ${event}`,
+    prompt: 'Datez cet évènement sur la frise',
     difficulty, points: POINTS[difficulty], hint: null,
     payload: {
       event,
-      anchors: sorted.map(([label, at]) => ({ label, year: at })),
+      from,
+      to,
+      marks: marks.map(([label, at]) => ({ label, year: at })),
     },
-    answer: { slot, slots: sorted.length + 1 },
+    answer: { year, maxGap: gap, exact },
   }
 }
 
@@ -204,13 +209,10 @@ export const QUESTIONS = [
     ['Népal', 'Bhoutan', 'Botswana', 'Laos', 'Cambodge'], 'Botswana'),
 
   // ═══ Histoire ═════════════════════════════════════════════════════════
-  ecrite('Histoire', 1, 'En quelle année a commencé la Révolution française ?', ['1789']),
-  ecrite('Histoire', 1, 'En quelle année l’homme a-t-il marché sur la Lune ?', ['1969']),
   ecrite('Histoire', 1, 'Quel mur est tombé en 1989 ?', ['Mur de Berlin', 'Berlin']),
   ecrite('Histoire', 1, 'Qui était le premier président de la Ve République ?',
     ['Charles de Gaulle', 'De Gaulle', 'Gaulle']),
   ecrite('Histoire', 1, 'Quelle bataille Napoléon a-t-il perdue en 1815 ?', ['Waterloo']),
-  ecrite('Histoire', 1, 'En quelle année a éclaté la Première Guerre mondiale ?', ['1914']),
   ecrite('Histoire', 2, 'Qui fut la première femme à recevoir un prix Nobel ?',
     ['Marie Curie', 'Curie']),
   ecrite('Histoire', 2, 'Quel navire a coulé en 1912 après avoir heurté un iceberg ?',
@@ -228,10 +230,7 @@ export const QUESTIONS = [
     'Louis XIV', 'Louis XVI', 'Louis XV', 'Louis XIII', 'Louis IX', 'Saint Louis',
     'Louis XI', 'Louis XVIII', 'Louis-Philippe', 'Louis VIII', 'Louis X',
   ]),
-  estimation('Histoire', 1, 'En quelle année a été inaugurée la tour Eiffel ?', 1889, ''),
   estimation('Histoire', 2, 'Combien de temps a duré la guerre de Cent Ans ?', 116, 'ans'),
-  estimation('Histoire', 2, 'En quelle année a été signé le traité de Versailles ?',
-    1919, ''),
   classement('Histoire', 1, 'Classez ces événements du plus ancien au plus récent',
     ['Révolution française', 'Première Guerre mondiale', 'Seconde Guerre mondiale',
       'Premier pas sur la Lune', 'Chute du mur de Berlin'],
@@ -320,8 +319,6 @@ export const QUESTIONS = [
     'Rebelle', 'Soul', 'Luca',
   ]),
   estimation('Cinéma', 1, 'Combien de films compte la saga Harry Potter ?', 8, 'films'),
-  estimation('Cinéma', 2, 'En quelle année est sorti le premier film Star Wars ?',
-    1977, ''),
   classement('Cinéma', 2, 'Classez ces films du plus ancien au plus récent',
     ['Le Parrain', 'Star Wars', 'Retour vers le futur', 'Titanic', 'Avatar'],
     'Le plus ancien', 'Le plus récent'),
@@ -474,7 +471,6 @@ export const QUESTIONS = [
     'Python', 'JavaScript', 'Java', 'C', 'C++', 'C#', 'Ruby', 'Go', 'Rust',
     'PHP', 'Swift', 'Kotlin', 'TypeScript', 'SQL',
   ]),
-  estimation('Technologie', 1, 'En quelle année est sorti le premier iPhone ?', 2007, ''),
   classement('Technologie', 1, 'Classez ces inventions par ordre d’apparition',
     ['Ordinateur personnel', 'Internet', 'Téléphone portable', 'Smartphone',
       'Réseaux sociaux'],
@@ -528,79 +524,98 @@ export const QUESTIONS = [
   }),
 
   // ═══ Frises chronologiques ════════════════════════════════════════════
-  // Un evenement a situer entre des reperes deja dates : la question
-  // devient « avant ou apres ? », ce qui se joue en un clic et se sait
-  // bien mieux qu'une date exacte.
-  frise('Histoire', 1, 'La chute de l’Empire romain d’Occident', 476, [
-    ['Construction de la pyramide de Khéops', -2560],
-    ['Mort de Jules César', -44],
-    ['Couronnement de Charlemagne', 800],
-    ['Découverte de l’Amérique', 1492],
-    ['Révolution française', 1789],
-  ]),
-  frise('Histoire', 1, 'La Révolution française', 1789, [
-    ['Première croisade', 1096],
-    ['Imprimerie de Gutenberg', 1450],
-    ['Louis XIV monte sur le trône', 1643],
-    ['Première Guerre mondiale', 1914],
-    ['Chute du mur de Berlin', 1989],
-  ]),
-  frise('Histoire', 2, 'L’invention de l’imprimerie par Gutenberg', 1450, [
-    ['Chute de l’Empire romain d’Occident', 476],
-    ['Couronnement de Charlemagne', 800],
-    ['Découverte de l’Amérique', 1492],
-    ['Révolution française', 1789],
-    ['Premier pas sur la Lune', 1969],
-  ]),
-  frise('Histoire', 2, 'La chute du mur de Berlin', 1989, [
-    ['Première Guerre mondiale', 1914],
-    ['Seconde Guerre mondiale', 1939],
-    ['Premier homme dans l’espace', 1961],
-    ['Attentats du 11 septembre', 2001],
-    ['Pandémie de Covid-19', 2020],
-  ]),
-  frise('Technologie', 2, 'La première automobile à essence', 1886, [
-    ['Machine à vapeur de Watt', 1769],
-    ['Première photographie', 1826],
-    ['Première ampoule électrique', 1879],
-    ['Premier vol des frères Wright', 1903],
-    ['Premier ordinateur ENIAC', 1945],
-  ]),
-  frise('Technologie', 2, 'La création du Web', 1989, [
-    ['Invention du transistor', 1947],
-    ['Premier microprocesseur', 1971],
-    ['Sortie de Windows 95', 1995],
-    ['Création de Facebook', 2004],
-    ['Sortie du premier iPhone', 2007],
-  ]),
-  frise('Cinéma', 1, 'La sortie du premier Star Wars', 1977, [
-    ['Première projection des frères Lumière', 1895],
-    ['Premier film parlant', 1927],
-    ['Blanche-Neige et les Sept Nains', 1937],
-    ['Jurassic Park', 1993],
-    ['Avatar', 2009],
-  ]),
-  frise('Sciences', 2, 'La théorie de la relativité d’Einstein', 1905, [
-    ['Loi de la gravitation de Newton', 1687],
-    ['Théorie de l’évolution de Darwin', 1859],
-    ['Découverte de la pénicilline', 1928],
-    ['Structure de l’ADN', 1953],
-    ['Séquençage du génome humain', 2003],
-  ]),
-  frise('Sport', 2, 'Les premiers Jeux olympiques modernes', 1896, [
-    ['Révolution française', 1789],
-    ['Inauguration de la tour Eiffel', 1889],
-    ['Première Coupe du monde de football', 1930],
-    ['Première Coupe du monde de rugby', 1987],
-    ['Jeux olympiques de Paris', 2024],
-  ]),
-  frise('Jeux vidéo', 2, 'La sortie de la première PlayStation', 1994, [
-    ['Sortie de Pong', 1972],
-    ['Sortie de la NES', 1983],
-    ['Sortie du Game Boy', 1989],
-    ['Sortie de la Wii', 2006],
-    ['Sortie de la Switch', 2017],
-  ]),
+  // Toutes les questions de date passent par ici : on fait glisser un
+  // curseur sur un axe plutot que de taper une annee. Taper « 1789 » est un
+  // examen, chercher a la main est un jeu, et la note degressive recompense
+  // le raisonnement meme sans la date exacte en tete.
+  frise('Histoire', 1, 'La Révolution française', 1789, {
+    from: 1600, to: 2000, gap: 60, exact: 2,
+    marks: [['Règne de Louis XIV', 1661], ['Première Guerre mondiale', 1914]],
+  }),
+  frise('Histoire', 1, 'Le premier pas de l’homme sur la Lune', 1969, {
+    from: 1900, to: 2000, gap: 15, exact: 1,
+    marks: [['Seconde Guerre mondiale', 1939], ['Chute du mur de Berlin', 1989]],
+  }),
+  frise('Histoire', 1, 'Le début de la Première Guerre mondiale', 1914, {
+    from: 1850, to: 1980, gap: 20, exact: 1,
+    marks: [['Inauguration de la tour Eiffel', 1889], ['Débarquement de Normandie', 1944]],
+  }),
+  frise('Histoire', 1, 'La chute du mur de Berlin', 1989, {
+    from: 1940, to: 2020, gap: 12, exact: 1,
+    marks: [['Premier homme dans l’espace', 1961], ['Passage à l’euro', 2002]],
+  }),
+  frise('Histoire', 1, 'La découverte de l’Amérique par Christophe Colomb', 1492, {
+    from: 1200, to: 1800, gap: 80, exact: 5,
+    marks: [['Première croisade', 1096], ['Règne de Louis XIV', 1661]],
+  }),
+  frise('Histoire', 2, 'L’inauguration de la tour Eiffel', 1889, {
+    from: 1800, to: 1950, gap: 20, exact: 2,
+    marks: [['Révolution française', 1789], ['Première Guerre mondiale', 1914]],
+  }),
+  frise('Histoire', 2, 'La signature du traité de Versailles', 1919, {
+    from: 1880, to: 1960, gap: 12, exact: 1,
+    marks: [['Début de la Première Guerre mondiale', 1914], ['Seconde Guerre mondiale', 1939]],
+  }),
+  frise('Histoire', 2, 'La construction de la pyramide de Khéops', -2560, {
+    from: -3500, to: 0, gap: 600, exact: 100,
+    marks: [['Naissance de l’écriture', -3300], ['Mort de Jules César', -44]],
+  }),
+  frise('Histoire', 2, 'Le couronnement de Charlemagne', 800, {
+    from: 0, to: 1500, gap: 200, exact: 20,
+    marks: [['Chute de l’Empire romain d’Occident', 476], ['Première croisade', 1096]],
+  }),
+  frise('Histoire', 3, 'La chute de l’Empire romain d’Occident', 476, {
+    from: -500, to: 1200, gap: 250, exact: 25,
+    marks: [['Mort de Jules César', -44], ['Couronnement de Charlemagne', 800]],
+  }),
+  frise('Technologie', 1, 'La sortie du premier iPhone', 2007, {
+    from: 1980, to: 2025, gap: 8, exact: 1,
+    marks: [['Sortie de Windows 95', 1995], ['Création de Facebook', 2004]],
+  }),
+  frise('Technologie', 2, 'La création du Web', 1989, {
+    from: 1940, to: 2020, gap: 15, exact: 2,
+    marks: [['Premier ordinateur ENIAC', 1945], ['Sortie du premier iPhone', 2007]],
+  }),
+  frise('Technologie', 2, 'La première automobile à essence', 1886, {
+    from: 1750, to: 1950, gap: 30, exact: 3,
+    marks: [['Machine à vapeur de Watt', 1769], ['Premier vol des frères Wright', 1903]],
+  }),
+  frise('Cinéma', 1, 'La sortie du premier Star Wars', 1977, {
+    from: 1930, to: 2020, gap: 12, exact: 1,
+    marks: [['Blanche-Neige et les Sept Nains', 1937], ['Titanic', 1997]],
+  }),
+  frise('Cinéma', 2, 'La première projection publique des frères Lumière', 1895, {
+    from: 1850, to: 1960, gap: 20, exact: 2,
+    marks: [['Inauguration de la tour Eiffel', 1889], ['Premier film parlant', 1927]],
+  }),
+  frise('Sciences', 2, 'La théorie de la relativité d’Einstein', 1905, {
+    from: 1600, to: 2000, gap: 50, exact: 3,
+    marks: [['Loi de la gravitation de Newton', 1687], ['Structure de l’ADN', 1953]],
+  }),
+  frise('Sciences', 2, 'La découverte de la pénicilline', 1928, {
+    from: 1850, to: 2000, gap: 25, exact: 2,
+    marks: [['Théorie de l’évolution de Darwin', 1859], ['Structure de l’ADN', 1953]],
+  }),
+  frise('Sport', 2, 'Les premiers Jeux olympiques modernes', 1896, {
+    from: 1800, to: 1980, gap: 25, exact: 2,
+    marks: [['Inauguration de la tour Eiffel', 1889], ['Première Coupe du monde de football', 1930]],
+  }),
+  frise('Sport', 2, 'La première Coupe du monde de football', 1930, {
+    from: 1880, to: 2000, gap: 20, exact: 2,
+    marks: [['Premiers Jeux olympiques modernes', 1896], ['Seconde Guerre mondiale', 1939]],
+  }),
+  frise('Jeux vidéo', 2, 'La sortie de la première PlayStation', 1994, {
+    from: 1970, to: 2025, gap: 8, exact: 1,
+    marks: [['Sortie de la NES', 1983], ['Sortie de la Wii', 2006]],
+  }),
+  frise('Jeux vidéo', 2, 'La sortie de la Nintendo Switch', 2017, {
+    from: 1980, to: 2025, gap: 6, exact: 1,
+    marks: [['Sortie du Game Boy', 1989], ['Sortie de la Wii', 2006]],
+  }),
+  frise('Musique', 3, 'La séparation des Beatles', 1970, {
+    from: 1940, to: 2010, gap: 12, exact: 1,
+    marks: [['Premier disque des Beatles', 1963], ['Premier pas sur la Lune', 1969]],
+  }),
 
   // ═══ Cartes ═══════════════════════════════════════════════════════════
   // Le rayon tolere suit l'echelle : mille kilometres sur un planisphere
@@ -623,6 +638,32 @@ export const QUESTIONS = [
   carte('Géographie', 2, 'Strasbourg', 'france', 48.58, 7.75, 160),
   carte('Géographie', 1, 'la Corse', 'france', 42.15, 9.1, 160),
   carte('Géographie', 3, 'Clermont-Ferrand', 'france', 45.78, 3.08, 160),
+
+  // Les capitales du monde entier, la ou une reponse ecrite ne dirait rien
+  // de ce qu'on sait vraiment situer.
+  carte('Géographie', 1, 'Londres', 'europe', 51.51, -0.13, 400),
+  carte('Géographie', 1, 'Rome', 'europe', 41.9, 12.5, 400),
+  carte('Géographie', 2, 'Lisbonne', 'europe', 38.72, -9.14, 400),
+  carte('Géographie', 2, 'Stockholm', 'europe', 59.33, 18.07, 450),
+  carte('Géographie', 2, 'Varsovie', 'europe', 52.23, 21.01, 450),
+  carte('Géographie', 3, 'Bucarest', 'europe', 44.43, 26.1, 450),
+  carte('Géographie', 3, 'Dublin', 'europe', 53.35, -6.26, 400),
+  carte('Géographie', 3, 'Vienne', 'europe', 48.21, 16.37, 400),
+  carte('Géographie', 1, 'Tokyo', 'monde', 35.68, 139.69, 1100),
+  carte('Géographie', 1, 'Le Caire', 'monde', 30.04, 31.24, 1100),
+  carte('Géographie', 2, 'Pékin', 'monde', 39.9, 116.4, 1100),
+  carte('Géographie', 2, 'Rio de Janeiro', 'monde', -22.91, -43.17, 1200),
+  carte('Géographie', 2, 'Sydney', 'monde', -33.87, 151.21, 1200),
+  carte('Géographie', 2, 'Los Angeles', 'monde', 34.05, -118.24, 1000),
+  carte('Géographie', 3, 'Le Cap', 'monde', -33.92, 18.42, 1200),
+  carte('Géographie', 3, 'Buenos Aires', 'monde', -34.6, -58.38, 1200),
+  carte('Géographie', 3, 'New Delhi', 'monde', 28.61, 77.21, 1100),
+  carte('Géographie', 3, 'Istanbul', 'monde', 41.01, 28.98, 1000),
+  carte('Géographie', 3, 'Nairobi', 'monde', -1.29, 36.82, 1200),
+  carte('Géographie', 2, 'le Canada', 'monde', 56, -106, 1800),
+  carte('Géographie', 2, 'la Norvège', 'monde', 62, 10, 1200),
+  carte('Géographie', 3, 'le Pérou', 'monde', -10, -76, 1200),
+  carte('Géographie', 3, 'la Thaïlande', 'monde', 15.5, 101, 1100),
 
   // ═══ Thèmes à difficulté choisie ══════════════════════════════════════
   // Le joueur voit le sujet, pas la question, et décide de ce qu'il risque.
@@ -752,8 +793,6 @@ export const QUESTIONS = [
     ['Sony']),
   ecrite('Jeux vidéo', 2, 'Quel studio a créé la série Grand Theft Auto ?',
     ['Rockstar', 'Rockstar Games']),
-  ecrite('Jeux vidéo', 2, 'En quelle année la Nintendo Switch est-elle sortie ?',
-    ['2017']),
   ecrite('Jeux vidéo', 2, 'Quel Pokémon porte le numéro 1 du Pokédex ?',
     ['Bulbizarre']),
   ecrite('Jeux vidéo', 3, 'Quel jeu de 2017 a lancé la mode de la « battle royale » ?',
@@ -793,8 +832,31 @@ export const QUESTIONS = [
     'La plus ancienne', 'La plus récente'),
 
   // ═══ Petit bac ════════════════════════════════════════════════════════
-  petitBac('Petit bac', 1, 'B', ['Un pays', 'Un animal', 'Un aliment', 'Un métier']),
-  petitBac('Petit bac', 1, 'M', ['Une ville', 'Un fruit', 'Un sport', 'Un prénom']),
-  petitBac('Petit bac', 2, 'V', ['Un pays', 'Un légume', 'Un instrument', 'Une couleur']),
-  petitBac('Petit bac', 2, 'C', ['Un animal', 'Une capitale', 'Un métier', 'Un film']),
+  petitBac('Petit bac', 1, 'B', [
+    'Un pays', 'Un animal', 'Un aliment', 'Un métier', 'Un prénom', 'Une ville',
+  ]),
+  petitBac('Petit bac', 1, 'M', [
+    'Une ville', 'Un fruit ou légume', 'Un sport', 'Un prénom',
+    'Un film', 'Une marque',
+  ]),
+  petitBac('Petit bac', 2, 'V', [
+    'Un pays', 'Un légume', 'Un instrument de musique', 'Une couleur',
+    'Un animal', 'Un métier',
+  ]),
+  petitBac('Petit bac', 2, 'C', [
+    'Un animal', 'Une capitale', 'Un métier', 'Un film',
+    'Une partie du corps', 'Un personnage célèbre',
+  ]),
+  petitBac('Petit bac', 2, 'S', [
+    'Un pays', 'Un sport', 'Un aliment', 'Un prénom',
+    'Un groupe de musique', 'Un objet de la maison',
+  ]),
+  petitBac('Petit bac', 3, 'L', [
+    'Une ville', 'Un animal', 'Un métier', 'Un fleuve',
+    'Un jeu vidéo', 'Une matière scolaire',
+  ]),
+  petitBac('Petit bac', 3, 'G', [
+    'Un pays', 'Un fruit', 'Un instrument de musique', 'Un prénom',
+    'Une marque de voiture', 'Un vêtement',
+  ]),
 ]

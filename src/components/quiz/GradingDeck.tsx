@@ -34,7 +34,11 @@ function readable(payload: unknown): string {
       return value.items.filter((item) => String(item).trim()).join(' · ') || '(vide)'
     }
     if (typeof value.choice === 'string') return value.choice
-    if (typeof value.slot === 'number') return `Intervalle ${value.slot + 1}`
+    if (typeof value.year === 'number') {
+      return value.year < 0
+        ? `${Math.abs(value.year)} av. J.-C.`
+        : String(value.year)
+    }
     if (typeof value.lat === 'number' && typeof value.lng === 'number') {
       const ns = value.lat >= 0 ? 'N' : 'S'
       const ew = value.lng >= 0 ? 'E' : 'O'
