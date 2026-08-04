@@ -8,6 +8,7 @@
 
 export type QuestionKind =
   | 'ecrite'
+  | 'liste'
   | 'estimation'
   | 'classement'
   | 'frise'
@@ -20,6 +21,10 @@ export type QuestionKind =
 /** Contenu propre a chaque forme, tel qu'il est stocke en base. */
 export interface WrittenPayload {
   placeholder?: string
+}
+export interface ListPayload {
+  /** Nombre de reponses demandees. */
+  count: number
 }
 export interface EstimatePayload {
   unit?: string
@@ -53,6 +58,7 @@ export interface Question {
 /** Ce que le joueur a soumis, forme-dependant. */
 export type AnswerPayload =
   | { kind: 'ecrite'; text: string }
+  | { kind: 'liste'; items: string[] }
   | { kind: 'estimation'; value: number }
   | { kind: 'classement'; order: string[] }
   | { kind: 'intrus'; choice: string }
@@ -69,9 +75,18 @@ export interface QuestionComponentProps<P, A> {
   onChange: (answer: A) => void
 }
 
-/** Une forme est-elle notable sans intervention de l'hote ? */
+/**
+ * Une forme est-elle notable sans intervention de l'hote ?
+ *
+ * L'ecrite et la liste en font partie depuis qu'elles portent leurs
+ * variantes acceptees : la machine reconnait ce qu'elle peut, l'hote ne
+ * tranche plus que le reste. C'est ce qui fait tenir la correction en
+ * quelques minutes.
+ */
 export function isAutoScored(kind: QuestionKind): boolean {
   return (
+    kind === 'ecrite' ||
+    kind === 'liste' ||
     kind === 'estimation' ||
     kind === 'classement' ||
     kind === 'frise' ||
@@ -83,6 +98,7 @@ export function isAutoScored(kind: QuestionKind): boolean {
 
 export const KIND_LABELS: Record<QuestionKind, string> = {
   ecrite: 'Réponse écrite',
+  liste: 'Citez',
   estimation: 'Estimation',
   classement: 'Classement',
   frise: 'Frise',

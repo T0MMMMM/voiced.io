@@ -10,7 +10,53 @@
  * multiplie par la valeur de la question.
  */
 
+import { areClose, normalizeAnswer } from './similarity'
+
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
+
+/**
+ * Reponse ecrite : juste si elle rejoint l'une des variantes acceptees.
+ *
+ * Une question a rarement une seule formulation valable — « Leonard de
+ * Vinci », « De Vinci » et « Vinci » designent la meme personne. On liste
+ * donc les variantes, et le rapprochement tolere fautes de frappe et
+ * accents. L'hote garde le dernier mot sur ce que la machine n'a pas su
+ * reconnaitre.
+ */
+export function scoreWritten(given: string, accepted: string[]): number {
+  const answer = normalizeAnswer(given)
+  if (answer.length === 0) return 0
+  return accepted.some((variant) => areClose(answer, normalizeAnswer(variant)))
+    ? 1
+    : 0
+}
+
+/**
+ * « Citez N » : une fraction par bonne reponse distincte.
+ *
+ * Les doublons ne comptent qu'une fois — citer quatre fois l'Australie ne
+ * vaut pas quatre pays. En donner plus que demande ne rapporte rien de
+ * plus : on ne recompense pas l'arrosage.
+ */
+export function scoreList(
+  given: string[],
+  accepted: string[],
+  needed: number,
+): number {
+  if (needed <= 0) return 0
+
+  const found = new Set<string>()
+
+  for (const raw of given) {
+    const answer = normalizeAnswer(raw)
+    if (answer.length === 0) continue
+
+    const match = accepted.find((variant) => areClose(answer, normalizeAnswer(variant)))
+    if (match) found.add(normalizeAnswer(match))
+  }
+
+  return clamp01(found.size / needed)
+}
 
 /**
  * Estimation : l'ecart relatif decide de la fraction obtenue.

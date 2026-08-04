@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { EstimateQuestion } from '@/components/quiz/kinds/EstimateQuestion'
+import { ListQuestion } from '@/components/quiz/kinds/ListQuestion'
 import { RankingQuestion } from '@/components/quiz/kinds/RankingQuestion'
 import { WrittenQuestion } from '@/components/quiz/kinds/WrittenQuestion'
 import { Button, Panel } from '@/components/ui'
@@ -17,6 +18,7 @@ import {
   KIND_LABELS,
   type AnswerPayload,
   type EstimatePayload,
+  type ListPayload,
   type Question,
   type RankingPayload,
   type WrittenPayload,
@@ -159,6 +161,14 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
           <WrittenQuestion
             payload={question.payload as WrittenPayload}
             value={answer?.kind === 'ecrite' ? answer : null}
+            disabled={locked}
+            onChange={setAnswer}
+          />
+        )}
+        {question.kind === 'liste' && (
+          <ListQuestion
+            payload={question.payload as ListPayload}
+            value={answer?.kind === 'liste' ? answer : null}
             disabled={locked}
             onChange={setAnswer}
           />

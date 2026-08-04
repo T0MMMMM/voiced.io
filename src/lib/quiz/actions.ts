@@ -5,9 +5,11 @@ import { mergeOptions } from '@/lib/rooms/options'
 import { isAutoScored, type AnswerPayload, type Question } from './kinds'
 import {
   scoreEstimate,
+  scoreList,
   scoreOddOneOut,
   scorePairs,
   scoreRanking,
+  scoreWritten,
   type LatLng,
 } from './scoring'
 import { scoreDistance } from './scoring'
@@ -146,6 +148,14 @@ function scoreOf(
   expected: unknown,
 ): number {
   try {
+    if (kind === 'ecrite' && given.kind === 'ecrite') {
+      const accepted = (expected as { accepted?: string[] })?.accepted ?? []
+      return scoreWritten(given.text, accepted)
+    }
+    if (kind === 'liste' && given.kind === 'liste') {
+      const target = expected as { accepted?: string[]; count?: number }
+      return scoreList(given.items, target?.accepted ?? [], target?.count ?? 1)
+    }
     if (kind === 'estimation' && given.kind === 'estimation') {
       return scoreEstimate(given.value, Number(expected))
     }

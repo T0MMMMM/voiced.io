@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
+    "seed:questions": "dotenv -e .env.local -- node scripts/seed-questions.mjs",
     "check:rls": "dotenv -e .env.local -- tsx scripts/check-rls.ts",
     "db:types": "supabase gen types typescript --project-id kqqatnhniuqqujhrfqsf > src/types/db.ts"
   },

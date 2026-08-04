@@ -25,6 +25,9 @@ function readable(payload: unknown): string {
     if (typeof value.text === 'string') return value.text
     if (typeof value.value === 'number') return String(value.value)
     if (Array.isArray(value.order)) return value.order.join(' · ')
+    if (Array.isArray(value.items)) {
+      return value.items.filter((item) => String(item).trim()).join(' · ') || '—'
+    }
     if (typeof value.choice === 'string') return value.choice
   }
   return '—'
