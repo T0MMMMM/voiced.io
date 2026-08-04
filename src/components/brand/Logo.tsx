@@ -2,23 +2,21 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils/cn'
 
 /**
- * Une barre de son plate, et un pic au milieu.
+ * Une forme d'onde : le silence, un pic de voix, puis le retour au calme.
  *
- * C'est le vocabulaire de la forme d'onde utilisée partout ailleurs dans le
- * produit, réduit à ce qui se reconnaît : le silence, puis la voix. Un
- * spectre aux hauteurs variées se lit comme n'importe quel égaliseur ;
- * un seul pic sur une ligne plate ne ressemble qu'à lui-même.
+ * Le profil est volontairement dissymétrique — montée franche, descente
+ * plus lente. C'est ainsi qu'un son se comporte réellement, et c'est ce qui
+ * distingue la marque d'un égaliseur symétrique quelconque.
  *
  * Toutes les barres partagent le même centre : c'est la hauteur seule qui
  * fait le dessin, et la marque tient donc à seize pixels.
  */
-const BARS = [
-  { x: 1.8, height: 3 },
-  { x: 5.4, height: 3 },
-  { x: 9, height: 16 },
-  { x: 12.6, height: 3 },
-  { x: 16.2, height: 3 },
-]
+export const BAR_HEIGHTS = [1.4, 2, 3.4, 6, 11, 16.4, 12, 7, 3.6, 1.6]
+
+const BARS = BAR_HEIGHTS.map((height, index) => ({
+  x: 0.9 + index * 1.92,
+  height,
+}))
 
 export function WaveMark({ className }: { className?: string }) {
   return (
@@ -33,9 +31,9 @@ export function WaveMark({ className }: { className?: string }) {
           key={x}
           x={x}
           y={(20 - height) / 2}
-          width="2"
+          width="1.15"
           height={height}
-          rx="1"
+          rx="0.58"
         />
       ))}
     </svg>

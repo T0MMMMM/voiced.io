@@ -67,11 +67,6 @@ export default function Home() {
               <GameLane key={game.id} game={game} />
             ))}
           </ul>
-
-          <p className="text-faint mt-6 text-[13px]">
-            Le doublage est jouable dès maintenant. Les trois autres arrivent.
-            L’enregistrement demande un ordinateur et un micro.
-          </p>
         </section>
       </main>
     </>

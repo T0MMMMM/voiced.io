@@ -28,20 +28,14 @@ type ToggleKey = Exclude<keyof RoomOptions, ScaleKey | 'kinds'>
 interface Scale {
   key: ScaleKey
   legend: string
-  hint?: string
   choices: readonly { value: string | number; label: string }[]
 }
 
 const SCALES: Scale[] = [
   { key: 'questionCount', legend: 'Longueur', choices: COUNT_CHOICES },
-  {
-    key: 'pace',
-    legend: 'Rythme',
-    // On ne regle plus une duree : chaque question tire son temps de sa
-    // forme et de sa difficulte, et ce reglage ne fait que l'etirer.
-    hint: 'Le temps s’adapte à chaque question',
-    choices: PACE_CHOICES,
-  },
+  // On ne regle plus une duree : chaque question tire son temps de sa
+  // forme et de sa difficulte, et ce reglage ne fait que l'etirer.
+  { key: 'pace', legend: 'Rythme', choices: PACE_CHOICES },
 ]
 
 const LABELS: Record<ToggleKey, { label: string; hint: string }> = {
@@ -151,12 +145,10 @@ export function RoomLobby({
   return (
     <div className="space-y-10">
       <div className="flex flex-col items-center gap-6">
-        <span className="bg-surface shadow-token rounded-token text-muted inline-flex items-center gap-2 px-3 py-1.5 text-[13px]">
-          <span className="bg-accent size-2 animate-pulse rounded-full" />
-          En direct · {players.length} joueur{players.length > 1 ? 's' : ''}
-        </span>
-
-        <RoomCode code={room.code} />
+        {/* Le nombre de joueurs se pose sur le code plutot que dans une
+            pastille a lui : c'est la meme information, sans un bloc de plus
+            au-dessus de l'element principal de l'ecran. */}
+        <RoomCode code={room.code} present={players.length} />
       </div>
 
       <section aria-label="Joueurs">
@@ -219,11 +211,6 @@ export function RoomLobby({
                   <div key={scale.key}>
                     <legend className="text-fg mb-2 text-[15px] font-medium">
                       {scale.legend}
-                      {scale.hint && (
-                        <span className="text-faint ml-2 text-[13px] font-normal">
-                          {scale.hint}
-                        </span>
-                      )}
                     </legend>
                     <Segmented
                       label={scale.legend}

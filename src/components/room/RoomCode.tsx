@@ -13,7 +13,14 @@ import { cn } from '@/lib/utils/cn'
  * évidente de l'écran est aussi la plus grande. La petite icône en bas à
  * droite ne fait que signaler que c'est possible.
  */
-export function RoomCode({ code }: { code: string }) {
+export function RoomCode({
+  code,
+  present,
+}: {
+  code: string
+  /** Combien de joueurs sont connectes, affiche en pastille sur le code. */
+  present?: number
+}) {
   const codeRef = useRef<HTMLSpanElement>(null)
   const [copied, setCopied] = useState(false)
 
@@ -44,8 +51,20 @@ export function RoomCode({ code }: { code: string }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="relative flex flex-col items-center gap-2">
       <p className="eyebrow text-faint">Code du salon</p>
+
+      {/* Le point vert bat : c'est ce qui dit que le salon est vivant, et
+          le nombre suffit a dire combien on est. */}
+      {present !== undefined && (
+        <span
+          className="text-muted absolute top-0 right-0 flex items-center gap-1.5 text-[13px]"
+          aria-label={`${present} joueur${present > 1 ? 's' : ''} connecté${present > 1 ? 's' : ''}`}
+        >
+          <span className="tnum">{present}</span>
+          <span className="bg-accent size-2 animate-pulse rounded-full" />
+        </span>
+      )}
 
       <button
         type="button"
