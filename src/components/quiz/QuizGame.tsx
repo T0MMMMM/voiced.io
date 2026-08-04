@@ -232,7 +232,11 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
           <span className="eyebrow text-faint">
             Question {step + 1} sur {questions.length} · {KIND_LABELS[question.kind]}
           </span>
-          <QuestionMeta difficulty={question.difficulty} points={question.points} />
+          {/* Le theme au choix n'annonce ni difficulte ni points : c'est le
+              joueur qui les fixe, et les afficher d'avance mentirait. */}
+          {question.kind !== 'theme' && (
+            <QuestionMeta difficulty={question.difficulty} points={question.points} />
+          )}
         </div>
 
         {/* Le temps se lit d'un coup d'oeil : une barre qui se vide dit
