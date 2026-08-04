@@ -9,6 +9,7 @@ import { PlayIcon, SlidersIcon, UsersIcon } from '@/components/ui/icons'
 import type { GameId } from '@/lib/games'
 import { setRoomGame, setRoomOptions, startGame, touchPlayer } from '@/lib/rooms/actions'
 import {
+  COUNT_CHOICES,
   mergeOptions,
   optionsFor,
   TIMER_CHOICES,
@@ -17,10 +18,22 @@ import {
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
 
-const LABELS: Record<
-  Exclude<keyof RoomOptions, 'timerSec'>,
-  { label: string; hint: string }
-> = {
+/** Reglages a plusieurs valeurs : ils s'affichent en controle segmente. */
+type ScaleKey = 'timerSec' | 'questionCount'
+type ToggleKey = Exclude<keyof RoomOptions, ScaleKey>
+
+interface Scale {
+  key: ScaleKey
+  legend: string
+  choices: readonly { value: number; label: string }[]
+}
+
+const SCALES: Scale[] = [
+  { key: 'questionCount', legend: 'Longueur', choices: COUNT_CHOICES },
+  { key: 'timerSec', legend: 'Minuteur', choices: TIMER_CHOICES },
+]
+
+const LABELS: Record<ToggleKey, { label: string; hint: string }> = {
   shuffle: {
     label: 'Ordre aléatoire',
     hint: 'Les questions ne tombent pas dans l’ordre',
@@ -83,9 +96,10 @@ export function RoomLobby({
   // Un jeu sans réglage n'affiche pas de section vide : promettre des
   // réglages qui n'existent pas est pire que ne rien promettre.
   const available = optionsFor(room.game)
-  const hasTimer = available.includes('timerSec')
+  const scales = SCALES.filter((scale) => available.includes(scale.key))
+
   const toggles = available.filter(
-    (key): key is Exclude<keyof RoomOptions, 'timerSec'> => key !== 'timerSec',
+    (key): key is ToggleKey => key !== 'timerSec' && key !== 'questionCount',
   )
 
   useEffect(() => {
@@ -174,31 +188,33 @@ export function RoomLobby({
           {open && (
             <Panel>
               <fieldset disabled={!isHost || busy} className="space-y-4">
-                {hasTimer && (
-                  <div>
+                {scales.map((scale) => (
+                  <div key={scale.key}>
                     <legend className="text-fg mb-2 text-[15px] font-medium">
-                      Minuteur
+                      {scale.legend}
                     </legend>
                     <Segmented
-                      label="Durée du minuteur"
-                      options={TIMER_CHOICES.map((choice) => ({
+                      label={scale.legend}
+                      options={scale.choices.map((choice) => ({
                         value: choice.value,
                         label: choice.label,
                       }))}
-                      value={options.timerSec}
+                      value={options[scale.key]}
                       disabled={!isHost || busy}
                       onChange={(next) =>
-                        void run(() => setRoomOptions(room.id, { timerSec: next }))
+                        void run(() =>
+                          setRoomOptions(room.id, { [scale.key]: next }),
+                        )
                       }
                     />
                   </div>
-                )}
+                ))}
 
                 {toggles.length > 0 && (
                   <div
                     className={cn(
                       'divide-default divide-y',
-                      hasTimer && 'border-t border-t-[var(--border)] pt-1',
+                      scales.length > 0 && 'border-t border-t-[var(--border)] pt-1',
                     )}
                   >
                     {toggles.map((key) => (

@@ -13,9 +13,14 @@ export const MAX_PLAYERS = 8
 
 export type TimerSec = 0 | 15 | 30 | 60
 
+/** Longueur d'une partie de quiz. */
+export type QuestionCount = 10 | 20 | 30
+
 export interface RoomOptions {
   /** 0 = pas de minuteur. */
   timerSec: TimerSec
+  /** Nombre de questions tirees pour la partie. */
+  questionCount: QuestionCount
   /** Ordre des questions tire au hasard. */
   shuffle: boolean
   /** L'hote corrige sans voir qui a repondu quoi. */
@@ -28,6 +33,12 @@ export interface RoomOptions {
   allowSteal: boolean
 }
 
+export const COUNT_CHOICES: { value: QuestionCount; label: string }[] = [
+  { value: 10, label: 'Courte' },
+  { value: 20, label: 'Normale' },
+  { value: 30, label: 'Longue' },
+]
+
 export const TIMER_CHOICES: { value: TimerSec; label: string }[] = [
   { value: 0, label: 'Aucun' },
   { value: 15, label: '15 s' },
@@ -37,6 +48,7 @@ export const TIMER_CHOICES: { value: TimerSec; label: string }[] = [
 
 export const DEFAULT_OPTIONS: RoomOptions = {
   timerSec: 30,
+  questionCount: 20,
   shuffle: false,
   anonymousGrading: false,
   allowBets: false,
@@ -45,6 +57,7 @@ export const DEFAULT_OPTIONS: RoomOptions = {
 }
 
 const TIMER_VALUES = TIMER_CHOICES.map((choice) => choice.value)
+const COUNT_VALUES = COUNT_CHOICES.map((choice) => choice.value)
 
 /**
  * Reglages qui ont un sens pour chaque jeu.
@@ -55,6 +68,7 @@ const TIMER_VALUES = TIMER_CHOICES.map((choice) => choice.value)
  */
 export const OPTIONS_BY_GAME: Record<string, (keyof RoomOptions)[]> = {
   quiz: [
+    'questionCount',
     'timerSec',
     'shuffle',
     'anonymousGrading',
@@ -81,6 +95,12 @@ function timer(value: unknown): TimerSec {
     : DEFAULT_OPTIONS.timerSec
 }
 
+function count(value: unknown): QuestionCount {
+  return COUNT_VALUES.includes(value as QuestionCount)
+    ? (value as QuestionCount)
+    : DEFAULT_OPTIONS.questionCount
+}
+
 export function mergeOptions(stored: unknown): RoomOptions {
   // `typeof null === 'object'`, et un tableau aussi : les deux sont exclus.
   const source =
@@ -90,6 +110,7 @@ export function mergeOptions(stored: unknown): RoomOptions {
 
   return {
     timerSec: timer(source.timerSec),
+    questionCount: count(source.questionCount),
     shuffle: bool(source.shuffle, DEFAULT_OPTIONS.shuffle),
     anonymousGrading: bool(
       source.anonymousGrading,
