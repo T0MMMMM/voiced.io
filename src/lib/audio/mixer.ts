@@ -116,7 +116,9 @@ export class DubMixer {
       const source = context.createBufferSource()
       source.buffer = track.buffer
       source.connect(gain)
-      source.start(now + cue.delaySec, cue.seekSec)
+      // La duree declaree fait foi : le fichier deborde toujours un peu du
+      // segment, on ne joue pas cette queue.
+      source.start(now + cue.delaySec, cue.seekSec, track.durationSec - cue.seekSec)
       this.sources.push(source)
     }
   }

@@ -32,8 +32,14 @@ import {
 import type { Player, Room } from '@/lib/supabase/types'
 import { clamp } from '@/lib/utils/time'
 
-/** Resolution du spectre d'une prise : assez fine pour juger un decalage. */
-const TAKE_PEAKS = 220
+/**
+ * Densite du spectre d'une prise, en tranches par seconde.
+ *
+ * Elle vise celle de la bande originale : un doublage dessine trois fois
+ * plus fin que l'original se lirait comme une matiere differente, alors
+ * qu'on veut justement comparer les deux traces.
+ */
+const TAKE_PEAKS_PER_SEC = 16
 
 export interface DubGameProps {
   room: Room
@@ -45,13 +51,28 @@ export interface DubGameProps {
   initialTakes: SavedTake[]
 }
 
-/** Le spectre de la prise sert a la comparer a l'original, pas a la rejouer. */
-async function peaksOf(blob: Blob): Promise<number[]> {
+/**
+ * Spectre de la prise, limite a `durationSec`.
+ *
+ * L'arret n'est jamais instantane : la boucle du lecteur a une image de
+ * retard et MediaRecorder met quelques dizaines de millisecondes a se
+ * fermer. Le fichier depasse donc toujours un peu le segment. On ne
+ * represente que la partie utile, sinon le trace deborde de sa zone.
+ */
+async function peaksOf(blob: Blob, durationSec: number): Promise<number[]> {
   try {
     const context = new AudioContext()
     try {
       const decoded = await context.decodeAudioData(await blob.arrayBuffer())
-      return bucketPeaks(decoded.getChannelData(0), TAKE_PEAKS)
+      const samples = decoded.getChannelData(0)
+      const usable = Math.min(
+        samples.length,
+        Math.floor(durationSec * decoded.sampleRate),
+      )
+      return bucketPeaks(
+        samples.subarray(0, usable),
+        Math.max(8, Math.round(durationSec * TAKE_PEAKS_PER_SEC)),
+      )
     } finally {
       void context.close()
     }
@@ -199,6 +220,12 @@ export function DubGame({
     setRecording(false)
 
     try {
+      // La prise ne peut pas durer plus que le segment vise : le
+      // depassement n'est que le temps de fermeture du micro, et le laisser
+      // ferait deborder le trace hors de sa zone.
+      const cap = aim ? (aim.end - aim.start) * 1000 : result.durationMs
+      const durationMs = Math.min(result.durationMs, cap)
+
       const form = new FormData()
       form.set('roomId', room.id)
       form.set('playerId', youId ?? '')
@@ -208,9 +235,9 @@ export function DubGame({
         'startSec',
         String((aim?.start ?? clock.current) + result.latencyMs / 1000),
       )
-      form.set('durationMs', String(result.durationMs))
+      form.set('durationMs', String(durationMs))
       form.set('offsetMs', '0')
-      form.set('peaks', JSON.stringify(await peaksOf(result.blob)))
+      form.set('peaks', JSON.stringify(await peaksOf(result.blob, durationMs / 1000)))
       form.set('audio', new File([result.blob], 'prise', { type: result.mimeType }))
 
       await saveTake(form)
@@ -299,8 +326,10 @@ export function DubGame({
     const from = clock.current
     setReviewing(true)
     mixer.current.start(from)
-    stage.current?.playFrom(from, volume)
-  }, [busy, reviewing, takes, volume])
+    // La video part muette : on entend le doublage a la place des voix
+    // d'origine, ce qui est tout l'objet de l'ecoute.
+    stage.current?.playFrom(from, 0)
+  }, [busy, reviewing, takes])
 
   const toggleRecord = useCallback(() => {
     if (recording) void stopRecording()
@@ -401,6 +430,15 @@ export function DubGame({
           aspectRatio={aspectRatio}
         />
         {counting && <Countdown onDone={() => void armRecorder()} />}
+        {!counting && !recording && (
+          <VolumeControl
+            value={volume}
+            onChange={(next) => {
+              setVolume(next)
+              stage.current?.setVolume(next)
+            }}
+          />
+        )}
       </div>
 
       <section aria-label="Partition de la bande originale" className="space-y-2.5">
@@ -433,16 +471,6 @@ export function DubGame({
           onCommitBreakpoints={() => persist(points)}
         />
       </section>
-
-      <div className="flex justify-center">
-        <VolumeControl
-          value={volume}
-          onChange={(next) => {
-            setVolume(next)
-            stage.current?.setVolume(next)
-          }}
-        />
-      </div>
 
       <Transport
         playing={playing}

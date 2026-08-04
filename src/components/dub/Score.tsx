@@ -137,9 +137,11 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
       }
     }
 
-    // 4. Le doublage par-dessus, en transparence et sur le meme axe : c'est
-    //    la superposition qui rend un decalage visible sans reecouter.
-    context.globalAlpha = 0.62
+    // 4. Le doublage par-dessus, meme axe et meme dessin que l'original mais
+    //    en barres plus epaisses et translucides : c'est la superposition de
+    //    deux traces de meme nature qui rend un decalage lisible d'un coup
+    //    d'oeil. Un trace de forme differente se comparerait mal.
+    context.globalAlpha = 0.7
     context.fillStyle = color('--wave-self')
     for (const track of dubTracks) {
       if (track.peaks.length === 0) continue
@@ -147,12 +149,12 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
       if (track.startSec + track.durationSec < from) continue
 
       const bucketSec = track.durationSec / track.peaks.length
-      const barWidth = Math.max(1.5, bucketSec * pxPerSec - 1)
+      const barWidth = Math.max(3, bucketSec * pxPerSec - 0.5)
 
       for (let i = 0; i < track.peaks.length; i++) {
         const x = at(track.startSec + i * bucketSec)
         if (x < -barWidth || x > width) continue
-        const barHeight = Math.max(2, (track.peaks[i] ?? 0) * (height - 12))
+        const barHeight = Math.max(3, (track.peaks[i] ?? 0) * (height - 12))
         context.beginPath()
         context.roundRect(x, middle - barHeight / 2, barWidth, barHeight, barWidth / 2)
         context.fill()
