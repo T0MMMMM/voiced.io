@@ -21,7 +21,12 @@ import {
 } from '@/lib/audio/breakpoints'
 import { DubMixer } from '@/lib/audio/mixer'
 import { bucketPeaks, extractPeaks } from '@/lib/audio/peaks'
-import { startRecording, type RecorderHandle } from '@/lib/audio/recorder'
+import {
+  meterFor,
+  openMicrophone,
+  type MicrophoneHandle,
+  type RecorderHandle,
+} from '@/lib/audio/recorder'
 import { finishGame, setBreakpoints } from '@/lib/rooms/actions'
 import {
   claimMicrophone,
@@ -96,6 +101,8 @@ export function DubGame({
   const stage = useRef<VideoStageHandle>(null)
   const score = useRef<ScoreHandle>(null)
   const recorder = useRef<RecorderHandle | null>(null)
+  /** Micro ouvert des l'appui sur R, pour qu'il chauffe pendant le decompte. */
+  const microphone = useRef<MicrophoneHandle | null>(null)
   const clock = useRef(0)
   /** Segment vise par la prise en cours ; l'arret se fera a sa fin. */
   const target = useRef<Segment | null>(null)
@@ -115,6 +122,7 @@ export function DubGame({
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [volume, setVolume] = useState(0.8)
   const [reviewing, setReviewing] = useState(false)
+  const [level, setLevel] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   // Les points viennent du salon ; l'etat local ne sert qu'a repondre au
@@ -221,6 +229,7 @@ export function DubGame({
 
     stage.current?.pause()
     const result = await handle.stop()
+    microphone.current = null
     setRecording(false)
 
     try {
@@ -233,19 +242,25 @@ export function DubGame({
       const form = new FormData()
       form.set('roomId', room.id)
       form.set('playerId', youId ?? '')
-      // La latence de MediaRecorder decale la prise : elle a commence un peu
-      // apres le debut de la lecture, donc on l'ancre plus loin.
-      form.set(
-        'startSec',
-        String((aim?.start ?? clock.current) + result.latencyMs / 1000),
-      )
+      // La capture demarre juste avant la video, a quelques millisecondes
+      // pres : la prise s'ancre donc au debut du segment vise. L'ancienne
+      // correction de latence ajoutait un decalage au lieu de le corriger,
+      // le micro n'etant plus ouvert au dernier moment.
+      form.set('startSec', String(aim?.start ?? clock.current))
       form.set('durationMs', String(durationMs))
       form.set('offsetMs', '0')
-      form.set('peaks', JSON.stringify(await peaksOf(result.blob, durationMs / 1000)))
+      const shape = await peaksOf(result.blob, durationMs / 1000)
+      form.set('peaks', JSON.stringify(shape))
       form.set('audio', new File([result.blob], 'prise', { type: result.mimeType }))
 
       await saveTake(form)
       await refreshTakes()
+
+      // Une prise muette part sans rien dire et ne se decouvre qu'a
+      // l'ecoute finale, quand il est trop tard pour la refaire.
+      if (shape.length > 0 && Math.max(...shape) < 0.04) {
+        setError('Cette prise est silencieuse. Vérifiez le micro et refaites-la.')
+      }
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : 'Enregistrement non sauvegardé.',
@@ -261,10 +276,11 @@ export function DubGame({
   const armRecorder = useCallback(async () => {
     setCounting(false)
     const aim = target.current
-    if (!aim) return
+    const mic = microphone.current
+    if (!aim || !mic) return
 
     try {
-      recorder.current = await startRecording()
+      recorder.current = mic.record()
       setRecording(true)
       setElapsedMs(0)
       stage.current?.playMuted(aim.start)
@@ -279,10 +295,10 @@ export function DubGame({
       )
     } catch {
       target.current = null
+      microphone.current?.close()
+      microphone.current = null
       await releaseMicrophone(room.id)
-      setError(
-        'Micro inaccessible. Autorisez-le dans votre navigateur, puis réessayez.',
-      )
+      setError('L’enregistrement n’a pas pu démarrer.')
     }
   }, [room.id])
 
@@ -298,6 +314,19 @@ export function DubGame({
     const claimed = await claimMicrophone(room.id, youId)
     if (!claimed) {
       setError('Quelqu’un vient de prendre le micro.')
+      return
+    }
+
+    try {
+      // Le micro s'ouvre maintenant et chauffe pendant le decompte. C'est
+      // toute la correction : ouvert au dernier moment, il ne capte rien
+      // pendant ses premieres centaines de millisecondes.
+      microphone.current = await openMicrophone()
+    } catch {
+      await releaseMicrophone(room.id)
+      setError(
+        'Micro inaccessible. Autorisez-le dans votre navigateur, puis réessayez.',
+      )
       return
     }
 
@@ -351,6 +380,21 @@ export function DubGame({
   }, [])
 
   useEffect(() => () => mixer.current?.dispose(), [])
+
+  useEffect(() => {
+    const stream = microphone.current?.stream
+    if ((!counting && !recording) || !stream) {
+      setLevel(0)
+      return
+    }
+
+    const meter = meterFor(stream)
+    const timer = window.setInterval(() => setLevel(meter.read()), 80)
+    return () => {
+      window.clearInterval(timer)
+      meter.close()
+    }
+  }, [counting, recording])
 
   useEffect(() => {
     if (!recording) return
@@ -443,7 +487,7 @@ export function DubGame({
           }}
           aspectRatio={aspectRatio}
         />
-        {counting && <Countdown onDone={() => void armRecorder()} />}
+        {counting && <Countdown onDone={() => void armRecorder()} level={level} />}
         {!counting && !recording && (
           <VolumeControl
             value={volume}
@@ -491,6 +535,7 @@ export function DubGame({
         recording={recording}
         blockedBy={someoneElseRecords ? holderName : null}
         elapsedMs={elapsedMs}
+        level={level}
         onPlayPause={() => stage.current?.toggle()}
         onRecord={toggleRecord}
         onRestart={() => stage.current?.seek(0)}

@@ -10,6 +10,8 @@ export interface TransportProps {
   /** Nom du joueur qui tient le micro, si ce n'est pas vous. */
   blockedBy: string | null
   elapsedMs: number
+  /** Niveau d'entree du micro, entre 0 et 1. */
+  level: number
   onPlayPause: () => void
   onRecord: () => void
   onRestart: () => void
@@ -49,6 +51,7 @@ export function Transport({
   recording,
   blockedBy,
   elapsedMs,
+  level,
   onPlayPause,
   onRecord,
   onRestart,
@@ -75,6 +78,14 @@ export function Transport({
             <span className="text-rec font-medium">Vous enregistrez</span>
             <span className="tnum text-muted font-mono">
               {formatTimecode(elapsedMs / 1000)}
+            </span>
+            {/* Une prise muette ne se decouvre sinon qu'a l'ecoute finale,
+                quand il est trop tard pour la refaire. */}
+            <span className="bg-sunken ml-1 h-1.5 w-16 overflow-hidden rounded-full">
+              <span
+                className="bg-rec block h-full rounded-full transition-[width] duration-75"
+                style={{ width: `${Math.min(100, level * 140)}%` }}
+              />
             </span>
           </>
         ) : locked ? (
