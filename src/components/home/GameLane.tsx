@@ -94,7 +94,7 @@ export function GameLane({ game }: { game: Game }) {
     }
   }, [active, shape])
 
-  const playable = game.href !== null
+  const playable = game.playable
 
   const body = (
     <>

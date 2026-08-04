@@ -9,6 +9,12 @@ export interface Game {
   id: GameId
   name: string
   tagline: string
+  /**
+   * Le jeu peut-il se lancer ? C'est distinct du lien : un jeu se choisit
+   * dans le salon, le lien ne sert qu'a ouvrir un salon deja regle depuis
+   * l'accueil.
+   */
+  playable: boolean
   href: string | null
 }
 
@@ -71,25 +77,29 @@ export const GAMES: Game[] = [
   {
     id: 'quiz',
     name: 'Quiz',
-    tagline: 'Sept formes de questions. L’hôte corrige à la main, tout le monde regarde.',
-    href: null,
+    tagline: 'Cinq formes de questions, 159 au catalogue. L’hôte corrige à la fin.',
+    playable: true,
+    href: '/create?game=quiz',
   },
   {
     id: 'dub',
     name: 'Doublage',
     tagline: 'Prêtez vos voix à une scène. On découvre le résultat ensemble.',
-    href: '/create',
+    playable: true,
+    href: '/create?game=dub',
   },
   {
     id: 'beast',
     name: 'Animaux',
     tagline: 'Un cri, un animal à reconnaître. Plus dur qu’il n’y paraît.',
+    playable: false,
     href: null,
   },
   {
     id: 'next',
     name: 'La suite',
     tagline: 'Le son s’arrête net. À vous d’inventer ce qui vient après.',
+    playable: false,
     href: null,
   },
 ]

@@ -43,7 +43,7 @@ export function GamePicker({
     GAMES.findIndex((candidate) => candidate.id === game),
   )
   const current = GAMES[index] ?? GAMES[0]!
-  const available = current.href !== null
+  const available = current.playable
 
   function step(direction: -1 | 1) {
     const next = GAMES[(index + direction + GAMES.length) % GAMES.length]

@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ClipStep } from '@/components/room/ClipStep'
 import { DubGame } from '@/components/dub/DubGame'
 import { DubResult } from '@/components/dub/DubResult'
 import { GradingDeck } from '@/components/quiz/GradingDeck'
 import { Podium } from '@/components/quiz/Podium'
 import { QuizGame } from '@/components/quiz/QuizGame'
+import { loadQuestions } from '@/lib/quiz/actions'
 import type { Question } from '@/lib/quiz/kinds'
 import { RoomLobby } from '@/components/room/RoomLobby'
 import type { SavedTake } from '@/lib/takes/actions'
@@ -43,6 +44,14 @@ export function RoomScreen({
   dub: DubContext | null
   questions: Question[]
 }) {
+  /**
+   * Les questions recues en props datent du rendu serveur, c'est-a-dire de
+   * l'ouverture de la page — donc d'avant le tirage. Sans ce rechargement,
+   * lancer une partie affichait « aucune question » alors qu'elles venaient
+   * d'etre tirees.
+   */
+  const [drawn, setDrawn] = useState<Question[]>(questions)
+  useEffect(() => setDrawn(questions), [questions])
   const {
     room: liveRoom,
     players: livePlayers,
@@ -58,6 +67,19 @@ export function RoomScreen({
 
   const room = liveRoom ?? initialRoom
   const players = liveRoom ? livePlayers : initialPlayers
+
+  const ids = Array.isArray(room.question_ids) ? (room.question_ids as string[]) : []
+  const idsKey = ids.join(',')
+
+  useEffect(() => {
+    if (idsKey === '') return
+    // Le tirage a change sous nos pieds : on va chercher les enonces.
+    if (drawn.length === ids.length && drawn.every((q, i) => q.id === ids[i])) return
+    void loadQuestions(ids).then(setDrawn)
+    // `idsKey` resume le tirage : comparer le tableau lui-meme relancerait
+    // l'effet a chaque rendu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey])
 
   if (error) {
     return (
@@ -79,12 +101,12 @@ export function RoomScreen({
           room={room}
           players={players}
           youId={youId}
-          questions={questions}
+          questions={drawn}
         />
       )
     }
     return (
-      <QuizGame room={room} players={players} youId={youId} questions={questions} />
+      <QuizGame room={room} players={players} youId={youId} questions={drawn} />
     )
   }
 

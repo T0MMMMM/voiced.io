@@ -1,10 +1,11 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { PlusIcon } from '@/components/ui/icons'
 import { createRoom } from '@/lib/rooms/actions'
+import { GAMES, type GameId } from '@/lib/games'
 
 /**
  * On ouvre le salon d'abord, on choisit le jeu ensuite.
@@ -13,8 +14,16 @@ import { createRoom } from '@/lib/rooms/actions'
  * pour retrouver des amis, pas pour jouer a un jeu decide a l'avance. Le
  * choix se fait a plusieurs, une fois tout le monde arrive.
  */
-export default function CreatePage() {
+function CreateForm() {
   const router = useRouter()
+  const params = useSearchParams()
+
+  // Le jeu vient de la piste cliquee sur l'accueil ; il reste modifiable
+  // dans le salon, c'est la qu'on le choisit vraiment.
+  const requested = params.get('game')
+  const game: GameId = GAMES.some((candidate) => candidate.id === requested)
+    ? (requested as GameId)
+    : 'quiz'
   const [nickname, setNickname] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +33,7 @@ export default function CreatePage() {
     setBusy(true)
     setError(null)
     try {
-      const room = await createRoom({ game: 'dub', nickname })
+      const room = await createRoom({ game, nickname })
       router.push(`/room/${room.code}`)
     } catch (cause) {
       setError(
@@ -35,7 +44,7 @@ export default function CreatePage() {
   }
 
   return (
-    <main className="mx-auto max-w-sm px-6 pt-32 pb-24 sm:pt-40">
+    <>
       <h1
         className="rise text-fg text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.05] font-medium tracking-[-0.035em]"
         style={{ animationDelay: '40ms' }}
@@ -83,6 +92,16 @@ export default function CreatePage() {
           </p>
         )}
       </form>
+    </>
+  )
+}
+
+export default function CreatePage() {
+  return (
+    <main className="mx-auto max-w-sm px-6 pt-32 pb-24 sm:pt-40">
+      <Suspense fallback={null}>
+        <CreateForm />
+      </Suspense>
     </main>
   )
 }
