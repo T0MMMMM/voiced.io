@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation'
 import { RoomScreen } from '@/components/room/RoomScreen'
 import { buttonClassName } from '@/components/ui'
 import { readIdentity } from '@/lib/rooms/identity'
+import { listTakes } from '@/lib/takes/actions'
+import { getUrl } from '@/lib/storage'
+import type { DubContext } from '@/components/room/RoomScreen'
 import { createServiceClient } from '@/lib/supabase/server'
 import { normalizeRoomCode } from '@/lib/utils/id'
 
@@ -54,13 +57,40 @@ export default async function RoomPage({
     .eq('room_id', room.id)
     .order('slot')
 
+  // Le contexte du doublage ne se charge que quand il sert : un salon de
+  // quiz n'a ni clip ni prises a aller chercher.
+  let dub: DubContext | null = null
+  if (room.game === 'dub' && room.clip_id) {
+    const { data: clip } = await supabase
+      .from('clips')
+      .select('storage_path, duration_sec, width, height')
+      .eq('id', room.clip_id)
+      .maybeSingle()
+
+    if (clip) {
+      try {
+        dub = {
+          videoUrl: await getUrl('clips', clip.storage_path),
+          durationSec: Number(clip.duration_sec),
+          aspectRatio:
+            clip.width && clip.height ? clip.width / clip.height : 16 / 9,
+          takes: await listTakes(room.id),
+        }
+      } catch {
+        // Fichier introuvable : le salon retombe sur l'etape d'import.
+        dub = null
+      }
+    }
+  }
+
   return (
-    <main className="mx-auto max-w-3xl px-6 pt-28 pb-24 sm:px-10 sm:pt-32">
+    <main className="mx-auto max-w-4xl px-6 pt-28 pb-24 sm:px-10 sm:pt-32">
       <RoomScreen
         code={code}
         youId={identity.playerId}
         initialRoom={room}
         initialPlayers={players ?? []}
+        dub={dub}
       />
     </main>
   )

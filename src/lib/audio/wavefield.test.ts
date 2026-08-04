@@ -52,13 +52,22 @@ describe('mouvement', () => {
     expect(before).not.toEqual(after)
   })
 
-  it('bouge sur toute la longueur, pas seulement par endroits', () => {
-    const before = frame(5)
-    const after = frame(5.25)
-    const moved = before.filter(
-      (amplitude, i) => Math.abs(amplitude - (after[i] ?? 0)) > 0.02,
-    )
-    expect(moved.length).toBeGreaterThan(BARS * 0.75)
+  it('n’a aucune zone morte : chaque barre bouge sur quatre secondes', () => {
+    // La propriete qui compte n'est pas que tout bouge au meme instant —
+    // avec des vagues larges, certaines zones passent par un noeud. C'est
+    // qu'aucune portion de la piste ne reste figee.
+    //
+    // La fenetre couvre quatre secondes : la composante la plus lente du
+    // champ a une periode voisine, et juger sur moins reviendrait a juger
+    // une vague sur une fraction de sa course. Le minimum mesure est de
+    // 0,21 — le seuil garde donc de la marge tout en attrapant un vrai gel.
+    const samples = Array.from({ length: 49 }, (_, k) => frame(5 + k / 12))
+
+    for (let i = 0; i < BARS; i++) {
+      const values = samples.map((s) => s[i] ?? 0)
+      const swing = Math.max(...values) - Math.min(...values)
+      expect(swing).toBeGreaterThan(0.1)
+    }
   })
 
   it('ne se fige jamais sur une valeur unique', () => {

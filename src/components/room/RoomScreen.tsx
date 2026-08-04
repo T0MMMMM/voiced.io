@@ -2,7 +2,9 @@
 
 import { useEffect } from 'react'
 import { ClipStep } from '@/components/room/ClipStep'
+import { DubGame } from '@/components/dub/DubGame'
 import { RoomLobby } from '@/components/room/RoomLobby'
+import type { SavedTake } from '@/lib/takes/actions'
 import type { Player, Room } from '@/lib/supabase/types'
 import { useRoomStore } from '@/stores/useRoomStore'
 
@@ -14,16 +16,25 @@ import { useRoomStore } from '@/stores/useRoomStore'
  * qu'il est prêt. Sans ce relais, on afficherait un chargement à chaque
  * arrivée alors que la donnée est déjà là.
  */
+export interface DubContext {
+  videoUrl: string
+  durationSec: number
+  aspectRatio: number
+  takes: SavedTake[]
+}
+
 export function RoomScreen({
   code,
   youId,
   initialRoom,
   initialPlayers,
+  dub,
 }: {
   code: string
   youId: string | null
   initialRoom: Room
   initialPlayers: Player[]
+  dub: DubContext | null
 }) {
   const {
     room: liveRoom,
@@ -58,6 +69,20 @@ export function RoomScreen({
   if (room.game === 'dub' && !room.clip_id) {
     const you = players.find((player) => player.id === youId)
     return <ClipStep room={room} isHost={you?.is_host ?? false} />
+  }
+
+  if (room.game === 'dub' && dub) {
+    return (
+      <DubGame
+        room={room}
+        players={players}
+        youId={youId}
+        videoUrl={dub.videoUrl}
+        durationSec={dub.durationSec}
+        aspectRatio={dub.aspectRatio}
+        initialTakes={dub.takes}
+      />
+    )
   }
 
   return (

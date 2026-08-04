@@ -7,25 +7,29 @@
  * points proches de la meme courbe, donc leurs hauteurs se ressemblent
  * forcement. C'est cette continuite qui fait la vague.
  *
- * Quatre sinusoides de longueurs, vitesses et sens differents se
- * superposent : aucune ne domine, leur somme ne se repete pas a l'oeil, et
- * le mouvement traverse la piste dans les deux sens a la fois.
+ * Trois sinusoides de longueurs, vitesses et sens differents se superposent :
+ * aucune ne domine, leur somme ne se repete pas a l'oeil, et le mouvement
+ * traverse la piste dans les deux sens a la fois.
  */
 
 /** Ecartement entre deux barres dans le champ. Regle la taille des vagues. */
-const SPACING = 0.38
+const SPACING = 0.24
 
 /** Plancher : une piste n'est jamais tout a fait plate. */
 export const FLOOR = 0.045
 
 type Wave = { length: number; speed: number; weight: number }
 
-/** La plus courte fait environ six barres : en deca, la vague se disloque. */
+/**
+ * Trois ondes suffisent : au-dela, les vagues se croisent trop et le trace
+ * redevient du bruit. Les longueurs sont choisies pour qu'on en compte deux
+ * a quatre sur la largeur de la piste — assez pour voir le mouvement
+ * traverser, pas assez pour qu'il s'emmele.
+ */
 const CARRIER: Wave[] = [
-  { length: 0.85, speed: -2.6, weight: 0.45 },
-  { length: 1.63, speed: 3.4, weight: 0.28 },
-  { length: 2.71, speed: -4.7, weight: 0.16 },
-  { length: 0.41, speed: 1.7, weight: 0.32 },
+  { length: 0.62, speed: -2.4, weight: 0.5 },
+  { length: 1.15, speed: 3.1, weight: 0.3 },
+  { length: 0.33, speed: 1.6, weight: 0.35 },
 ]
 
 /** Ondes lentes qui creusent des zones fortes et des zones calmes. */
