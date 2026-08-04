@@ -64,12 +64,19 @@ export class DubMixer {
   private gain: GainNode | null = null
   private loaded: LoadedTrack[] = []
 
+  /**
+   * Charge les prises et rend le compte de ce qui est reellement lisible.
+   *
+   * Une prise qui ne se decode pas ne doit pas empecher d'entendre les
+   * autres — mais le silence total doit pouvoir s'expliquer. L'appelant a
+   * besoin de savoir combien ont ete perdues pour le dire.
+   */
   async load(
     tracks: (Track & { url: string })[],
     fetcher: typeof fetch = fetch,
-  ): Promise<void> {
+  ): Promise<{ loaded: number; total: number }> {
     this.dispose()
-    if (tracks.length === 0) return
+    if (tracks.length === 0) return { loaded: 0, total: 0 }
 
     const context = new AudioContext()
     this.context = context
@@ -92,6 +99,7 @@ export class DubMixer {
     )
 
     this.loaded = decoded.filter((track): track is Decoded => track !== null)
+    return { loaded: this.loaded.length, total: tracks.length }
   }
 
   get ready(): boolean {

@@ -2,6 +2,7 @@
 
 import { extensionFromMime, getUrl, remove, takePath, upload } from '@/lib/storage'
 import { createServiceClient } from '@/lib/supabase/server'
+import { replacedBy } from './overlap'
 
 /**
  * Une prise de trente secondes en Opus pese moins de cent kilooctets : elle
@@ -88,23 +89,26 @@ export async function saveTake(form: FormData): Promise<void> {
   // remplace que SES propres prises — deux joueurs peuvent legitimement
   // parler par-dessus le meme passage.
   if (playerId) {
-    const endSec = startSec + durationMs / 1000
     const { data: overlapping } = await supabase
       .from('takes')
       .select('id, storage_path, start_sec, duration_ms')
       .eq('room_id', roomId)
       .eq('player_id', playerId)
 
-    const doomed = (overlapping ?? []).filter((take) => {
-      const from = Number(take.start_sec)
-      const to = from + take.duration_ms / 1000
-      return from < endSec && startSec < to
-    })
+    const doomed = replacedBy(
+      (overlapping ?? []).map((take) => ({
+        id: take.id,
+        storagePath: take.storage_path,
+        startSec: Number(take.start_sec),
+        durationMs: take.duration_ms,
+      })),
+      { startSec, durationMs },
+    )
 
     if (doomed.length > 0) {
       await remove(
         'takes',
-        doomed.map((take) => take.storage_path),
+        doomed.map((take) => take.storagePath),
       ).catch(() => {})
       await supabase
         .from('takes')

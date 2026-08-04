@@ -347,7 +347,7 @@ export function DubGame({
 
     setError(null)
     mixer.current ??= new DubMixer()
-    await mixer.current.load(
+    const { loaded, total } = await mixer.current.load(
       takes.map((take) => ({
         id: take.id,
         url: take.url,
@@ -355,6 +355,17 @@ export function DubGame({
         durationSec: take.durationMs / 1000,
       })),
     )
+
+    // Un silence total doit pouvoir s'expliquer, sinon on cherche du cote
+    // du micro un probleme qui est du cote de la lecture.
+    if (loaded === 0 && total > 0) {
+      setError('Aucune prise n’a pu être lue. Rechargez la page et réessayez.')
+      setReviewing(false)
+      return
+    }
+    if (loaded < total) {
+      setError(`${total - loaded} prise(s) sur ${total} n’ont pas pu être lues.`)
+    }
 
     // On repart du debut : apres une prise, la tete est posee a la fin du
     // segment, et « ecouter le resultat » n'aurait fait entendre que la

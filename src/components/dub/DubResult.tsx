@@ -41,6 +41,7 @@ export function DubResult({
   const [playing, setPlaying] = useState(false)
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [warning, setWarning] = useState<string | null>(null)
 
   const you = players.find((player) => player.id === youId)
   const isHost = you?.is_host ?? false
@@ -56,8 +57,9 @@ export function DubResult({
     }
 
     setLoading(true)
+    setWarning(null)
     mixer.current ??= new DubMixer()
-    await mixer.current.load(
+    const { loaded, total } = await mixer.current.load(
       takes.map((take) => ({
         id: take.id,
         url: take.url,
@@ -66,6 +68,14 @@ export function DubResult({
       })),
     )
     setLoading(false)
+
+    if (loaded === 0 && total > 0) {
+      setWarning('Aucune prise n’a pu être lue. Rechargez la page et réessayez.')
+      return
+    }
+    if (loaded < total) {
+      setWarning(`${total - loaded} prise(s) sur ${total} n’ont pas pu être lues.`)
+    }
 
     await mixer.current.start(0)
     // La bande originale se tait : c'est votre version qu'on écoute.
@@ -111,6 +121,12 @@ export function DubResult({
           {playing ? 'Arrêter' : 'Lancer le doublage complet'}
         </Button>
       </div>
+
+      {warning && (
+        <p role="alert" className="text-rec text-center text-[15px]">
+          {warning}
+        </p>
+      )}
 
       <Panel>
         <h2 className="text-fg mb-3 text-[15px] font-medium">Les voix</h2>
