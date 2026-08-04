@@ -13,7 +13,7 @@ import { ThemeQuestion } from '@/components/quiz/kinds/ThemeQuestion'
 import { TimelineQuestion } from '@/components/quiz/kinds/TimelineQuestion'
 import { WrittenQuestion } from '@/components/quiz/kinds/WrittenQuestion'
 import { QuestionMeta } from '@/components/quiz/QuestionMeta'
-import { Button, Panel } from '@/components/ui'
+import { IconButton, Panel } from '@/components/ui'
 import { CheckIcon } from '@/components/ui/icons'
 import {
   advanceQuiz,
@@ -304,32 +304,35 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
   return (
     <div className="space-y-8">
       <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="flex flex-wrap items-center gap-3">
-            <span className="eyebrow text-faint">
-              Question {step + 1} sur {questions.length} · {KIND_LABELS[question.kind]}
-            </span>
-            {/* Le theme au choix n'annonce ni difficulte ni points : c'est le
-                joueur qui les fixe, et les afficher d'avance mentirait. */}
-            {question.kind !== 'theme' && (
-              <QuestionMeta difficulty={question.difficulty} points={question.points} />
-            )}
+        {/* La barre garde son dessin d'origine : l'enonce a gauche, la
+            difficulte a droite. Le bouton de validation se pose par-dessus,
+            hors du flux, pour ne rien deplacer. */}
+        <div className="relative flex flex-wrap items-center justify-between gap-3 pr-12">
+          <span className="eyebrow text-faint">
+            Question {step + 1} sur {questions.length} · {KIND_LABELS[question.kind]}
           </span>
+          {/* Le theme au choix n'annonce ni difficulte ni points : c'est le
+              joueur qui les fixe, et les afficher d'avance mentirait. */}
+          {question.kind !== 'theme' && (
+            <QuestionMeta difficulty={question.difficulty} points={question.points} />
+          )}
 
           {/* Valider ne sert pas a envoyer la reponse, qui part deja toute
               seule : c'est dire « j'ai fini ». Quand toute la table a
               valide, on passe sans attendre le minuteur. */}
-          <Button
+          <IconButton
+            label={done ? 'Réponse validée' : 'Valider ma réponse'}
             size="sm"
-            variant={done ? 'ghost' : 'primary'}
-            loading={busy}
-            disabled={done || timeUp}
+            variant={done ? 'ghost' : 'raised'}
+            disabled={done || timeUp || busy}
             onClick={() => void validate()}
-            className="gap-2"
+            className={cn(
+              'absolute top-1/2 right-0 -translate-y-1/2',
+              done && 'text-accent disabled:opacity-100',
+            )}
           >
-            {done && <CheckIcon className="size-4" />}
-            {done ? 'Validé' : 'Valider'}
-          </Button>
+            <CheckIcon className="size-[18px]" />
+          </IconButton>
         </div>
 
         {/* Le temps se lit d'un coup d'oeil : une barre qui se vide dit

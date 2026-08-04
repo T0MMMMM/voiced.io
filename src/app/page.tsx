@@ -17,15 +17,8 @@ export default function Home() {
             className="rise text-fg max-w-2xl text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.95] font-medium tracking-[-0.05em] text-balance"
             style={{ animationDelay: '60ms' }}
           >
-            Jouez ensemble. Découvrez à la fin.
+            Jouez ensemble. Amusez vous bien ;)
           </h1>
-          <p
-            className="rise text-muted mt-5 max-w-md text-[17px] leading-relaxed"
-            style={{ animationDelay: '160ms' }}
-          >
-            Quatre jeux à plusieurs, sans rien installer.
-          </p>
-
           <div className="rise mt-12 sm:mt-14" style={{ animationDelay: '260ms' }}>
             <VoiceField />
           </div>

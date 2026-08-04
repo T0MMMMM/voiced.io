@@ -290,6 +290,8 @@ La réponse s'enregistre au fil de la saisie, jamais au clic : personne ne perd 
 
 - réponses anonymes pendant la correction (l'hôte ne voit pas qui a écrit quoi : corrige les biais entre amis)
 
+Après la dernière question corrigée, un écran de **rattrapage** précède le podium : l'hôte ajuste les totaux au demi-point près. La machine se trompe, l'hôte aussi, et revenir en arrière question par question coûterait dix minutes. L'écran est visible de toute la table, à dessein : un ajustement fait en cachette serait suspect, fait devant tout le monde il se discute.
+
 Ce dernier réglage mérite d'exister : quand l'hôte sait qui a répondu, il est plus indulgent avec certains. L'anonymat pendant la correction rend l'arbitrage plus juste et le résultat plus crédible.
 
 ### L'écran de correction

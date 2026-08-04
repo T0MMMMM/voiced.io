@@ -427,6 +427,8 @@ export interface Standing {
   playerId: string
   nickname: string
   score: number
+  /** Ce que l'hote a ajoute ou retire a la main, deja compris dans `score`. */
+  bonus: number
   answered: number
 }
 
@@ -436,7 +438,7 @@ export async function standings(roomId: string): Promise<Standing[]> {
 
   const { data: players } = await supabase
     .from('players')
-    .select('id, nickname')
+    .select('id, nickname, bonus')
     .eq('room_id', roomId)
     .order('slot')
 
@@ -448,14 +450,44 @@ export async function standings(roomId: string): Promise<Standing[]> {
   return (players ?? [])
     .map((player) => {
       const own = (answers ?? []).filter((a) => a.player_id === player.id)
+      const earned = own.reduce((sum, a) => sum + Number(a.final_score ?? 0), 0)
       return {
         playerId: player.id,
         nickname: player.nickname,
-        score: own.reduce((sum, a) => sum + Number(a.final_score ?? 0), 0),
+        // Le rattrapage de l'hote fait partie du score, il ne s'affiche pas
+        // a cote : le podium doit montrer un total, pas une addition.
+        score: earned + Number(player.bonus ?? 0),
+        bonus: Number(player.bonus ?? 0),
         answered: own.length,
       }
     })
     .sort((a, b) => b.score - a.score)
+}
+
+/**
+ * Le rattrapage de fin de correction.
+ *
+ * La machine se trompe, l'hote aussi : une reponse juste refusee, un
+ * doublon compte deux fois. Revenir en arriere question par question
+ * couterait dix minutes ; on corrige le total.
+ */
+export async function adjustScore(playerId: string, delta: number): Promise<void> {
+  const supabase = createServiceClient()
+
+  const { data: player } = await supabase
+    .from('players')
+    .select('bonus')
+    .eq('id', playerId)
+    .maybeSingle()
+
+  if (!player) throw new Error('Joueur introuvable.')
+
+  const { error } = await supabase
+    .from('players')
+    .update({ bonus: Number(player.bonus ?? 0) + delta })
+    .eq('id', playerId)
+
+  if (error) throw new Error(`Ajustement impossible : ${error.message}`)
 }
 
 export async function publishResults(roomId: string): Promise<void> {

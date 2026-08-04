@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { Button, Panel } from '@/components/ui'
-import { CheckIcon } from '@/components/ui/icons'
+import { CheckIcon, CrossIcon } from '@/components/ui/icons'
 import { AnswerKey } from '@/components/quiz/AnswerKey'
 import {
   advanceQuiz,
   answersFor,
   expectedAnswer,
   gradeAnswers,
-  publishResults,
   type PlayerAnswer,
 } from '@/lib/quiz/actions'
 import {
@@ -133,20 +132,39 @@ export function GradingDeck({
     void load()
   }, [load])
 
+  useEffect(() => {
+    if (isHost) return
+    const timer = window.setInterval(() => void load(), 2000)
+    return () => window.clearInterval(timer)
+  }, [isHost, load])
+
   const auto = question ? isAutoScored(question.kind) : false
 
+  /**
+   * Trancher se voit immediatement.
+   *
+   * L'ecran se met a jour avant le serveur, et l'ecriture part sans qu'on
+   * l'attende : corriger vingt questions a huit joueurs, c'est deux cents
+   * clics, et un aller-retour reseau a chacun rendait la correction
+   * penible. En cas d'echec, on relit la base et on le dit.
+   */
   const grade = useCallback(
-    async (ids: string[], correct: boolean) => {
+    (ids: string[], correct: boolean) => {
       if (!question) return
-      setBusy(true)
-      try {
-        await gradeAnswers(ids, correct ? question.points : 0)
-        await load()
-      } catch (cause) {
+      const points = correct ? question.points : 0
+
+      setAnswers((current) =>
+        current.map((answer) =>
+          ids.includes(answer.id)
+            ? { ...answer, finalScore: points, graded: true }
+            : answer,
+        ),
+      )
+
+      void gradeAnswers(ids, points).catch((cause) => {
         setError(cause instanceof Error ? cause.message : 'Correction impossible.')
-      } finally {
-        setBusy(false)
-      }
+        void load()
+      })
     },
     [question, load],
   )
@@ -154,17 +172,18 @@ export function GradingDeck({
   const next = useCallback(async () => {
     setBusy(true)
     try {
-      if (step >= questions.length - 1) await publishResults(room.id)
-      else await advanceQuiz(room.id, step + 1)
+      // La derniere question ne publie pas : elle mene a l'ajustement,
+      // ou l'hote rattrape ce que la correction a rate.
+      await advanceQuiz(room.id, step + 1)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Action impossible.')
     } finally {
       setBusy(false)
     }
-  }, [room.id, step, questions.length])
+  }, [room.id, step])
 
-  // Tout au clavier : J juste, F faux, → suivante. Une correction se mène
-  // au rythme de la parole, pas à celui de la souris.
+  // Tout au clavier : Entrée ou → pour avancer. Une correction se mène au
+  // rythme de la parole, pas à celui de la souris.
   useEffect(() => {
     if (!isHost) return
     function onKey(event: KeyboardEvent) {
@@ -181,20 +200,6 @@ export function GradingDeck({
   }, [isHost, next])
 
   if (!question) return null
-
-  if (!isHost) {
-    return (
-      <div className="py-16 text-center">
-        <p className="eyebrow text-accent">Correction en cours</p>
-        <p className="text-fg mt-3 text-[17px]">
-          {you ? 'L’hôte passe les réponses en revue.' : 'Correction en cours.'}
-        </p>
-        <p className="text-faint mt-2 text-[13px]">
-          Question {step + 1} sur {questions.length}
-        </p>
-      </div>
-    )
-  }
 
   const groups: Group[] = groupAnswers(
     answers.map((answer) => ({ id: answer.id, text: readable(answer.payload) })),
@@ -290,12 +295,15 @@ export function GradingDeck({
                   )}
                 </span>
 
-                <span className="flex shrink-0 gap-2">
+                {/* Les joueurs voient la correction se faire ; seul l'hote
+                    tranche. Regarder sans pouvoir toucher vaut mieux que
+                    d'attendre devant un ecran vide. */}
+                {isHost && <span className="flex shrink-0 gap-2">
                   <Button
                     size="sm"
                     variant={settled && score > 0 ? 'primary' : 'secondary'}
-                    disabled={busy}
-                    onClick={() => void grade(ids, true)}
+                    onClick={() => grade(ids, true)}
+                    className="gap-1.5"
                   >
                     <CheckIcon className="size-4" />
                     Juste
@@ -303,12 +311,13 @@ export function GradingDeck({
                   <Button
                     size="sm"
                     variant={settled && score === 0 ? 'danger' : 'secondary'}
-                    disabled={busy}
-                    onClick={() => void grade(ids, false)}
+                    onClick={() => grade(ids, false)}
+                    className="gap-1.5"
                   >
+                    <CrossIcon className="size-4" />
                     Faux
                   </Button>
-                </span>
+                </span>}
               </Panel>
             </li>
           )
@@ -322,12 +331,20 @@ export function GradingDeck({
       </ul>
 
       <div className="flex flex-col items-center gap-2">
-        <Button size="lg" loading={busy} onClick={() => void next()}>
-          {step >= questions.length - 1
-            ? 'Publier les résultats'
-            : 'Question suivante'}
-        </Button>
-        <p className="text-faint text-[13px]">Entrée ou → pour avancer</p>
+        {isHost ? (
+          <>
+            <Button size="lg" loading={busy} onClick={() => void next()}>
+              {step >= questions.length - 1
+                ? 'Ajuster les points'
+                : 'Question suivante'}
+            </Button>
+            <p className="text-faint text-[13px]">Entrée ou → pour avancer</p>
+          </>
+        ) : (
+          <p className="text-faint text-[13px]">
+            L’hôte passe les réponses en revue.
+          </p>
+        )}
       </div>
 
       {error && (

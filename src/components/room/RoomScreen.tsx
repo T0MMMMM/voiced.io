@@ -6,6 +6,7 @@ import { DubGame } from '@/components/dub/DubGame'
 import { DubResult } from '@/components/dub/DubResult'
 import { GradingDeck } from '@/components/quiz/GradingDeck'
 import { Podium } from '@/components/quiz/Podium'
+import { ScoreFix } from '@/components/quiz/ScoreFix'
 import { QuizGame } from '@/components/quiz/QuizGame'
 import { loadQuestions } from '@/lib/quiz/actions'
 import type { Question } from '@/lib/quiz/kinds'
@@ -96,6 +97,12 @@ export function RoomScreen({
   if (room.game === 'quiz') {
     if (room.status === 'results') return <Podium room={room} youId={youId} />
     if (room.status === 'grading') {
+      // Passe la derniere question, la correction n'est pas finie : reste
+      // le rattrapage, ou l'hote repare ce qu'elle a manque.
+      if (drawn.length > 0 && room.current_step >= drawn.length) {
+        return <ScoreFix room={room} players={players} youId={youId} />
+      }
+
       return (
         <GradingDeck
           room={room}

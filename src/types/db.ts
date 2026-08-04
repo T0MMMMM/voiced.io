@@ -128,6 +128,7 @@ export type Database = {
       }
       players: {
         Row: {
+          bonus: number
           id: string
           is_host: boolean
           last_seen_at: string
@@ -136,6 +137,7 @@ export type Database = {
           slot: number
         }
         Insert: {
+          bonus?: number
           id?: string
           is_host?: boolean
           last_seen_at?: string
@@ -144,6 +146,7 @@ export type Database = {
           slot: number
         }
         Update: {
+          bonus?: number
           id?: string
           is_host?: boolean
           last_seen_at?: string

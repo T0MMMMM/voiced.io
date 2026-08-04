@@ -29,12 +29,12 @@ export function RoomCode({ code }: { code: string }) {
     element.classList.add('pop')
   }
 
-  async function copyLink() {
+  async function copyCode() {
     bounce()
     try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/join?code=${code}`,
-      )
+      // Le code seul, pas l'adresse : c'est ce qu'on colle dans une
+      // conversation, et c'est ce que le champ « j'ai un code » attend.
+      await navigator.clipboard.writeText(code)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1800)
     } catch {
@@ -49,9 +49,9 @@ export function RoomCode({ code }: { code: string }) {
 
       <button
         type="button"
-        onClick={() => void copyLink()}
+        onClick={() => void copyCode()}
         aria-label={
-          copied ? 'Lien copié' : `Copier le lien d’invitation, code ${code}`
+          copied ? 'Code copié' : `Copier le code ${code}`
         }
         className="rounded-token group relative px-4 pb-3 transition-colors duration-200"
       >
@@ -83,7 +83,7 @@ export function RoomCode({ code }: { code: string }) {
           copied ? 'text-accent opacity-100' : 'opacity-0',
         )}
       >
-        Lien copié
+        Code copié
       </p>
     </div>
   )

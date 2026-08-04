@@ -72,6 +72,12 @@ export const CheckIcon = ({ className }: IconProps) => (
   </Svg>
 )
 
+export const CrossIcon = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M6 6l8 8M14 6l-8 8" />
+  </Svg>
+)
+
 export const PlayIcon = ({ className }: IconProps) => (
   <Svg className={className} filled>
     <path d="M6.5 4.2v11.6L16 10 6.5 4.2Z" />
