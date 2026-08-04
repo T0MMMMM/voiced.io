@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { GamePicker } from '@/components/room/GamePicker'
-import { PlayerRow } from '@/components/room/PlayerRow'
+import { PlayerSeats } from '@/components/room/PlayerSeats'
 import { RoomCode } from '@/components/room/RoomCode'
 import { Button, Checkbox, Panel, Segmented } from '@/components/ui'
 import { PlayIcon, SlidersIcon, UsersIcon } from '@/components/ui/icons'
@@ -136,7 +136,7 @@ export function RoomLobby({
         <SectionTitle icon={<UsersIcon />} aside={isHost ? 'Vous arbitrez' : undefined}>
           Autour de la table
         </SectionTitle>
-        <PlayerRow players={players} youId={youId} hostId={room.host_player_id} />
+        <PlayerSeats players={players} youId={youId} hostId={room.host_player_id} />
       </section>
 
       <section aria-label="Jeu">

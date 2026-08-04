@@ -244,6 +244,7 @@ export type Database = {
           host_player_id: string | null
           id: string
           options: Json
+          question_ids: Json
           quiz_id: string | null
           recording_by: string | null
           recording_since: string | null
@@ -261,6 +262,7 @@ export type Database = {
           host_player_id?: string | null
           id?: string
           options?: Json
+          question_ids?: Json
           quiz_id?: string | null
           recording_by?: string | null
           recording_since?: string | null
@@ -278,6 +280,7 @@ export type Database = {
           host_player_id?: string | null
           id?: string
           options?: Json
+          question_ids?: Json
           quiz_id?: string | null
           recording_by?: string | null
           recording_since?: string | null
