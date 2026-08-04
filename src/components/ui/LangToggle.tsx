@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils/cn'
 /**
  * Le choix de langue, à côté du bouton de thème.
  *
- * Même matière et même taille : ce sont deux réglages personnels de même
- * nature, et rien ne justifierait d'en mettre un en avant.
+ * Même matière et même hauteur que lui : ce sont deux réglages personnels
+ * de même nature, et rien ne justifierait d'en mettre un en avant.
  *
  * Changer de langue recharge la page. Le cookie est lu côté serveur pour
  * que la première image soit déjà traduite ; basculer sans recharger
@@ -30,7 +30,7 @@ export function LangToggle() {
     <div
       role="radiogroup"
       aria-label="Langue · Language"
-      className="bg-surface shadow-token rounded-token flex h-11 items-center p-1"
+      className="bg-surface shadow-token rounded-token flex h-9 items-center p-1"
     >
       {LOCALE_CHOICES.map((choice) => {
         const active = choice.value === current
@@ -43,7 +43,7 @@ export function LangToggle() {
             disabled={busy}
             onClick={() => pick(choice.value)}
             className={cn(
-              'rounded-token h-9 px-2.5 text-[13px] font-medium',
+              'rounded-token h-7 px-2 text-[13px] font-medium',
               'transition-colors duration-200 ease-out',
               active ? 'bg-accent text-on-accent' : 'text-muted hover:text-fg',
             )}

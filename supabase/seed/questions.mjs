@@ -161,7 +161,7 @@ const silhouette = (difficulty, country, rotate, hint = null) => {
     prompt: 'Quel pays reconnaissez-vous ?',
     difficulty, points: POINTS[difficulty], hint,
     payload: { shape: shape.path, rotate },
-    answer: { accepted: shape.names },
+    answer: { accepted: shape.names.fr },
   }
 }
 

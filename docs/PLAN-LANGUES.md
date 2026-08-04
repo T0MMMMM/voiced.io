@@ -106,13 +106,21 @@ lieu change, la géométrie non.
 
 ## 6. Ordre d'exécution
 
-| # | Étape | Coût |
+| # | Étape | État |
 |---|---|---|
-| 1 | Socle : cookie, provider, sélecteur, `fr.ts` avec les clés existantes | ½ jour |
-| 2 | Extraction des chaînes de l'interface, écran par écran | 2 jours |
-| 3 | `en.ts` et test de parité des clés | ½ jour |
-| 4 | Colonne `locale` sur les questions, réglage de salon, filtre au tirage | ½ jour |
-| 5 | Banque anglaise, par vagues | continu |
+| 1 | Socle : cookie, provider, sélecteur, `fr.ts` | ✅ fait |
+| 2 | Extraction des chaînes de l'interface | ✅ accueil, salon, quiz, correction, rattrapage · **reste** : doublage, `/create`, `/join`, messages d'erreur serveur |
+| 3 | `en.ts` et test de parité des clés | ✅ fait |
+| 4 | Colonne `locale`, filtre au tirage sur la langue de l'hôte | ✅ fait |
+| 5 | Banque anglaise | ✅ 235 questions · **reste** : l'étoffer |
+
+Les cartes, silhouettes et frises anglaises sont **dérivées** de la banque
+française : une carte est un couple de coordonnées, une silhouette une
+forme, une frise une année. Seuls les libellés sont traduits, et une
+traduction manquante interrompt le semis au lieu de laisser passer un mot
+français dans une partie anglaise. Le reste est écrit à part, parce qu'il
+ne se traduit pas : citer quatre fromages français ne veut rien dire pour
+une table anglophone.
 
 Les étapes 1 à 3 rendent le site entièrement bilingue **sauf les questions**,
 et se tiennent en trois jours. L'étape 5 n'a pas de fin nette, mais elle ne

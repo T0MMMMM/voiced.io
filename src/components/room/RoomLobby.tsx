@@ -17,7 +17,7 @@ import {
   PACE_CHOICES,
   type RoomOptions,
 } from '@/lib/rooms/options'
-import { useT } from '@/lib/i18n'
+import { useLocale, useT } from '@/lib/i18n'
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
 
@@ -77,6 +77,7 @@ export function RoomLobby({
   youId: string | null
 }) {
   const t = useT()
+  const locale = useLocale()
 
   /** Les libelles vivent dans le dictionnaire, pas dans les tables. */
   function legendOf(key: ScaleKey): string {
@@ -305,7 +306,9 @@ export function RoomLobby({
               void run(() =>
                 // Le quiz doit tirer ses questions avant de demarrer ; les
                 // autres jeux se contentent de changer d'etat.
-                room.game === 'quiz' ? startQuiz(room.id) : startGame(room.id),
+                room.game === 'quiz'
+                  ? startQuiz(room.id, locale)
+                  : startGame(room.id),
               )
             }
           >

@@ -9,6 +9,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { QUESTIONS } from '../supabase/seed/questions.mjs'
+import { QUESTIONS_EN } from '../supabase/seed/questions.en.mjs'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -41,9 +42,17 @@ async function main() {
     .eq('quiz_id', QUIZ_ID)
   if (clearError) throw new Error(clearError.message)
 
-  const rows = QUESTIONS.map((question, index) => ({
+  // Les deux banques vivent dans le meme quiz, separees par leur langue :
+  // le tirage filtre dessus, et l'index reste unique.
+  const all = [
+    ...QUESTIONS.map((question) => ({ ...question, locale: 'fr' })),
+    ...QUESTIONS_EN.map((question) => ({ ...question, locale: 'en' })),
+  ]
+
+  const rows = all.map((question, index) => ({
     quiz_id: QUIZ_ID,
     idx: index,
+    locale: question.locale,
     kind: question.kind,
     prompt: question.prompt,
     hint: question.hint,
@@ -63,13 +72,20 @@ async function main() {
   const themes = new Map()
   const kinds = new Map()
   const levels = new Map()
-  for (const question of QUESTIONS) {
+  const langs = new Map()
+  for (const question of all) {
     themes.set(question.theme, (themes.get(question.theme) ?? 0) + 1)
     kinds.set(question.kind, (kinds.get(question.kind) ?? 0) + 1)
     levels.set(question.difficulty, (levels.get(question.difficulty) ?? 0) + 1)
+    langs.set(question.locale, (langs.get(question.locale) ?? 0) + 1)
   }
 
   console.log(`\n${rows.length} questions versées.\n`)
+  console.log('Par langue :')
+  for (const [lang, count] of langs) {
+    console.log(`  ${String(count).padStart(3)}  ${lang}`)
+  }
+  console.log('')
   console.log('Par thème :')
   for (const [theme, count] of [...themes].sort((a, b) => b[1] - a[1])) {
     console.log(`  ${String(count).padStart(3)}  ${theme}`)

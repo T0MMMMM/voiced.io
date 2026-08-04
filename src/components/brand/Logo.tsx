@@ -2,27 +2,24 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils/cn'
 
 /**
- * Sept barres, une montée, un pic, une descente.
+ * Une bulle de parole, avec une onde à l'intérieur.
  *
- * Un logo se lit, il ne se détaille pas : une dizaine de barres fines
- * donnait l'illustration d'une forme d'onde, pas une marque. Sept barres
- * épaisses, largement espacées, gardent la même idée et tiennent encore à
- * seize pixels, ce qui est la seule taille où un logo doit vraiment
- * fonctionner.
+ * Les barres seules disaient « audio », ce que dit n'importe quel lecteur
+ * de musique. La bulle dit ce que fait vraiment le site : des voix, à
+ * plusieurs, qui se répondent. C'est la seule forme essayée qui raconte le
+ * produit plutôt que sa technologie.
  *
- * La symétrie est voulue : elle équilibre la tuile. Un profil réaliste,
- * avec attaque franche et longue traîne, ressemblait à une capture d'écran.
+ * Trois barres, pas davantage : à seize pixels, la bulle mange déjà la
+ * moitié de la place, et un spectre entier s'y écraserait en une tache.
  */
-const BAR_WIDTH = 1.9
-const BAR_GAP = 0.85
-const BAR_HEIGHTS = [3, 6, 11, 17.4, 11, 6, 3]
+const BUBBLE =
+  'M3 6.5a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H9l-3.5 3v-3H6a3 3 0 0 1-3-3z'
 
-const SPAN = BAR_HEIGHTS.length * BAR_WIDTH + (BAR_HEIGHTS.length - 1) * BAR_GAP
-
-const BARS = BAR_HEIGHTS.map((height, index) => ({
-  x: (20 - SPAN) / 2 + index * (BAR_WIDTH + BAR_GAP),
-  height,
-}))
+const BARS = [
+  { x: 6.5, height: 2.6 },
+  { x: 9.35, height: 6 },
+  { x: 12.2, height: 2.6 },
+]
 
 export function WaveMark({ className }: { className?: string }) {
   return (
@@ -30,16 +27,23 @@ export function WaveMark({ className }: { className?: string }) {
       viewBox="0 0 20 20"
       aria-hidden="true"
       className={cn('size-5', className)}
-      fill="currentColor"
+      fill="none"
     >
+      <path
+        d={BUBBLE}
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
       {BARS.map(({ x, height }) => (
         <rect
           key={x}
           x={x}
-          y={(20 - height) / 2}
-          width={BAR_WIDTH}
+          y={9 - height / 2}
+          width="1.3"
           height={height}
-          rx={BAR_WIDTH / 2}
+          rx="0.65"
+          fill="currentColor"
         />
       ))}
     </svg>

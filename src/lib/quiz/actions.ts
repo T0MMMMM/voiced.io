@@ -32,7 +32,10 @@ export interface PlayerAnswer {
  * la meme si quelqu'un rafraichit sa page, et la liste doit exister avant
  * qu'on puisse afficher « question 3 sur 20 ».
  */
-export async function startQuiz(roomId: string): Promise<void> {
+export async function startQuiz(
+  roomId: string,
+  locale: 'fr' | 'en' = 'fr',
+): Promise<void> {
   const supabase = createServiceClient()
 
   const { data: room } = await supabase
@@ -46,10 +49,14 @@ export async function startQuiz(roomId: string): Promise<void> {
   const { data: pool } = await supabase
     .from('questions')
     .select('id, kind, idx')
+    .eq('locale', locale)
     .in('kind', kinds)
     .limit(500)
 
   if (!pool || pool.length === 0) {
+    // L'interface suit chaque joueur, mais le contenu suit la table : c'est
+    // la langue de l'hote au lancement qui decide, puisqu'on ne peut pas
+    // poser deux questions differentes aux memes joueurs.
     throw new Error(
       'Aucune question ne correspond aux formes choisies. Réactivez-en une.',
     )

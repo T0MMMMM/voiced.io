@@ -21,42 +21,45 @@ import { writeFileSync } from 'node:fs'
 import { feature } from 'topojson-client'
 import topology from 'world-atlas/countries-110m.json' with { type: 'json' }
 
-/** Ce qu'on garde. Un pays qu'on ne saurait pas nommer n'a rien à faire ici. */
+/**
+ * Ce qu'on garde, et comment on l'accepte dans chaque langue. Un pays
+ * qu'on ne saurait pas nommer n'a rien à faire ici.
+ */
 const WANTED = {
-  France: ['France'],
-  Italy: ['Italie'],
-  Spain: ['Espagne'],
-  Portugal: ['Portugal'],
-  Germany: ['Allemagne'],
-  'United Kingdom': ['Royaume-Uni', 'Angleterre', 'Grande-Bretagne'],
-  Ireland: ['Irlande'],
-  Norway: ['Norvège'],
-  Sweden: ['Suède'],
-  Finland: ['Finlande'],
-  Greece: ['Grèce'],
-  Poland: ['Pologne'],
-  Switzerland: ['Suisse'],
-  Austria: ['Autriche'],
-  Netherlands: ['Pays-Bas', 'Hollande'],
-  Belgium: ['Belgique'],
-  Turkey: ['Turquie'],
-  India: ['Inde'],
-  Japan: ['Japon'],
-  China: ['Chine'],
-  Brazil: ['Brésil'],
-  Argentina: ['Argentine'],
-  Chile: ['Chili'],
-  Mexico: ['Mexique'],
-  Canada: ['Canada'],
-  Australia: ['Australie'],
-  'New Zealand': ['Nouvelle-Zélande'],
-  Egypt: ['Égypte'],
-  Morocco: ['Maroc'],
-  Madagascar: ['Madagascar'],
-  'South Africa': ['Afrique du Sud'],
-  Iceland: ['Islande'],
-  Cuba: ['Cuba'],
-  Vietnam: ['Viêt Nam', 'Vietnam'],
+  France: { fr: ['France'], en: ['France'] },
+  Italy: { fr: ['Italie'], en: ['Italy'] },
+  Spain: { fr: ['Espagne'], en: ['Spain'] },
+  Portugal: { fr: ['Portugal'], en: ['Portugal'] },
+  Germany: { fr: ['Allemagne'], en: ['Germany'] },
+  'United Kingdom': { fr: ['Royaume-Uni', 'Angleterre', 'Grande-Bretagne'], en: ['United Kingdom', 'UK', 'Great Britain', 'Britain', 'England'] },
+  Ireland: { fr: ['Irlande'], en: ['Ireland'] },
+  Norway: { fr: ['Norvège'], en: ['Norway'] },
+  Sweden: { fr: ['Suède'], en: ['Sweden'] },
+  Finland: { fr: ['Finlande'], en: ['Finland'] },
+  Greece: { fr: ['Grèce'], en: ['Greece'] },
+  Poland: { fr: ['Pologne'], en: ['Poland'] },
+  Switzerland: { fr: ['Suisse'], en: ['Switzerland'] },
+  Austria: { fr: ['Autriche'], en: ['Austria'] },
+  Netherlands: { fr: ['Pays-Bas', 'Hollande'], en: ['Netherlands', 'Holland'] },
+  Belgium: { fr: ['Belgique'], en: ['Belgium'] },
+  Turkey: { fr: ['Turquie'], en: ['Turkey', 'Türkiye'] },
+  India: { fr: ['Inde'], en: ['India'] },
+  Japan: { fr: ['Japon'], en: ['Japan'] },
+  China: { fr: ['Chine'], en: ['China'] },
+  Brazil: { fr: ['Brésil'], en: ['Brazil'] },
+  Argentina: { fr: ['Argentine'], en: ['Argentina'] },
+  Chile: { fr: ['Chili'], en: ['Chile'] },
+  Mexico: { fr: ['Mexique'], en: ['Mexico'] },
+  Canada: { fr: ['Canada'], en: ['Canada'] },
+  Australia: { fr: ['Australie'], en: ['Australia'] },
+  'New Zealand': { fr: ['Nouvelle-Zélande'], en: ['New Zealand'] },
+  Egypt: { fr: ['Égypte'], en: ['Egypt'] },
+  Morocco: { fr: ['Maroc'], en: ['Morocco'] },
+  Madagascar: { fr: ['Madagascar'], en: ['Madagascar'] },
+  'South Africa': { fr: ['Afrique du Sud'], en: ['South Africa'] },
+  Iceland: { fr: ['Islande'], en: ['Iceland'] },
+  Cuba: { fr: ['Cuba'], en: ['Cuba'] },
+  Vietnam: { fr: ['Viêt Nam', 'Vietnam'], en: ['Vietnam', 'Viet Nam'] },
 }
 
 /** Aire d'un anneau, par la formule du lacet. Sert à trouver le continent. */
@@ -108,16 +111,16 @@ const countries = feature(topology, topology.objects.countries)
 const entries = []
 
 for (const country of countries.features) {
-  const french = WANTED[country.properties?.name]
-  if (!french || !country.geometry) continue
-  entries.push([french, shapeOf(country.geometry)])
+  const names = WANTED[country.properties?.name]
+  if (!names || !country.geometry) continue
+  entries.push([names, shapeOf(country.geometry)])
 }
 
 const missing = Object.values(WANTED).filter(
-  (names) => !entries.some(([kept]) => kept[0] === names[0]),
+  (names) => !entries.some(([kept]) => kept.fr[0] === names.fr[0]),
 )
 if (missing.length > 0) {
-  console.warn(`Introuvables : ${missing.map((names) => names[0]).join(', ')}`)
+  console.warn(`Introuvables : ${missing.map((names) => names.fr[0]).join(', ')}`)
 }
 
 const file = `/**
@@ -130,7 +133,7 @@ const file = `/**
  * Source : Natural Earth (domaine public), via world-atlas.
  */
 export const SHAPES = ${JSON.stringify(
-  Object.fromEntries(entries.map(([names, path]) => [names[0], { names, path }])),
+  Object.fromEntries(entries.map(([names, path]) => [names.fr[0], { names, path }])),
   null,
   2,
 )}

@@ -172,6 +172,7 @@ export type Database = {
           id: string
           idx: number
           kind: string
+          locale: string
           media_path: string | null
           payload: Json
           points: number
@@ -185,6 +186,7 @@ export type Database = {
           id?: string
           idx: number
           kind: string
+          locale?: string
           media_path?: string | null
           payload?: Json
           points?: number
@@ -198,6 +200,7 @@ export type Database = {
           id?: string
           idx?: number
           kind?: string
+          locale?: string
           media_path?: string | null
           payload?: Json
           points?: number
