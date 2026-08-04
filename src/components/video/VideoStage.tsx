@@ -20,8 +20,8 @@ export interface VideoStageHandle {
   playMuted: (from: number) => void
   toggle: () => void
   pause: () => void
-  /** Joue avec le son a `volume`, depuis `from`. Sert a ecouter le resultat. */
-  playFrom: (from: number, volume: number) => void
+  /** Joue depuis `from` en coupant le son. Sert a ecouter le doublage seul. */
+  playSilentFrom: (from: number) => void
   setVolume: (volume: number) => void
 }
 
@@ -43,6 +43,12 @@ export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
   ) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const stopAt = useRef<number | null>(null)
+    /**
+     * Volume voulu par l'utilisateur. Couper le son pour enregistrer ou pour
+     * ecouter le doublage est temporaire : sans cette memoire, la video
+     * restait muette pour de bon des la premiere prise.
+     */
+    const wanted = useRef(1)
     const [playing, setPlaying] = useState(false)
 
     // `timeupdate` ne se déclenche que trois ou quatre fois par seconde :
@@ -78,6 +84,8 @@ export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
         const video = videoRef.current
         if (!video) return
         stopAt.current = null
+        video.muted = wanted.current === 0
+        video.volume = wanted.current
         video.currentTime = time
         onTime(time)
       },
@@ -85,6 +93,8 @@ export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
         const video = videoRef.current
         if (!video) return
         stopAt.current = end
+        video.muted = wanted.current === 0
+        video.volume = wanted.current
         video.currentTime = start
         void video.play()
       },
@@ -100,29 +110,30 @@ export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
         const video = videoRef.current
         if (!video) return
         stopAt.current = null
-        video.muted = false
+        video.muted = wanted.current === 0
+        video.volume = wanted.current
         if (video.paused) void video.play()
         else video.pause()
       },
       pause() {
         videoRef.current?.pause()
       },
-      playFrom(from, volume) {
+      playSilentFrom(from) {
         const video = videoRef.current
         if (!video) return
         stopAt.current = null
-        video.muted = volume === 0
-        video.volume = volume
+        video.muted = true
         video.currentTime = from
         void video.play()
       },
       setVolume(volume) {
         const video = videoRef.current
         if (!video) return
+        wanted.current = volume
         video.volume = volume
         // `muted` l'emporte sur `volume` : sans cette remise a zero, monter
         // le curseur apres avoir coupe le son ne rendrait rien.
-        if (volume > 0) video.muted = false
+        video.muted = volume === 0
       },
     }))
 

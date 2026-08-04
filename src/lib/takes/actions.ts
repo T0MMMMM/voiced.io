@@ -166,15 +166,26 @@ export async function listTakes(roomId: string): Promise<SavedTake[]> {
 
   const names = new Map((players ?? []).map((p) => [p.id, p.nickname]))
 
-  return Promise.all(
-    takes.map(async (take) => ({
-      id: take.id,
-      playerId: take.player_id,
-      author: (take.player_id ? names.get(take.player_id) : null) ?? 'Anonyme',
-      startSec: Number(take.start_sec),
-      durationMs: take.duration_ms,
-      url: await getUrl('takes', take.storage_path),
-      peaks: Array.isArray(take.peaks) ? (take.peaks as number[]) : [],
-    })),
+  // Une prise dont le fichier a disparu ne doit pas emporter les autres :
+  // sans ce filtrage, une seule ligne orpheline rendait tout l'ecran
+  // inaccessible.
+  const signed = await Promise.all(
+    takes.map(async (take) => {
+      try {
+        return {
+          id: take.id,
+          playerId: take.player_id,
+          author: (take.player_id ? names.get(take.player_id) : null) ?? 'Anonyme',
+          startSec: Number(take.start_sec),
+          durationMs: take.duration_ms,
+          url: await getUrl('takes', take.storage_path),
+          peaks: Array.isArray(take.peaks) ? (take.peaks as number[]) : [],
+        }
+      } catch {
+        return null
+      }
+    }),
   )
+
+  return signed.filter((take): take is SavedTake => take !== null)
 }

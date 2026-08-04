@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { ClipStep } from '@/components/room/ClipStep'
 import { DubGame } from '@/components/dub/DubGame'
+import { DubResult } from '@/components/dub/DubResult'
 import { RoomLobby } from '@/components/room/RoomLobby'
 import type { SavedTake } from '@/lib/takes/actions'
 import type { Player, Room } from '@/lib/supabase/types'
@@ -69,6 +70,20 @@ export function RoomScreen({
   if (room.game === 'dub' && !room.clip_id) {
     const you = players.find((player) => player.id === youId)
     return <ClipStep room={room} isHost={you?.is_host ?? false} />
+  }
+
+  if (room.game === 'dub' && dub && room.status === 'results') {
+    return (
+      <DubResult
+        room={room}
+        players={players}
+        youId={youId}
+        videoUrl={dub.videoUrl}
+        durationSec={dub.durationSec}
+        aspectRatio={dub.aspectRatio}
+        takes={dub.takes}
+      />
+    )
   }
 
   if (room.game === 'dub' && dub) {

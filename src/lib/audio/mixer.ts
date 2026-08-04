@@ -98,13 +98,17 @@ export class DubMixer {
     return this.loaded.length > 0
   }
 
-  start(fromSec: number): void {
+  async start(fromSec: number): Promise<void> {
     const context = this.context
     const gain = this.gain
     if (!context || !gain) return
 
     this.stop()
-    void context.resume()
+
+    // Un AudioContext cree hors d'un geste utilisateur demarre suspendu, et
+    // son horloge n'avance pas. Programmer avant la reprise reviendrait a
+    // caler toutes les prises sur un temps qui ne s'ecoule pas.
+    if (context.state === 'suspended') await context.resume()
 
     const now = context.currentTime
     const byId = new Map(this.loaded.map((track) => [track.id, track]))

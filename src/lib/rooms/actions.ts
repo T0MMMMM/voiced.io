@@ -257,6 +257,28 @@ export async function startGame(roomId: string): Promise<void> {
   if (error) throw new Error(`Impossible de lancer la partie : ${error.message}`)
 }
 
+/** Cloture la partie : tout le monde bascule sur l'ecran de resultat. */
+export async function finishGame(roomId: string): Promise<void> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('rooms')
+    .update({ status: 'results', recording_by: null })
+    .eq('id', roomId)
+
+  if (error) throw new Error(`Impossible de terminer : ${error.message}`)
+}
+
+/** Repasse en enregistrement, sans rien perdre : les prises restent. */
+export async function reopenRoom(roomId: string): Promise<void> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('rooms')
+    .update({ status: 'playing' })
+    .eq('id', roomId)
+
+  if (error) throw new Error(`Impossible de reprendre : ${error.message}`)
+}
+
 /** Battement de presence : au-dela de 30 s sans signe, le joueur est marque absent. */
 export async function touchPlayer(playerId: string): Promise<void> {
   const supabase = createServiceClient()

@@ -7,7 +7,8 @@ import { VolumeControl } from '@/components/dub/VolumeControl'
 import { Score, type ScoreHandle } from '@/components/dub/Score'
 import { SegmentList } from '@/components/dub/SegmentList'
 import { Transport } from '@/components/dub/Transport'
-import { Panel } from '@/components/ui'
+import { Button, Panel } from '@/components/ui'
+import { PlayIcon } from '@/components/ui/icons'
 import { VideoStage, type VideoStageHandle } from '@/components/video/VideoStage'
 import {
   addBreakpoint,
@@ -21,7 +22,7 @@ import {
 import { DubMixer } from '@/lib/audio/mixer'
 import { bucketPeaks, extractPeaks } from '@/lib/audio/peaks'
 import { startRecording, type RecorderHandle } from '@/lib/audio/recorder'
-import { setBreakpoints } from '@/lib/rooms/actions'
+import { finishGame, setBreakpoints } from '@/lib/rooms/actions'
 import {
   claimMicrophone,
   listTakes,
@@ -176,9 +177,12 @@ export function DubGame({
 
     // On n'attend de personne qu'il appuie au bon moment : le segment finit,
     // l'enregistrement s'arrete.
-    const aim = target.current
-    if (aim && recorder.current && time >= aim.end) {
-      target.current = null
+    //
+    // Le segment vise n'est PAS efface ici : c'est `stopRecording` qui en a
+    // besoin pour ancrer la prise a son debut. L'effacer avant l'ancrait a
+    // la position courante — c'est-a-dire a la fin du segment, ce qui
+    // decalait tout le doublage d'une replique.
+    if (target.current && recorder.current && time >= target.current.end) {
       stopRef.current()
     }
   }, [])
@@ -323,18 +327,28 @@ export function DubGame({
       })),
     )
 
-    const from = clock.current
+    // On repart du debut : apres une prise, la tete est posee a la fin du
+    // segment, et « ecouter le resultat » n'aurait fait entendre que la
+    // toute fin de la scene.
     setReviewing(true)
-    mixer.current.start(from)
+    await mixer.current.start(0)
     // La video part muette : on entend le doublage a la place des voix
     // d'origine, ce qui est tout l'objet de l'ecoute.
-    stage.current?.playFrom(from, 0)
+    stage.current?.playSilentFrom(0)
   }, [busy, reviewing, takes])
 
   const toggleRecord = useCallback(() => {
     if (recording) void stopRecording()
     else if (!busy) void beginRecording()
   }, [recording, busy, stopRecording, beginRecording])
+
+  // L'element video demarre a plein volume : sans cette mise a niveau,
+  // la glissiere afficherait 80 % pendant que le son sort a 100 %.
+  useEffect(() => {
+    stage.current?.setVolume(volume)
+    // Volontairement au montage seulement : ensuite c'est la glissiere qui pilote.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => () => mixer.current?.dispose(), [])
 
@@ -524,6 +538,23 @@ export function DubGame({
         <p role="alert" className="text-rec text-center text-[15px]">
           {error}
         </p>
+      )}
+
+      {takes.length > 0 && (
+        <div className="flex flex-col items-center gap-2">
+          <Button
+            size="lg"
+            disabled={busy}
+            className="gap-2.5"
+            onClick={() => void finishGame(room.id)}
+          >
+            <PlayIcon />
+            Terminer et écouter à plusieurs
+          </Button>
+          <p className="text-faint text-[13px]">
+            Tout le monde bascule sur le résultat en même temps.
+          </p>
+        </div>
       )}
     </div>
   )
