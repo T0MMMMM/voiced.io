@@ -1,29 +1,47 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button, Checkbox, Panel, Segmented } from '@/components/ui'
-import { PlayerSeats } from '@/components/room/PlayerSeats'
+import { GamePicker } from '@/components/room/GamePicker'
+import { PlayerRow } from '@/components/room/PlayerRow'
 import { RoomCode } from '@/components/room/RoomCode'
-import { Silhouette } from '@/components/room/Silhouette'
-import { GAMES } from '@/lib/games'
+import { Button, Checkbox, Panel, Segmented } from '@/components/ui'
 import { PlayIcon, SlidersIcon, UsersIcon } from '@/components/ui/icons'
+import type { GameId } from '@/lib/games'
+import { setRoomGame, setRoomOptions, startGame, touchPlayer } from '@/lib/rooms/actions'
 import {
-  setRoomGame,
-  setRoomOptions,
-  startGame,
-  touchPlayer,
-} from '@/lib/rooms/actions'
-import { mergeOptions, TIMER_CHOICES, type RoomOptions } from '@/lib/rooms/options'
+  mergeOptions,
+  optionsFor,
+  TIMER_CHOICES,
+  type RoomOptions,
+} from '@/lib/rooms/options'
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
 
-const TOGGLES: { key: keyof RoomOptions; label: string; hint: string }[] = [
-  { key: 'shuffle', label: 'Ordre aléatoire', hint: 'Les questions ne tombent pas dans l’ordre' },
-  { key: 'anonymousGrading', label: 'Correction anonyme', hint: 'L’hôte ne voit pas qui a répondu quoi' },
-  { key: 'allowBets', label: 'Paris', hint: 'Chacun mise sur sa confiance avant de répondre' },
-  { key: 'allowHints', label: 'Indices', hint: 'Des indices tombent, la question perd de la valeur' },
-  { key: 'allowSteal', label: 'Question volée', hint: 'Celui qui passe laisse la main aux autres' },
-]
+const LABELS: Record<
+  Exclude<keyof RoomOptions, 'timerSec'>,
+  { label: string; hint: string }
+> = {
+  shuffle: {
+    label: 'Ordre aléatoire',
+    hint: 'Les questions ne tombent pas dans l’ordre',
+  },
+  anonymousGrading: {
+    label: 'Correction anonyme',
+    hint: 'L’hôte ne voit pas qui a répondu quoi',
+  },
+  allowBets: {
+    label: 'Paris',
+    hint: 'Chacun mise sur sa confiance avant de répondre',
+  },
+  allowHints: {
+    label: 'Indices',
+    hint: 'Des indices tombent, la question perd de la valeur',
+  },
+  allowSteal: {
+    label: 'Question volée',
+    hint: 'Celui qui passe laisse la main aux autres',
+  },
+}
 
 function SectionTitle({
   icon,
@@ -35,7 +53,7 @@ function SectionTitle({
   aside?: React.ReactNode
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between px-1">
+    <div className="mb-2.5 flex items-center justify-between px-1">
       <span className="eyebrow text-faint flex items-center gap-2">
         <span className="[&>svg]:size-4">{icon}</span>
         {children}
@@ -55,14 +73,21 @@ export function RoomLobby({
   youId: string | null
 }) {
   const [busy, setBusy] = useState(false)
+  const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const you = players.find((player) => player.id === youId) ?? null
   const isHost = you?.is_host ?? false
   const options = mergeOptions(room.options)
 
-  // Battement de présence. Sans lui, un joueur reste « prêt » pour toujours,
-  // y compris après avoir fermé son onglet.
+  // Un jeu sans réglage n'affiche pas de section vide : promettre des
+  // réglages qui n'existent pas est pire que ne rien promettre.
+  const available = optionsFor(room.game)
+  const hasTimer = available.includes('timerSec')
+  const toggles = available.filter(
+    (key): key is Exclude<keyof RoomOptions, 'timerSec'> => key !== 'timerSec',
+  )
+
   useEffect(() => {
     if (!youId) return
     void touchPlayer(youId)
@@ -83,7 +108,7 @@ export function RoomLobby({
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <div className="flex flex-col items-center gap-6">
         <span className="bg-surface shadow-token rounded-token text-muted inline-flex items-center gap-2 px-3 py-1.5 text-[13px]">
           <span className="bg-accent size-2 animate-pulse rounded-full" />
@@ -94,115 +119,108 @@ export function RoomLobby({
       </div>
 
       <section aria-label="Joueurs">
-        <SectionTitle
-          icon={<UsersIcon />}
-          aside={isHost ? 'Vous arbitrez' : undefined}
-        >
+        <SectionTitle icon={<UsersIcon />} aside={isHost ? 'Vous arbitrez' : undefined}>
           Autour de la table
         </SectionTitle>
-        <PlayerSeats players={players} youId={youId} hostId={room.host_player_id} />
+        <PlayerRow players={players} youId={youId} hostId={room.host_player_id} />
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section aria-label="Jeu">
-          <SectionTitle
-            icon={<PlayIcon />}
-            aside={isHost ? 'Vous choisissez' : 'L’hôte choisit'}
-          >
-            Jeu
-          </SectionTitle>
+      <section aria-label="Jeu">
+        <SectionTitle
+          icon={<PlayIcon />}
+          aside={isHost ? 'Vous choisissez' : 'L’hôte choisit'}
+        >
+          Jeu
+        </SectionTitle>
+        <GamePicker
+          game={room.game as GameId}
+          canChange={isHost && !busy}
+          onChange={(next) => void run(() => setRoomGame(room.id, next))}
+        />
+      </section>
 
-          <Panel padded={false} className="overflow-hidden">
-            <ul className="divide-default divide-y">
-              {GAMES.map((game) => {
-                const chosen = room.game === game.id
-                const available = game.href !== null
-                const selectable = isHost && available && !busy
-
-                return (
-                  <li key={game.id}>
-                    <button
-                      type="button"
-                      disabled={!selectable}
-                      aria-pressed={chosen}
-                      onClick={() => void run(() => setRoomGame(room.id, game.id))}
-                      className={cn(
-                        'flex w-full items-center gap-3 px-4 py-3.5 text-left',
-                        'transition-[background-color,transform] duration-200 ease-out',
-                        selectable && 'active:scale-[0.99]',
-                        chosen && 'bg-accent-soft',
-                        selectable && !chosen && 'hover:bg-sunken',
-                        !selectable && 'cursor-default',
-                      )}
-                    >
-                      <Silhouette
-                        gameId={game.id}
-                        className={chosen ? 'bg-accent' : 'bg-wave-ref'}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="text-fg block text-[15px] font-medium">
-                          {game.name}
-                        </span>
-                        {!available && (
-                          <span className="eyebrow text-faint">Bientôt</span>
-                        )}
-                      </span>
-                      {chosen && <span className="eyebrow text-accent">Choisi</span>}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </Panel>
-        </section>
-
+      {available.length > 0 && (
         <section aria-label="Réglages">
-          <SectionTitle
-            icon={<SlidersIcon />}
-            aside={isHost ? undefined : 'Lecture seule'}
+          <button
+            type="button"
+            onClick={() => setOpen((current) => !current)}
+            aria-expanded={open}
+            className="mb-2.5 flex w-full items-center justify-between px-1"
           >
-            Réglages
-          </SectionTitle>
+            <span className="eyebrow text-faint flex items-center gap-2">
+              <SlidersIcon className="size-4" />
+              Réglages
+            </span>
+            <span className="eyebrow text-faint flex items-center gap-1.5">
+              {open ? 'Masquer' : 'Afficher'}
+              <svg
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+                className={cn(
+                  'size-3.5 transition-transform duration-200',
+                  open && 'rotate-180',
+                )}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 8l5 5 5-5" />
+              </svg>
+            </span>
+          </button>
 
-          <Panel>
-            <fieldset disabled={!isHost || busy} className="space-y-4">
-              <div>
-                <legend className="text-fg mb-2 text-[15px] font-medium">
-                  Minuteur
-                </legend>
-                <Segmented
-                  label="Durée du minuteur"
-                  options={TIMER_CHOICES.map((choice) => ({
-                    value: choice.value,
-                    label: choice.label,
-                  }))}
-                  value={options.timerSec}
-                  disabled={!isHost || busy}
-                  onChange={(next) =>
-                    void run(() => setRoomOptions(room.id, { timerSec: next }))
-                  }
-                />
-              </div>
+          {open && (
+            <Panel>
+              <fieldset disabled={!isHost || busy} className="space-y-4">
+                {hasTimer && (
+                  <div>
+                    <legend className="text-fg mb-2 text-[15px] font-medium">
+                      Minuteur
+                    </legend>
+                    <Segmented
+                      label="Durée du minuteur"
+                      options={TIMER_CHOICES.map((choice) => ({
+                        value: choice.value,
+                        label: choice.label,
+                      }))}
+                      value={options.timerSec}
+                      disabled={!isHost || busy}
+                      onChange={(next) =>
+                        void run(() => setRoomOptions(room.id, { timerSec: next }))
+                      }
+                    />
+                  </div>
+                )}
 
-              <div className="divide-default divide-y border-t border-t-[var(--border)] pt-1">
-                {TOGGLES.map(({ key, label, hint }) => (
-                  <Checkbox
-                    key={key}
-                    label={label}
-                    hint={hint}
-                    checked={options[key] as boolean}
-                    onChange={(event) =>
-                      void run(() =>
-                        setRoomOptions(room.id, { [key]: event.target.checked }),
-                      )
-                    }
-                  />
-                ))}
-              </div>
-            </fieldset>
-          </Panel>
+                {toggles.length > 0 && (
+                  <div
+                    className={cn(
+                      'divide-default divide-y',
+                      hasTimer && 'border-t border-t-[var(--border)] pt-1',
+                    )}
+                  >
+                    {toggles.map((key) => (
+                      <Checkbox
+                        key={key}
+                        label={LABELS[key].label}
+                        hint={LABELS[key].hint}
+                        checked={options[key]}
+                        onChange={(event) =>
+                          void run(() =>
+                            setRoomOptions(room.id, { [key]: event.target.checked }),
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </fieldset>
+            </Panel>
+          )}
         </section>
-      </div>
+      )}
 
       <section className="flex flex-col items-center gap-4">
         {isHost ? (

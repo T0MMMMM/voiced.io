@@ -46,6 +46,31 @@ export const DEFAULT_OPTIONS: RoomOptions = {
 
 const TIMER_VALUES = TIMER_CHOICES.map((choice) => choice.value)
 
+/**
+ * Reglages qui ont un sens pour chaque jeu.
+ *
+ * Le doublage n'en a aucun : il se joue au micro, sans minuteur ni mise, et
+ * afficher une section vide reviendrait a promettre des reglages qui
+ * n'existent pas. La section disparait alors completement.
+ */
+export const OPTIONS_BY_GAME: Record<string, (keyof RoomOptions)[]> = {
+  quiz: [
+    'timerSec',
+    'shuffle',
+    'anonymousGrading',
+    'allowBets',
+    'allowHints',
+    'allowSteal',
+  ],
+  beast: ['timerSec', 'shuffle'],
+  next: ['timerSec'],
+  dub: [],
+}
+
+export function optionsFor(game: string): (keyof RoomOptions)[] {
+  return OPTIONS_BY_GAME[game] ?? []
+}
+
 function bool(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback
 }

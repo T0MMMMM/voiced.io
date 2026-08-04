@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      answers: {
+        Row: {
+          answered_at: string
+          auto_score: number | null
+          bet: number
+          final_score: number | null
+          graded_by_host: boolean
+          id: string
+          payload: Json
+          player_id: string
+          question_id: string
+          room_id: string
+        }
+        Insert: {
+          answered_at?: string
+          auto_score?: number | null
+          bet?: number
+          final_score?: number | null
+          graded_by_host?: boolean
+          id?: string
+          payload?: Json
+          player_id: string
+          question_id: string
+          room_id: string
+        }
+        Update: {
+          answered_at?: string
+          auto_score?: number | null
+          bet?: number
+          final_score?: number | null
+          graded_by_host?: boolean
+          id?: string
+          payload?: Json
+          player_id?: string
+          question_id?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clips: {
         Row: {
           anime_title: string | null
@@ -97,6 +158,80 @@ export type Database = {
           },
         ]
       }
+      questions: {
+        Row: {
+          answer: Json | null
+          hint: string | null
+          id: string
+          idx: number
+          kind: string
+          media_path: string | null
+          payload: Json
+          points: number
+          prompt: string
+          quiz_id: string
+        }
+        Insert: {
+          answer?: Json | null
+          hint?: string | null
+          id?: string
+          idx: number
+          kind: string
+          media_path?: string | null
+          payload?: Json
+          points?: number
+          prompt: string
+          quiz_id: string
+        }
+        Update: {
+          answer?: Json | null
+          hint?: string | null
+          id?: string
+          idx?: number
+          kind?: string
+          media_path?: string | null
+          payload?: Json
+          points?: number
+          prompt?: string
+          quiz_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quizzes: {
+        Row: {
+          author_nickname: string | null
+          created_at: string
+          id: string
+          is_public: boolean
+          theme: string | null
+          title: string
+        }
+        Insert: {
+          author_nickname?: string | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          theme?: string | null
+          title: string
+        }
+        Update: {
+          author_nickname?: string | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          theme?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           breakpoints: Json
@@ -109,6 +244,7 @@ export type Database = {
           host_player_id: string | null
           id: string
           options: Json
+          quiz_id: string | null
           recording_by: string | null
           recording_since: string | null
           status: string
@@ -125,6 +261,7 @@ export type Database = {
           host_player_id?: string | null
           id?: string
           options?: Json
+          quiz_id?: string | null
           recording_by?: string | null
           recording_since?: string | null
           status?: string
@@ -141,6 +278,7 @@ export type Database = {
           host_player_id?: string | null
           id?: string
           options?: Json
+          quiz_id?: string | null
           recording_by?: string | null
           recording_since?: string | null
           status?: string
@@ -159,6 +297,13 @@ export type Database = {
             columns: ["host_player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
             referencedColumns: ["id"]
           },
           {
