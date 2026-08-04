@@ -110,6 +110,7 @@ export type Database = {
           id: string
           options: Json
           recording_by: string | null
+          recording_since: string | null
           status: string
           step_started_at: string | null
         }
@@ -125,6 +126,7 @@ export type Database = {
           id?: string
           options?: Json
           recording_by?: string | null
+          recording_since?: string | null
           status?: string
           step_started_at?: string | null
         }
@@ -140,6 +142,7 @@ export type Database = {
           id?: string
           options?: Json
           recording_by?: string | null
+          recording_since?: string | null
           status?: string
           step_started_at?: string | null
         }

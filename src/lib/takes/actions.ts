@@ -21,20 +21,37 @@ export interface SavedTake {
 }
 
 /**
- * Prend le micro. Le verrou vit en base : c'est la seule facon que tous les
- * ecrans voient le meme etat, et la condition `is null` rend la prise du
- * verrou atomique — deux joueurs qui cliquent en meme temps, un seul passe.
+ * Au-dela, le verrou est considere abandonne : aucune replique ne dure
+ * aussi longtemps, et un onglet ferme en pleine prise ne doit pas bloquer
+ * le salon indefiniment.
+ */
+const STALE_LOCK_SEC = 90
+
+/**
+ * Prend le micro.
+ *
+ * Le verrou vit en base : c'est la seule facon que tous les ecrans voient
+ * le meme etat, et la condition fait partie de l'UPDATE, ce qui rend la
+ * prise atomique — deux joueurs qui cliquent en meme temps, un seul passe.
+ *
+ * Trois cas l'accordent : personne ne le tient, vous le teniez deja — une
+ * tentative precedente a pu echouer sans le rendre —, ou il est trop vieux
+ * pour etre encore serieux.
  */
 export async function claimMicrophone(
   roomId: string,
   playerId: string,
 ): Promise<boolean> {
   const supabase = createServiceClient()
+  const stale = new Date(Date.now() - STALE_LOCK_SEC * 1000).toISOString()
+
   const { data } = await supabase
     .from('rooms')
-    .update({ recording_by: playerId })
+    .update({ recording_by: playerId, recording_since: new Date().toISOString() })
     .eq('id', roomId)
-    .is('recording_by', null)
+    .or(
+      `recording_by.is.null,recording_by.eq.${playerId},recording_since.lt.${stale}`,
+    )
     .select('id')
 
   return (data?.length ?? 0) > 0
@@ -42,7 +59,10 @@ export async function claimMicrophone(
 
 export async function releaseMicrophone(roomId: string): Promise<void> {
   const supabase = createServiceClient()
-  await supabase.from('rooms').update({ recording_by: null }).eq('id', roomId)
+  await supabase
+    .from('rooms')
+    .update({ recording_by: null, recording_since: null })
+    .eq('id', roomId)
 }
 
 export async function saveTake(form: FormData): Promise<void> {

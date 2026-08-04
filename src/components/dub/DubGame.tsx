@@ -313,7 +313,7 @@ export function DubGame({
     // decouvrir que quelqu'un a demarre serait un micro ouvert pour rien.
     const claimed = await claimMicrophone(room.id, youId)
     if (!claimed) {
-      setError('Quelqu’un vient de prendre le micro.')
+      setError(`${holderName} tient le micro. Attendez la fin de sa prise.`)
       return
     }
 
@@ -376,6 +376,20 @@ export function DubGame({
   useEffect(() => {
     stage.current?.setVolume(volume)
     // Volontairement au montage seulement : ensuite c'est la glissiere qui pilote.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /**
+   * Verrou laisse par une session precedente : on arrive sur l'ecran en
+   * tenant deja le micro alors qu'on n'enregistre rien. Sans cette remise a
+   * zero, plus rien ne demarre et l'ecran n'offre aucun moyen de s'en
+   * sortir.
+   */
+  useEffect(() => {
+    if (room.recording_by === youId && youId) {
+      void releaseMicrophone(room.id)
+    }
+    // Au montage seulement : ensuite le verrou est pilote par les prises.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
