@@ -8,6 +8,7 @@ import { PairsQuestion } from '@/components/quiz/kinds/PairsQuestion'
 import { PetitBacQuestion } from '@/components/quiz/kinds/PetitBacQuestion'
 import { MapQuestion } from '@/components/quiz/kinds/MapQuestion'
 import { RankingQuestion } from '@/components/quiz/kinds/RankingQuestion'
+import { SilhouetteQuestion } from '@/components/quiz/kinds/SilhouetteQuestion'
 import { ThemeQuestion } from '@/components/quiz/kinds/ThemeQuestion'
 import { TimelineQuestion } from '@/components/quiz/kinds/TimelineQuestion'
 import { WrittenQuestion } from '@/components/quiz/kinds/WrittenQuestion'
@@ -32,6 +33,7 @@ import {
   type Question,
   type MapPayload,
   type RankingPayload,
+  type SilhouettePayload,
   type ThemePayload,
   type TimelinePayload,
   type WrittenPayload,
@@ -388,6 +390,14 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
           <MapQuestion
             payload={question.payload as MapPayload}
             value={answer?.kind === 'carte' ? answer : null}
+            disabled={locked}
+            onChange={setAnswer}
+          />
+        )}
+        {question.kind === 'silhouette' && (
+          <SilhouetteQuestion
+            payload={question.payload as SilhouettePayload}
+            value={answer?.kind === 'silhouette' ? answer : null}
             disabled={locked}
             onChange={setAnswer}
           />

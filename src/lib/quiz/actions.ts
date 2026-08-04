@@ -2,7 +2,7 @@
 
 import { createServiceClient } from '@/lib/supabase/server'
 import { mergeOptions } from '@/lib/rooms/options'
-import { drawQuestions } from './draw'
+import { drawQuestions, spreadKinds } from './draw'
 import { isAutoScored, type AnswerPayload, type Question } from './kinds'
 import {
   scoreDistance,
@@ -45,7 +45,7 @@ export async function startQuiz(roomId: string): Promise<void> {
 
   const { data: pool } = await supabase
     .from('questions')
-    .select('id, kind')
+    .select('id, kind, idx')
     .in('kind', kinds)
     .limit(500)
 
@@ -57,11 +57,16 @@ export async function startQuiz(roomId: string): Promise<void> {
 
   // On tire toujours au hasard dans la banque ; l'option « ordre aleatoire »
   // ne decide que de l'ordre dans lequel les questions tombent ensuite.
+  // Rangee, la partie suit l'ordre de la banque, donc ses themes.
   const drawn = drawQuestions(
-    pool as { id: string; kind: Question['kind'] }[],
+    pool as { id: string; kind: Question['kind']; idx: number }[],
     questionCount,
   )
-  const ordered = shuffle ? drawn.sort(() => Math.random() - 0.5) : drawn
+  // L'espacement des formes est refait apres le rangement, sinon trier par
+  // theme remettrait toutes les cartes bout a bout.
+  const ordered = shuffle
+    ? drawn
+    : spreadKinds([...drawn].sort((a, b) => a.idx - b.idx))
 
   const { error } = await supabase
     .from('rooms')
@@ -184,6 +189,10 @@ function scoreOf(
     if (kind === 'carte' && given.kind === 'carte') {
       const target = expected as { point: LatLng; maxKm: number }
       return scoreDistance(given, target.point, target.maxKm ?? 500)
+    }
+    if (kind === 'silhouette' && given.kind === 'silhouette') {
+      const accepted = (expected as { accepted?: string[] })?.accepted ?? []
+      return scoreWritten(given.text, accepted)
     }
     if (kind === 'theme' && given.kind === 'theme') {
       const target = expected as {

@@ -35,6 +35,7 @@ export const KIND_CHOICES: { value: QuestionKind; label: string }[] = [
   { value: 'frise', label: 'Frise' },
   { value: 'association', label: 'Association' },
   { value: 'carte', label: 'Carte' },
+  { value: 'silhouette', label: 'Silhouette' },
   { value: 'theme', label: 'Thème au choix' },
   { value: 'petit_bac', label: 'Petit bac' },
 ]

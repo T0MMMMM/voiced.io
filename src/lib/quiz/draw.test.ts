@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { drawQuestions, MAX_PER_KIND, type Drawable } from './draw'
+import { drawQuestions, MAX_PER_KIND, spreadKinds, type Drawable } from './draw'
 
 /** Un tirage previsible : sans lui, on testerait le hasard. */
 const fixed = () => 0.5
@@ -50,5 +50,53 @@ describe('drawQuestions', () => {
     // Plafonner une reponse ecrite viderait la plupart des parties.
     expect(MAX_PER_KIND.ecrite).toBeUndefined()
     expect(MAX_PER_KIND.petit_bac).toBe(1)
+  })
+})
+
+describe('spreadKinds', () => {
+  /** Les paires de formes identiques qui se suivent, hors réponse écrite. */
+  function repeats(questions: Drawable[]): number {
+    return questions.filter(
+      (question, index) =>
+        index > 0 &&
+        question.kind === questions[index - 1]?.kind &&
+        question.kind !== 'ecrite',
+    ).length
+  }
+
+  it('n’enchaîne jamais deux fois la même forme', () => {
+    // Deux cartes de suite, c'est le meme geste deux fois : la partie
+    // donne l'impression de tourner en rond.
+    const melange = [
+      ...pool('carte', 5),
+      ...pool('frise', 5),
+      ...pool('intrus', 5),
+    ]
+    expect(repeats(spreadKinds(melange))).toBe(0)
+  })
+
+  it('laisse les réponses écrites se suivre', () => {
+    // C'est le fond de la partie, pas une forme dont il faut se méfier.
+    const ecrites = pool('ecrite', 6)
+    expect(spreadKinds(ecrites)).toHaveLength(6)
+  })
+
+  it('garde toutes les questions, sans doublon', () => {
+    const melange = [...pool('carte', 4), ...pool('liste', 3), ...pool('ecrite', 5)]
+    const spread = spreadKinds(melange)
+    expect(spread).toHaveLength(melange.length)
+    expect(new Set(spread.map((q) => q.id)).size).toBe(melange.length)
+  })
+
+  it('reste jouable quand une seule forme domine', () => {
+    // Rien ne permet d'alterner : mieux vaut une partie qui alterne mal
+    // qu'une partie amputée.
+    const melange = [...pool('carte', 6), ...pool('liste', 1)]
+    expect(spreadKinds(melange)).toHaveLength(7)
+  })
+
+  it('sort déjà espacé du tirage', () => {
+    const melange = [...pool('carte', 10), ...pool('frise', 10)]
+    expect(repeats(drawQuestions(melange, 20, fixed))).toBe(0)
   })
 })

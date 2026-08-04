@@ -17,6 +17,7 @@ export type QuestionKind =
   | 'intrus'
   | 'association'
   | 'theme'
+  | 'silhouette'
   | 'media'
 
 /** Contenu propre a chaque forme, tel qu'il est stocke en base. */
@@ -59,9 +60,26 @@ export interface TimelinePayload {
 }
 export interface MapPayload {
   /** Le cadrage : le monde entier ne sert a rien pour situer un departement. */
-  region: 'monde' | 'europe' | 'france'
+  region: 'monde' | 'europe' | 'france' | 'pays'
+  /**
+   * Cadrage explicite en degres, pour un pays qui n'a pas son entree.
+   * `x` est la longitude du bord gauche, `y` l'oppose de la latitude du
+   * bord haut, comme dans le fond de carte.
+   */
+  box?: { x: number; y: number; w: number; h: number }
   /** Ce qu'il faut placer, si l'enonce ne suffit pas. */
   target?: string
+}
+
+/**
+ * Silhouette : les frontieres d'un pays, seules et souvent tournees. Le
+ * trace voyage avec la question, sans son nom : l'envoyer reviendrait a
+ * livrer la reponse dans le navigateur.
+ */
+export interface SilhouettePayload {
+  shape: string
+  /** Rotation en degres. Elle interdit de reconnaitre par l'orientation. */
+  rotate: number
 }
 /**
  * Theme a difficulte choisie : trois questions du meme sujet, le joueur
@@ -98,6 +116,7 @@ export type AnswerPayload =
   | { kind: 'frise'; year: number }
   | { kind: 'carte'; lat: number; lng: number }
   | { kind: 'theme'; level: number; text: string }
+  | { kind: 'silhouette'; text: string }
 
 /**
  * Contrat commun a toutes les formes. `disabled` couvre aussi bien le
@@ -129,7 +148,8 @@ export function isAutoScored(kind: QuestionKind): boolean {
     kind === 'carte' ||
     kind === 'intrus' ||
     kind === 'association' ||
-    kind === 'theme'
+    kind === 'theme' ||
+    kind === 'silhouette'
   )
 }
 
@@ -148,6 +168,7 @@ export const KIND_LABELS: Record<QuestionKind, string> = {
   carte: 'Carte',
   petit_bac: 'Petit bac',
   theme: 'Thème au choix',
+  silhouette: 'Silhouette',
   intrus: 'Intrus',
   association: 'Association',
   media: 'Extrait',

@@ -13,7 +13,14 @@ import { cn } from '@/lib/utils/cn'
  * Le planisphère s'arrête à 58° sud : l'Antarctique occupait un quart de
  * l'image pour rien et repoussait tout le reste vers le haut.
  */
-const FRAMES: Record<MapPayload['region'], { x: number; y: number; w: number; h: number }> = {
+interface Frame {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+const FRAMES: Record<string, Frame> = {
   monde: { x: -180, y: -80, w: 360, h: 138 },
   europe: { x: -13, y: -72, w: 56, h: 39 },
   france: { x: -5.6, y: -51.6, w: 15.6, h: 10.8 },
@@ -61,7 +68,9 @@ export function MapQuestion({
     setPoint(value ? { lat: value.lat, lng: value.lng } : null)
   }, [payload.region, value])
 
-  const frame = FRAMES[payload.region] ?? FRAMES.monde
+  // Un pays sans entree nommee porte son propre cadrage : la banque en
+  // ajoute sans qu'il faille toucher au composant.
+  const frame: Frame = payload.box ?? FRAMES[payload.region] ?? FRAMES.monde!
 
   /**
    * Tout ce qui se dessine se mesure en degrés, donc à l'échelle du
@@ -125,14 +134,15 @@ export function MapQuestion({
 
           {point && (
             <g transform={`translate(${point.lng} ${-point.lat})`}>
-              {/* Le halo se voit sur la terre comme sur la mer ; un simple
-                  point se perdait dans le vert des continents. */}
-              <circle r={unit * 3.2} fill="var(--rec)" opacity="0.22" />
+              {/* Le point reste petit : c'est lui qui dit la precision de
+                  la reponse, et un gros disque laisserait croire qu'on a
+                  droit a cinq cents kilometres d'a-peu-pres. Le liseré
+                  clair le detache de la terre comme de la mer. */}
               <circle
-                r={unit * 1.3}
+                r={unit * 0.75}
                 fill="var(--rec)"
                 stroke="var(--surface)"
-                strokeWidth={unit * 0.4}
+                strokeWidth={unit * 0.3}
               />
             </g>
           )}

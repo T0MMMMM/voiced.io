@@ -19,6 +19,8 @@
  * majorité est verte à dessein : on joue entre amis, pas à un concours.
  */
 
+import { SHAPES } from './shapes.mjs'
+
 /**
  * La difficulté fixe le barème : une question rouge doit rapporter plus
  * qu'une verte, sinon l'annoncer n'est qu'une décoration.
@@ -105,6 +107,63 @@ const carte = (theme, difficulty, target, region, lat, lng, maxKm) => ({
   payload: { region, target },
   answer: { point: { lat, lng }, maxKm },
 })
+
+/**
+ * Cadrages de pays, en degres : longitude du bord gauche, oppose de la
+ * latitude du bord haut, largeur, hauteur.
+ *
+ * Un pays seul a l'ecran, c'est la meme question que pour la France :
+ * placer une ville qu'on connait de nom sans savoir ou elle tombe.
+ */
+const PAYS = {
+  Italie: { x: 5.5, y: -47.5, w: 14, h: 11.5 },
+  Espagne: { x: -10, y: -44.5, w: 15, h: 10.5 },
+  Allemagne: { x: 5, y: -55.5, w: 12, h: 9.5 },
+  'Royaume-Uni': { x: -9, y: -59.5, w: 12.5, h: 10.5 },
+  Portugal: { x: -10, y: -42.5, w: 6, h: 6.5 },
+  Grèce: { x: 19, y: -42, w: 9.5, h: 7.5 },
+  Pologne: { x: 13.5, y: -55, w: 12, h: 6.5 },
+  Suède: { x: 10, y: -69.5, w: 16, h: 15 },
+  Turquie: { x: 25, y: -42.5, w: 20, h: 8.5 },
+  Maroc: { x: -13.5, y: -36.5, w: 14.5, h: 9.5 },
+  Égypte: { x: 24, y: -32.5, w: 13, h: 10 },
+  Japon: { x: 128, y: -46.5, w: 18, h: 16 },
+  Inde: { x: 67, y: -36.5, w: 26, h: 30 },
+  Chine: { x: 72, y: -54.5, w: 63, h: 36 },
+  'États-Unis': { x: -126, y: -50, w: 60, h: 26 },
+  Mexique: { x: -118, y: -33, w: 32, h: 20 },
+  Brésil: { x: -75, y: -6, w: 40, h: 40 },
+  Argentine: { x: -74, y: 20, w: 24, h: 36 },
+  Australie: { x: 112, y: 9, w: 42, h: 34 },
+  Canada: { x: -142, y: -72, w: 90, h: 32 },
+}
+
+/** Une ville a placer dans son seul pays, comme on le fait pour la France. */
+const carteVille = (difficulty, target, country, lat, lng, maxKm) => ({
+  theme: 'Géographie', kind: 'carte',
+  prompt: `Placez ${target} — ${country}`,
+  difficulty, points: POINTS[difficulty], hint: null,
+  payload: { region: 'pays', box: PAYS[country], target },
+  answer: { point: { lat, lng }, maxKm },
+})
+
+/**
+ * Silhouette : les frontieres d'un pays, tournees. Le trace est recopie
+ * depuis le fond libre au moment du semis, et le nom reste du cote de la
+ * correction.
+ */
+const silhouette = (difficulty, country, rotate, hint = null) => {
+  const shape = SHAPES[country]
+  if (!shape) throw new Error(`Silhouette inconnue : ${country}`)
+
+  return {
+    theme: 'Géographie', kind: 'silhouette',
+    prompt: 'Quel pays reconnaissez-vous ?',
+    difficulty, points: POINTS[difficulty], hint,
+    payload: { shape: shape.path, rotate },
+    answer: { accepted: shape.names },
+  }
+}
 
 /**
  * Theme a difficulte choisie : trois questions du meme sujet, et c'est le
@@ -664,6 +723,89 @@ export const QUESTIONS = [
   carte('Géographie', 2, 'la Norvège', 'monde', 62, 10, 1200),
   carte('Géographie', 3, 'le Pérou', 'monde', -10, -76, 1200),
   carte('Géographie', 3, 'la Thaïlande', 'monde', 15.5, 101, 1100),
+
+  // Un pays seul a l'ecran : la meme question que pour la France, mais
+  // ailleurs. On sait nommer ces villes ; les situer est autre chose.
+  carteVille(1, 'Rome', 'Italie', 41.9, 12.5, 130),
+  carteVille(2, 'Venise', 'Italie', 45.44, 12.34, 130),
+  carteVille(2, 'Naples', 'Italie', 40.85, 14.27, 130),
+  carteVille(1, 'Madrid', 'Espagne', 40.42, -3.7, 140),
+  carteVille(2, 'Barcelone', 'Espagne', 41.39, 2.17, 140),
+  carteVille(3, 'Séville', 'Espagne', 37.39, -6, 140),
+  carteVille(1, 'Berlin', 'Allemagne', 52.52, 13.4, 120),
+  carteVille(2, 'Munich', 'Allemagne', 48.14, 11.58, 120),
+  carteVille(3, 'Hambourg', 'Allemagne', 53.55, 9.99, 120),
+  carteVille(1, 'Londres', 'Royaume-Uni', 51.51, -0.13, 130),
+  carteVille(2, 'Édimbourg', 'Royaume-Uni', 55.95, -3.19, 130),
+  carteVille(3, 'Liverpool', 'Royaume-Uni', 53.41, -2.98, 130),
+  carteVille(1, 'Lisbonne', 'Portugal', 38.72, -9.14, 90),
+  carteVille(2, 'Porto', 'Portugal', 41.15, -8.61, 90),
+  carteVille(1, 'Athènes', 'Grèce', 37.98, 23.73, 110),
+  carteVille(2, 'Varsovie', 'Pologne', 52.23, 21.01, 130),
+  carteVille(2, 'Cracovie', 'Pologne', 50.06, 19.94, 130),
+  carteVille(2, 'Stockholm', 'Suède', 59.33, 18.07, 170),
+  carteVille(2, 'Istanbul', 'Turquie', 41.01, 28.98, 200),
+  carteVille(3, 'Ankara', 'Turquie', 39.93, 32.86, 200),
+  carteVille(2, 'Marrakech', 'Maroc', 31.63, -8, 150),
+  carteVille(2, 'Casablanca', 'Maroc', 33.57, -7.59, 150),
+  carteVille(1, 'Le Caire', 'Égypte', 30.04, 31.24, 150),
+  carteVille(3, 'Louxor', 'Égypte', 25.69, 32.64, 150),
+  carteVille(1, 'Tokyo', 'Japon', 35.68, 139.69, 200),
+  carteVille(3, 'Osaka', 'Japon', 34.69, 135.5, 200),
+  carteVille(2, 'New Delhi', 'Inde', 28.61, 77.21, 350),
+  carteVille(3, 'Bombay', 'Inde', 19.08, 72.88, 350),
+  carteVille(1, 'Pékin', 'Chine', 39.9, 116.4, 500),
+  carteVille(2, 'Shanghai', 'Chine', 31.23, 121.47, 500),
+  carteVille(3, 'Hong Kong', 'Chine', 22.32, 114.17, 500),
+  carteVille(1, 'New York', 'États-Unis', 40.71, -74.01, 400),
+  carteVille(2, 'Los Angeles', 'États-Unis', 34.05, -118.24, 400),
+  carteVille(2, 'Miami', 'États-Unis', 25.76, -80.19, 400),
+  carteVille(3, 'Chicago', 'États-Unis', 41.88, -87.63, 400),
+  carteVille(2, 'Mexico', 'Mexique', 19.43, -99.13, 300),
+  carteVille(1, 'Rio de Janeiro', 'Brésil', -22.91, -43.17, 500),
+  carteVille(2, 'São Paulo', 'Brésil', -23.55, -46.63, 500),
+  carteVille(3, 'Brasília', 'Brésil', -15.79, -47.88, 500),
+  carteVille(2, 'Buenos Aires', 'Argentine', -34.6, -58.38, 400),
+  carteVille(1, 'Sydney', 'Australie', -33.87, 151.21, 500),
+  carteVille(3, 'Perth', 'Australie', -31.95, 115.86, 500),
+  carteVille(2, 'Montréal', 'Canada', 45.5, -73.57, 600),
+  carteVille(3, 'Vancouver', 'Canada', 49.28, -123.12, 600),
+
+  // ═══ Silhouettes ══════════════════════════════════════════════════════
+  // Les frontieres seules, et tournees : un pays se reconnait beaucoup
+  // trop facilement a son orientation habituelle.
+  silhouette(1, 'France', 25),
+  silhouette(1, 'Italie', 140),
+  silhouette(1, 'Espagne', 200),
+  silhouette(2, 'Portugal', 90),
+  silhouette(2, 'Allemagne', 160),
+  silhouette(2, 'Royaume-Uni', 45),
+  silhouette(2, 'Irlande', 120),
+  silhouette(3, 'Norvège', 75),
+  silhouette(3, 'Suède', 210),
+  silhouette(3, 'Finlande', 30),
+  silhouette(2, 'Grèce', 250),
+  silhouette(3, 'Pologne', 100),
+  silhouette(3, 'Suisse', 180),
+  silhouette(3, 'Autriche', 60),
+  silhouette(2, 'Islande', 135),
+  silhouette(1, 'Inde', 190),
+  silhouette(2, 'Japon', 15),
+  silhouette(2, 'Chine', 220),
+  silhouette(2, 'Turquie', 170),
+  silhouette(1, 'Brésil', 130),
+  silhouette(2, 'Argentine', 40),
+  silhouette(3, 'Chili', 95),
+  silhouette(2, 'Mexique', 155),
+  silhouette(2, 'Canada', 205),
+  silhouette(1, 'Australie', 70),
+  silhouette(3, 'Nouvelle-Zélande', 240),
+  silhouette(2, 'Égypte', 115),
+  silhouette(3, 'Maroc', 20),
+  silhouette(3, 'Madagascar', 145),
+  silhouette(2, 'Afrique du Sud', 265),
+  silhouette(3, 'Cuba', 50),
+  silhouette(3, 'Viêt Nam', 175),
 
   // ═══ Thèmes à difficulté choisie ══════════════════════════════════════
   // Le joueur voit le sujet, pas la question, et décide de ce qu'il risque.

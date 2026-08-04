@@ -59,5 +59,59 @@ export function drawQuestions<T extends Drawable>(
     drawn.push(question)
   }
 
-  return drawn
+  return spreadKinds(drawn)
+}
+
+/**
+ * La forme qui peut se repeter sans lasser.
+ *
+ * Deux cartes de suite, c'est le meme geste deux fois ; deux reponses
+ * ecrites de suite, ce sont deux questions differentes. La reponse ecrite
+ * est le fond de la partie, pas une forme dont il faudrait se mefier.
+ */
+const REPEATABLE: QuestionKind = 'ecrite'
+
+/**
+ * Ecarte les formes identiques qui se suivent.
+ *
+ * A chaque tour on prend la forme qu'il reste le plus a placer, parmi
+ * celles qui different de la precedente. Prendre simplement la premiere
+ * venue vidait les formes dans l'ordre et laissait tout le stock de la
+ * derniere s'entasser a la fin de la partie.
+ *
+ * Quand aucune forme ne differe, on accepte la repetition : une partie qui
+ * n'autorise qu'une forme doit rester jouable, meme si elle se repete.
+ */
+export function spreadKinds<T extends Drawable>(questions: T[]): T[] {
+  const left = [...questions]
+  const spread: T[] = []
+  let previous: QuestionKind | null = null
+
+  while (left.length > 0) {
+    const remaining = new Map<QuestionKind, number>()
+    for (const question of left) {
+      remaining.set(question.kind, (remaining.get(question.kind) ?? 0) + 1)
+    }
+
+    let chosen: QuestionKind | null = null
+    let most = 0
+    for (const [kind, count] of remaining) {
+      if (kind === previous && kind !== REPEATABLE) continue
+      if (count > most) {
+        chosen = kind
+        most = count
+      }
+    }
+
+    const wanted = chosen
+    const index: number =
+      wanted === null ? 0 : left.findIndex((question) => question.kind === wanted)
+    const [next] = left.splice(index, 1)
+    if (!next) break
+
+    spread.push(next)
+    previous = next.kind
+  }
+
+  return spread
 }

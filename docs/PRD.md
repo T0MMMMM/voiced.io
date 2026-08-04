@@ -258,7 +258,8 @@ La correction est un moment de jeu à part entière, pas une corvée administrat
 | **Estimation** | Donne un nombre | **Auto** : le plus proche marque, dégressif ensuite |
 | **Classement** | Ordonne une liste (films les plus vus, pays les plus peuplés…) | **Auto** : points par paire correctement ordonnée, pas tout ou rien |
 | **Frise** | Fait glisser un curseur sur un axe du temps jusqu'à l'année voulue. **Toutes les questions de date passent par elle** | **Auto** : dégressif à l'écart en années, avec une tolérance propre à chaque question |
-| **Carte** | Pose un point sur une carte | **Auto** : score dégressif selon la distance en kilomètres |
+| **Carte** | Pose un point sur une carte, cadrée sur le monde, l'Europe ou un pays seul | **Auto** : score dégressif selon la distance en kilomètres |
+| **Silhouette** | Reconnaît un pays à ses seules frontières, présentées tournées | **Auto** : réponse écrite comparée aux variantes acceptées |
 | **Petit bac** | Une lettre, six catégories, un mot par catégorie | Manuelle, toujours. Une seule par partie : une minute à remplir et une minute à corriger, deux et la table décroche |
 | **Thème à difficulté** | Voit le sujet, pas la question, et choisit facile, moyen ou difficile avant de la découvrir | **Auto** : la note est mise à l'échelle du niveau choisi, et le choix est définitif |
 
@@ -279,7 +280,7 @@ Elles répondent à la demande « des idées qui changent des questions de base 
 
 Tout est activable ou désactivable par l'hôte, en `rooms.options` :
 
-- quelles formes de questions sont autorisées
+- quelles formes de questions sont autorisées. Le tirage écarte ensuite les formes identiques qui se suivent : deux cartes d'affilée, c'est le même geste deux fois. Seule la réponse écrite peut se répéter, parce qu'elle est le fond de la partie et non une mécanique
 - le rythme (tranquille, normal, rapide). Ce n'est plus une durée : chaque question tire son temps de sa forme et de sa difficulté, et le rythme ne fait qu'étirer ou resserrer l'ensemble. Trente secondes noyaient une question à un mot et étranglaient un petit bac à quatre catégories
 - paris activés
 - indices dégressifs activés

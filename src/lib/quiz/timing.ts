@@ -30,6 +30,7 @@ const BASE: Record<QuestionKind, number> = {
   estimation: 22,
   media: 25,
   frise: 26,
+  silhouette: 24,
   carte: 30,
   liste: 32,
   theme: 34,
