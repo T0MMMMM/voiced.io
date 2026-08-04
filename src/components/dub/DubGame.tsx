@@ -1,11 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Score, type ScoreHandle } from '@/components/dub/Score'
 import { TakeLane } from '@/components/dub/TakeLane'
 import { Transport } from '@/components/dub/Transport'
 import { VideoStage, type VideoStageHandle } from '@/components/video/VideoStage'
 import { extractPeaks } from '@/lib/audio/peaks'
+import { cueFor, findSegments, segmentFrom, type Segment } from '@/lib/audio/segments'
 import { startRecording, type RecorderHandle } from '@/lib/audio/recorder'
 import {
   claimMicrophone,
@@ -41,6 +42,8 @@ export function DubGame({
   const recorder = useRef<RecorderHandle | null>(null)
   const recordedFrom = useRef(0)
   const clock = useRef(0)
+  /** Replique visee par la prise en cours ; l'arret se fera a sa fin. */
+  const target = useRef<Segment | null>(null)
 
   const [peaks, setPeaks] = useState<number[]>([])
   const [peaksError, setPeaksError] = useState(false)
@@ -49,6 +52,15 @@ export function DubGame({
   const [recording, setRecording] = useState(false)
   const [elapsedMs, setElapsedMs] = useState(0)
   const [error, setError] = useState<string | null>(null)
+
+  // Les repliques se deduisent du spectre : les silences de la bande
+  // originale disent ou chaque phrase commence et finit.
+  const segments = useMemo(
+    () => findSegments(peaks, durationSec),
+    [peaks, durationSec],
+  )
+  const segmentsRef = useRef<Segment[]>([])
+  segmentsRef.current = segments
 
   // Le verrou vit en base : c'est lui, et non un etat local, qui dit qui
   // tient le micro. Tous les ecrans lisent la meme valeur.
@@ -77,9 +89,19 @@ export function DubGame({
     if (holder === null) void refreshTakes()
   }, [holder, refreshTakes])
 
+  const stopRef = useRef<() => void>(() => {})
+
   const handleTime = useCallback((time: number) => {
     clock.current = time
     score.current?.setTime(time)
+
+    // Le coeur de la solution : on n'attend de personne qu'il appuie au
+    // bon moment. La replique finit, l'enregistrement s'arrete.
+    const aim = target.current
+    if (aim && recorder.current && time >= aim.end) {
+      target.current = null
+      stopRef.current()
+    }
   }, [])
 
   const skip = useCallback(
@@ -120,7 +142,7 @@ export function DubGame({
     }
   }, [room.id, youId, refreshTakes])
 
-  const beginRecording = useCallback(async () => {
+  const beginRecording = useCallback(async (freehand = false) => {
     if (!youId) return
     setError(null)
 
@@ -134,12 +156,19 @@ export function DubGame({
     }
 
     try {
-      recordedFrom.current = clock.current
+      // Sans consigne contraire, on vise la replique suivante : la lecture
+      // recule un peu avant pour laisser le temps d'attaquer, et l'arret
+      // est programme sur sa fin.
+      const aim = freehand ? null : segmentFrom(segmentsRef.current, clock.current)
+      const from = aim ? cueFor(aim) : clock.current
+
+      target.current = aim
+      recordedFrom.current = from
       recorder.current = await startRecording()
       setRecording(true)
       setElapsedMs(0)
       // La video repart muette : sinon le micro reprend la bande originale.
-      stage.current?.playMuted(clock.current)
+      stage.current?.playMuted(from)
     } catch {
       await releaseMicrophone(room.id)
       setError(
@@ -148,10 +177,17 @@ export function DubGame({
     }
   }, [room.id, youId])
 
-  const toggleRecord = useCallback(() => {
-    if (recording) void stopRecording()
-    else if (!someoneElseRecords) void beginRecording()
-  }, [recording, someoneElseRecords, stopRecording, beginRecording])
+  const toggleRecord = useCallback(
+    (freehand = false) => {
+      if (recording) void stopRecording()
+      else if (!someoneElseRecords) void beginRecording(freehand)
+    },
+    [recording, someoneElseRecords, stopRecording, beginRecording],
+  )
+
+  // `handleTime` est stable pour ne pas relancer la boucle du lecteur a
+  // chaque image ; elle atteint l'arret par cette reference.
+  stopRef.current = () => void stopRecording()
 
   useEffect(() => {
     if (!recording) return
@@ -187,7 +223,8 @@ export function DubGame({
           break
         case 'KeyR':
           event.preventDefault()
-          toggleRecord()
+          // Maj+R enregistre librement, sans arret automatique.
+          toggleRecord(event.shiftKey)
           break
         case 'ArrowLeft':
           event.preventDefault()
@@ -226,7 +263,7 @@ export function DubGame({
               ? 'Spectre indisponible sur ce navigateur'
               : peaks.length === 0
                 ? 'Lecture du spectre…'
-                : 'La zone claire annonce ce qui arrive'}
+                : `${segments.length} réplique${segments.length > 1 ? 's' : ''} détectée${segments.length > 1 ? 's' : ''}`}
           </span>
         </div>
 
@@ -234,6 +271,7 @@ export function DubGame({
           ref={score}
           peaks={peaks}
           duration={durationSec}
+          segments={segments}
           recording={recording || someoneElseRecords}
           onSeek={(time) =>
             !recording && !someoneElseRecords && stage.current?.seek(time)
@@ -258,7 +296,7 @@ export function DubGame({
         blockedBy={someoneElseRecords ? holderName : null}
         elapsedMs={elapsedMs}
         onPlayPause={() => stage.current?.toggle()}
-        onRecord={toggleRecord}
+        onRecord={() => toggleRecord(false)}
         onRestart={() => stage.current?.seek(0)}
         onSkip={skip}
       />

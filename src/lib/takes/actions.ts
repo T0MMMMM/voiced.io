@@ -59,6 +59,37 @@ export async function saveTake(form: FormData): Promise<void> {
   }
 
   const supabase = createServiceClient()
+
+  // Refaire une reprise remplace la precedente au lieu de s'empiler
+  // dessus : sans cela, cinq essais donnent cinq voix superposees. On ne
+  // remplace que SES propres prises — deux joueurs peuvent legitimement
+  // parler par-dessus le meme passage.
+  if (playerId) {
+    const endSec = startSec + durationMs / 1000
+    const { data: overlapping } = await supabase
+      .from('takes')
+      .select('id, storage_path, start_sec, duration_ms')
+      .eq('room_id', roomId)
+      .eq('player_id', playerId)
+
+    const doomed = (overlapping ?? []).filter((take) => {
+      const from = Number(take.start_sec)
+      const to = from + take.duration_ms / 1000
+      return from < endSec && startSec < to
+    })
+
+    if (doomed.length > 0) {
+      await remove(
+        'takes',
+        doomed.map((take) => take.storage_path),
+      ).catch(() => {})
+      await supabase
+        .from('takes')
+        .delete()
+        .in('id', doomed.map((take) => take.id))
+    }
+  }
+
   const takeId = crypto.randomUUID()
   const mimeType = audio.type || 'audio/webm'
   const path = takePath(roomId, takeId, extensionFromMime(mimeType))

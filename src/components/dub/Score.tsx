@@ -1,26 +1,25 @@
 'use client'
 
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-} from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import type { Segment } from '@/lib/audio/segments'
 import { cn } from '@/lib/utils/cn'
 import { clamp } from '@/lib/utils/time'
+
+/** Fenêtre visible : cinq secondes de part et d'autre du moment présent. */
+export const WINDOW_SEC = 10
 
 /** Fenêtre de préparation, en secondes, mise en avant devant la tête de lecture. */
 const LOOKAHEAD_SEC = 2.5
 
 export interface ScoreHandle {
-  /** Déplace la tête de lecture sans repasser par React : 60 images par seconde. */
+  /** Fait défiler la partition sans repasser par React : 60 images par seconde. */
   setTime: (time: number) => void
 }
 
 export interface ScoreProps {
   peaks: number[]
   duration: number
+  segments: Segment[]
   recording?: boolean
   onSeek: (time: number) => void
   className?: string
@@ -31,70 +30,96 @@ export interface ScoreProps {
  *
  * Pendant l'enregistrement la vidéo est muette et personne n'entend les
  * autres : cette forme d'onde est la seule information de timing qui reste.
- * Elle se lit donc comme une partition, en avance — d'où les trois états.
  *
- *   · derrière la tête de lecture : estompé, c'est joué
+ * Elle défile sous une tête de lecture fixe au centre, et ne montre que
+ * cinq secondes de part et d'autre. Afficher tout le clip d'un coup
+ * revenait à ne rien montrer : à cette échelle, une réplique fait deux
+ * pixels. Ici, on lit ce qui arrive.
+ *
+ *   · à gauche du centre : ce qui est joué, estompé
  *   · les 2,5 secondes qui suivent : mises en avant, la réplique arrive
- *   · au-delà : normal, c'est le contexte
+ *   · les traits verticaux : les débuts et fins de répliques détectés
  *
- * Le tracé est peint une fois sur un canvas ; seuls les trois calques
- * mobiles bougent, par transformation. Redessiner 900 barres à chaque
- * image coûterait cher pour rien.
+ * La tête de lecture étant fixe, les calques le sont aussi : seul le tracé
+ * bouge, redessiné à chaque image sur la centaine de barres visibles.
  */
 export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
-  { peaks, duration, recording = false, onSeek, className },
+  { peaks, duration, segments, recording = false, onSeek, className },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const pastRef = useRef<HTMLDivElement>(null)
-  const aheadRef = useRef<HTMLDivElement>(null)
-  const headRef = useRef<HTMLDivElement>(null)
-  /** Largeur en pixels, tenue à jour par le ResizeObserver du tracé. */
-  const widthRef = useRef(0)
+  const sizeRef = useRef({ width: 0, height: 0 })
+  const timeRef = useRef(0)
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
     const host = hostRef.current
-    if (!canvas || !host || peaks.length === 0) return
+    if (!canvas || !host) return
 
-    const { width, height } = host.getBoundingClientRect()
-    widthRef.current = width
-    const ratio = window.devicePixelRatio || 1
-    canvas.width = Math.round(width * ratio)
-    canvas.height = Math.round(height * ratio)
+    const { width, height } = sizeRef.current
+    if (width === 0) return
 
     const context = canvas.getContext('2d')
     if (!context) return
-    context.scale(ratio, ratio)
+
+    const styles = getComputedStyle(host)
+    const waveColor = styles.getPropertyValue('--wave-ref').trim()
+    const markColor = styles.getPropertyValue('--border-strong').trim()
+
+    const ratio = window.devicePixelRatio || 1
+    context.setTransform(ratio, 0, 0, ratio, 0, 0)
     context.clearRect(0, 0, width, height)
 
-    // La couleur vient du thème courant, jamais d'une valeur en dur :
-    // le canvas ne bénéficie pas des variables CSS tout seul.
-    context.fillStyle = getComputedStyle(host).getPropertyValue('--wave-ref').trim()
-
-    const step = width / peaks.length
-    const barWidth = Math.max(1, step - 1)
+    const from = timeRef.current - WINDOW_SEC / 2
+    const pxPerSec = width / WINDOW_SEC
     const middle = height / 2
 
-    for (const [index, peak] of peaks.entries()) {
-      // Un plancher visible : une partition qui touche zéro paraît coupée.
-      const barHeight = Math.max(2, peak * (height - 8))
-      context.beginPath()
-      context.roundRect(
-        index * step,
-        middle - barHeight / 2,
-        barWidth,
-        barHeight,
-        barWidth / 2,
-      )
-      context.fill()
+    // Les frontières de répliques, sous le tracé : ce sont elles qui
+    // disent où l'enregistrement s'arrêtera tout seul.
+    context.fillStyle = markColor
+    for (const segment of segments) {
+      for (const edge of [segment.start, segment.end]) {
+        const x = (edge - from) * pxPerSec
+        if (x < -2 || x > width + 2) continue
+        context.fillRect(Math.round(x), 0, 1, height)
+      }
     }
-  }, [peaks])
+
+    if (peaks.length > 0) {
+      const bucketSec = duration / peaks.length
+      const first = Math.max(0, Math.floor(from / bucketSec))
+      const last = Math.min(peaks.length, Math.ceil((from + WINDOW_SEC) / bucketSec))
+      const barWidth = Math.max(1.5, bucketSec * pxPerSec - 1)
+
+      context.fillStyle = waveColor
+      for (let i = first; i < last; i++) {
+        const x = (i * bucketSec - from) * pxPerSec
+        const barHeight = Math.max(2, (peaks[i] ?? 0) * (height - 10))
+        context.beginPath()
+        context.roundRect(x, middle - barHeight / 2, barWidth, barHeight, barWidth / 2)
+        context.fill()
+      }
+    }
+  }, [peaks, duration, segments])
+
+  const measure = useCallback(() => {
+    const canvas = canvasRef.current
+    const host = hostRef.current
+    if (!canvas || !host) return
+
+    const { width, height } = host.getBoundingClientRect()
+    sizeRef.current = { width, height }
+
+    const ratio = window.devicePixelRatio || 1
+    canvas.width = Math.round(width * ratio)
+    canvas.height = Math.round(height * ratio)
+    draw()
+  }, [draw])
 
   useEffect(() => {
-    draw()
-    const observer = new ResizeObserver(draw)
+    measure()
+    const observer = new ResizeObserver(measure)
     if (hostRef.current) observer.observe(hostRef.current)
 
     // Le thème change les couleurs sans changer la taille : il faut aussi
@@ -109,18 +134,12 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
       observer.disconnect()
       themeObserver.disconnect()
     }
-  }, [draw])
+  }, [measure, draw])
 
   useImperativeHandle(ref, () => ({
     setTime(time) {
-      const played = duration > 0 ? clamp(time / duration, 0, 1) : 0
-      const x = played * widthRef.current
-
-      // Uniquement des transformations : elles ne déclenchent pas de calcul
-      // de mise en page, ce qui compte à soixante images par seconde.
-      if (pastRef.current) pastRef.current.style.transform = `scaleX(${played})`
-      if (headRef.current) headRef.current.style.transform = `translateX(${x}px)`
-      if (aheadRef.current) aheadRef.current.style.transform = `translateX(${x}px)`
+      timeRef.current = time
+      draw()
     },
   }))
 
@@ -128,7 +147,9 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
     const host = hostRef.current
     if (!host) return
     const rect = host.getBoundingClientRect()
-    onSeek(clamp(((clientX - rect.left) / rect.width) * duration, 0, duration))
+    // Cliquer déplace d'autant de secondes qu'on s'écarte du centre.
+    const offsetSec = ((clientX - rect.left) / rect.width - 0.5) * WINDOW_SEC
+    onSeek(clamp(timeRef.current + offsetSec, 0, duration))
   }
 
   return (
@@ -140,15 +161,11 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
         className,
       )}
     >
-      {/* La fenêtre de préparation, derrière le tracé pour ne pas le masquer. */}
+      {/* La fenêtre de préparation, juste devant la tête de lecture. */}
       <div
-        ref={aheadRef}
         aria-hidden="true"
-        className="bg-accent-soft pointer-events-none absolute inset-y-0 left-0 z-0"
-        style={{
-          width: `${(LOOKAHEAD_SEC / Math.max(duration, 0.001)) * 100}%`,
-          transform: 'translateX(0px)',
-        }}
+        className="bg-accent-soft pointer-events-none absolute inset-y-0 left-1/2 z-0"
+        style={{ width: `${(LOOKAHEAD_SEC / WINDOW_SEC) * 100}%` }}
       />
 
       <canvas
@@ -157,22 +174,19 @@ export const Score = forwardRef<ScoreHandle, ScoreProps>(function Score(
         className="pointer-events-none absolute inset-0 z-10 size-full"
       />
 
-      {/* Ce qui est joué s'estompe : on voile avec la couleur du fond. */}
+      {/* Ce qui est joué s'estompe. La tête étant fixe, c'est exactement la
+          moitié gauche — plus rien à déplacer. */}
       <div
-        ref={pastRef}
         aria-hidden="true"
-        className="bg-bg/65 pointer-events-none absolute inset-y-0 left-0 z-20 w-full origin-left"
-        style={{ transform: 'scaleX(0)' }}
+        className="bg-bg/55 pointer-events-none absolute inset-y-0 left-0 z-20 w-1/2"
       />
 
       <div
-        ref={headRef}
         aria-hidden="true"
         className={cn(
-          'pointer-events-none absolute inset-y-0 left-0 z-30 -ml-px w-0.5',
+          'pointer-events-none absolute inset-y-0 left-1/2 z-30 -ml-px w-0.5',
           recording ? 'bg-rec' : 'bg-playhead',
         )}
-        style={{ transform: 'translateX(0px)' }}
       >
         <span
           className={cn(

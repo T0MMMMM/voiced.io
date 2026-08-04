@@ -18,10 +18,10 @@ export interface TransportProps {
 
 /** Un raccourci n'est utile que s'il est écrit quelque part. */
 const SHORTCUTS: [key: string, action: string][] = [
+  ['R', 'doubler la réplique suivante'],
+  ['⇧ R', 'enregistrer librement'],
   ['Espace', 'lire ou mettre en pause'],
-  ['R', 'enregistrer'],
   ['← →', 'reculer ou avancer de 2 s'],
-  ['⇧ ← →', 'par pas de 0,5 s'],
   ['Début', 'revenir au début'],
 ]
 
@@ -72,7 +72,9 @@ export function Transport({
             <span className="text-muted">{blockedBy} enregistre</span>
           </>
         ) : (
-          <span className="text-faint">Personne n’enregistre</span>
+          <span className="text-faint">
+            Appuyez sur R : la réplique suivante se coupe toute seule
+          </span>
         )}
       </p>
 
