@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * Trois temps de huit cents millisecondes.
@@ -32,18 +32,29 @@ export function Countdown({
 }) {
   const [value, setValue] = useState(COUNTDOWN_FROM)
 
+  /**
+   * La callback passe par une référence, et le minuteur ne dépend de rien.
+   *
+   * Sans cela, le décompte ne se terminait jamais : `onDone` est recréé à
+   * chaque rendu du parent, la jauge de niveau en provoque un toutes les
+   * quatre-vingts millisecondes, et l'effet se nettoyait donc — minuteur
+   * compris — avant d'avoir atteint sa fin.
+   */
+  const done = useRef(onDone)
+  done.current = onDone
+
   useEffect(() => {
     const timer = window.setInterval(() => {
       setValue((current) => current - 1)
     }, COUNTDOWN_STEP_MS)
 
-    const done = window.setTimeout(onDone, COUNTDOWN_TOTAL_MS)
+    const finish = window.setTimeout(() => done.current(), COUNTDOWN_TOTAL_MS)
 
     return () => {
       window.clearInterval(timer)
-      window.clearTimeout(done)
+      window.clearTimeout(finish)
     }
-  }, [onDone])
+  }, [])
 
   return (
     <div
