@@ -30,9 +30,9 @@ function SunIcon() {
 }
 
 export function ThemeToggle() {
-  // Le rendu serveur ne connaît pas localStorage : on part sur 'light',
+  // Le rendu serveur ne connaît pas localStorage : on part sur 'dark',
   // qui est aussi le défaut du produit, puis on se synchronise au montage.
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<Theme>('dark')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {

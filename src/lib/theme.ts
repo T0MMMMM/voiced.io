@@ -3,12 +3,12 @@ export type Theme = 'light' | 'dark'
 export const THEME_STORAGE_KEY = 'voiced-theme'
 
 /**
- * Light est le défaut assumé du produit : toute valeur qui n'est pas
- * exactement 'dark' retombe sur 'light'. Aucune lecture de
+ * Le sombre est le défaut assumé du produit : toute valeur qui n'est pas
+ * exactement 'light' retombe sur 'dark'. Aucune lecture de
  * prefers-color-scheme, l'utilisateur choisit explicitement.
  */
 export function resolveTheme(stored: string | null | undefined): Theme {
-  return stored === 'dark' ? 'dark' : 'light'
+  return stored === 'light' ? 'light' : 'dark'
 }
 
 export function toggleTheme(current: Theme): Theme {
@@ -20,7 +20,7 @@ export function readStoredTheme(): Theme {
     return resolveTheme(localStorage.getItem(THEME_STORAGE_KEY))
   } catch {
     // localStorage indisponible (navigation privée stricte, iframe cloisonnée)
-    return 'light'
+    return 'dark'
   }
 }
 
@@ -35,7 +35,7 @@ export function applyTheme(theme: Theme): void {
 
 /**
  * Injecté en synchrone dans <head>, avant le premier rendu, pour que la page
- * ne s'affiche jamais en clair pendant une fraction de seconde chez un
- * utilisateur en thème sombre.
+ * ne s'affiche jamais en sombre pendant une fraction de seconde chez un
+ * utilisateur qui a choisi le thème clair.
  */
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');document.documentElement.dataset.theme=t==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}})()`
+export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');document.documentElement.dataset.theme=t==='light'?'light':'dark'}catch(e){document.documentElement.dataset.theme='dark'}})()`

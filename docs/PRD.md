@@ -422,6 +422,6 @@ C'est le prérequis des trois jeux. Rien d'autre ne peut avancer sans lui.
 
 ## 11. Ce qui est décidé, et ce qui ne l'est pas
 
-**Décidé.** Aucun traitement vidéo côté serveur · base de données comme source de vérité unique · aucun compte avant plus tard · thème clair par défaut, un seul fichier de tokens · correction manuelle par l'hôte pour tout ce qui demande du jugement, automatique pour le reste · doublage en continu, sans découpage ni personnages · support ordinateur uniquement pour l'enregistrement audio.
+**Décidé.** Aucun traitement vidéo côté serveur · base de données comme source de vérité unique · aucun compte avant plus tard · thème sombre par défaut, un seul fichier de tokens · correction manuelle par l'hôte pour tout ce qui demande du jugement, automatique pour le reste · doublage en continu, sans découpage ni personnages · support ordinateur uniquement pour l'enregistrement audio.
 
 **Ouvert.** Le nom du site si le quiz devient le jeu de tête · la provenance et les droits des sons d'animaux et des médias de questions · le passage à Cloudflare R2, déclenché par la mesure et pas avant · le partage public de quiz entre utilisateurs.

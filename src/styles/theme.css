@@ -12,6 +12,12 @@
    ───────────────────────────────────────────────────────────── */
 
 :root {
+  /* Le sombre est le defaut du produit ; le clair reste ecrit ici parce
+     que c'est la base sur laquelle le sombre s'ecarte, et parce qu'un jeu
+     de tokens se relit mieux en clair. `color-scheme` fait suivre les
+     ascenseurs et les champs natifs, que les variables n'atteignent pas. */
+  color-scheme: light;
+
   /* Surfaces */
   --bg:             #FFF7EA;
   --surface:        #FFFFFF;
@@ -61,6 +67,8 @@
 }
 
 [data-theme='dark'] {
+  color-scheme: dark;
+
   --bg:             #151714;
   --surface:        #1F221E;
   --surface-sunken: #1A1D19;

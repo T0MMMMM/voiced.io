@@ -8,19 +8,19 @@ import {
 } from './theme'
 
 describe('resolveTheme', () => {
-  it("retourne 'dark' pour la valeur exacte 'dark'", () => {
-    expect(resolveTheme('dark')).toBe('dark')
+  it("retourne 'light' pour la valeur exacte 'light'", () => {
+    expect(resolveTheme('light')).toBe('light')
   })
 
-  it("retourne 'light' par défaut quand rien n'est stocké", () => {
-    expect(resolveTheme(null)).toBe('light')
-    expect(resolveTheme(undefined)).toBe('light')
+  it("retourne 'dark' par défaut quand rien n'est stocké", () => {
+    expect(resolveTheme(null)).toBe('dark')
+    expect(resolveTheme(undefined)).toBe('dark')
   })
 
-  it("retourne 'light' pour toute valeur inconnue", () => {
-    expect(resolveTheme('DARK')).toBe('light')
-    expect(resolveTheme('sombre')).toBe('light')
-    expect(resolveTheme('')).toBe('light')
+  it("retourne 'dark' pour toute valeur inconnue", () => {
+    expect(resolveTheme('LIGHT')).toBe('dark')
+    expect(resolveTheme('clair')).toBe('dark')
+    expect(resolveTheme('')).toBe('dark')
   })
 })
 
@@ -38,21 +38,21 @@ describe('applyTheme et readStoredTheme', () => {
   })
 
   it("pose l'attribut data-theme sur <html>", () => {
-    applyTheme('dark')
-    expect(document.documentElement.dataset.theme).toBe('dark')
+    applyTheme('light')
+    expect(document.documentElement.dataset.theme).toBe('light')
   })
 
   it('persiste le thème dans localStorage', () => {
-    applyTheme('dark')
-    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark')
+    applyTheme('light')
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light')
   })
 
   it('relit le thème persisté', () => {
-    applyTheme('dark')
-    expect(readStoredTheme()).toBe('dark')
+    applyTheme('light')
+    expect(readStoredTheme()).toBe('light')
   })
 
-  it("retourne 'light' quand rien n'a jamais été persisté", () => {
-    expect(readStoredTheme()).toBe('light')
+  it("retourne 'dark' quand rien n'a jamais été persisté", () => {
+    expect(readStoredTheme()).toBe('dark')
   })
 })
