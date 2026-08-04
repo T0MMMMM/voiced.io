@@ -20,12 +20,17 @@ export interface VideoStageHandle {
   playMuted: (from: number) => void
   toggle: () => void
   pause: () => void
+  /** Joue avec le son a `volume`, depuis `from`. Sert a ecouter le resultat. */
+  playFrom: (from: number, volume: number) => void
+  setVolume: (volume: number) => void
 }
 
 export interface VideoStageProps {
   src: string
   onTime: (time: number) => void
   onPlayingChange?: (playing: boolean) => void
+  /** La lecture est arrivee au bout : plus aucune image ne suivra. */
+  onEnded?: () => void
   /** Largeur / hauteur du clip. Les extraits d'anime sont souvent verticaux. */
   aspectRatio?: number
   className?: string
@@ -33,7 +38,7 @@ export interface VideoStageProps {
 
 export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
   function VideoStage(
-    { src, onTime, onPlayingChange, aspectRatio = 16 / 9, className },
+    { src, onTime, onPlayingChange, onEnded, aspectRatio = 16 / 9, className },
     ref,
   ) {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -102,6 +107,23 @@ export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
       pause() {
         videoRef.current?.pause()
       },
+      playFrom(from, volume) {
+        const video = videoRef.current
+        if (!video) return
+        stopAt.current = null
+        video.muted = volume === 0
+        video.volume = volume
+        video.currentTime = from
+        void video.play()
+      },
+      setVolume(volume) {
+        const video = videoRef.current
+        if (!video) return
+        video.volume = volume
+        // `muted` l'emporte sur `volume` : sans cette remise a zero, monter
+        // le curseur apres avoir coupe le son ne rendrait rien.
+        if (volume > 0) video.muted = false
+      },
     }))
 
     return (
@@ -116,6 +138,10 @@ export const VideoStage = forwardRef<VideoStageHandle, VideoStageProps>(
           playsInline
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
+          onEnded={() => {
+            setPlaying(false)
+            onEnded?.()
+          }}
           onSeeked={() => onTime(videoRef.current?.currentTime ?? 0)}
           style={{ aspectRatio, maxHeight: '58vh' }}
           className={cn('rounded-token-lg bg-playhead max-w-full', className)}

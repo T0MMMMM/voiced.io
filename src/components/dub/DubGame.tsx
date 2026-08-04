@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Countdown } from '@/components/dub/Countdown'
+import { LiveClock, type LiveClockHandle } from '@/components/dub/LiveClock'
+import { VolumeControl } from '@/components/dub/VolumeControl'
 import { Score, type ScoreHandle } from '@/components/dub/Score'
 import { SegmentList } from '@/components/dub/SegmentList'
 import { Transport } from '@/components/dub/Transport'
@@ -16,6 +18,7 @@ import {
   stepSegment,
   type Segment,
 } from '@/lib/audio/breakpoints'
+import { DubMixer } from '@/lib/audio/mixer'
 import { bucketPeaks, extractPeaks } from '@/lib/audio/peaks'
 import { startRecording, type RecorderHandle } from '@/lib/audio/recorder'
 import { setBreakpoints } from '@/lib/rooms/actions'
@@ -75,6 +78,10 @@ export function DubGame({
   /** Segment vise par la prise en cours ; l'arret se fera a sa fin. */
   const target = useRef<Segment | null>(null)
   const stopRef = useRef<() => void>(() => {})
+  const clockView = useRef<LiveClockHandle>(null)
+  const mixer = useRef<DubMixer | null>(null)
+  /** Filet de securite : si la boucle du lecteur s'interrompt, la prise s'arrete quand meme. */
+  const guard = useRef<number | null>(null)
 
   const [peaks, setPeaks] = useState<number[]>([])
   const [peaksError, setPeaksError] = useState(false)
@@ -84,6 +91,8 @@ export function DubGame({
   const [counting, setCounting] = useState(false)
   const [elapsedMs, setElapsedMs] = useState(0)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [volume, setVolume] = useState(0.8)
+  const [reviewing, setReviewing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Les points viennent du salon ; l'etat local ne sert qu'a repondre au
@@ -141,6 +150,7 @@ export function DubGame({
   const handleTime = useCallback((time: number) => {
     clock.current = time
     score.current?.setTime(time)
+    clockView.current?.setTime(time)
     setActiveIndex(segmentAt(segmentsRef.current, time)?.index ?? null)
 
     // On n'attend de personne qu'il appuie au bon moment : le segment finit,
@@ -178,6 +188,11 @@ export function DubGame({
     recorder.current = null
     const aim = target.current
     target.current = null
+
+    if (guard.current !== null) {
+      window.clearTimeout(guard.current)
+      guard.current = null
+    }
 
     stage.current?.pause()
     const result = await handle.stop()
@@ -222,6 +237,15 @@ export function DubGame({
       setRecording(true)
       setElapsedMs(0)
       stage.current?.playMuted(aim.start)
+
+      // La boucle du lecteur declenche l'arret a la fin du segment. Ce
+      // minuteur ne sert que si elle s'interrompt — onglet en arriere-plan,
+      // lecture qui bute sur la fin du fichier — pour qu'un micro ne reste
+      // jamais ouvert.
+      guard.current = window.setTimeout(
+        () => stopRef.current(),
+        (aim.end - aim.start) * 1000 + 700,
+      )
     } catch {
       target.current = null
       await releaseMicrophone(room.id)
@@ -251,10 +275,39 @@ export function DubGame({
     setCounting(true)
   }, [room.id, youId])
 
+  /** Charge les prises une fois, puis les rejoue calees sur la video. */
+  const playResult = useCallback(async () => {
+    if (busy) return
+    if (reviewing) {
+      mixer.current?.stop()
+      stage.current?.pause()
+      setReviewing(false)
+      return
+    }
+
+    setError(null)
+    mixer.current ??= new DubMixer()
+    await mixer.current.load(
+      takes.map((take) => ({
+        id: take.id,
+        url: take.url,
+        startSec: take.startSec,
+        durationSec: take.durationMs / 1000,
+      })),
+    )
+
+    const from = clock.current
+    setReviewing(true)
+    mixer.current.start(from)
+    stage.current?.playFrom(from, volume)
+  }, [busy, reviewing, takes, volume])
+
   const toggleRecord = useCallback(() => {
     if (recording) void stopRecording()
     else if (!busy) void beginRecording()
   }, [recording, busy, stopRecording, beginRecording])
+
+  useEffect(() => () => mixer.current?.dispose(), [])
 
   useEffect(() => {
     if (!recording) return
@@ -317,6 +370,10 @@ export function DubGame({
             )
           }
           break
+        case 'KeyL':
+          event.preventDefault()
+          void playResult()
+          break
         case 'Home':
           event.preventDefault()
           if (!busy) stage.current?.seek(0)
@@ -326,7 +383,7 @@ export function DubGame({
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [busy, dropBreakpoint, goToSegment, toggleRecord])
+  }, [busy, dropBreakpoint, goToSegment, toggleRecord, playResult])
 
   return (
     <div className="space-y-8">
@@ -336,14 +393,22 @@ export function DubGame({
           src={videoUrl}
           onTime={handleTime}
           onPlayingChange={setPlaying}
+          onEnded={() => {
+            stopRef.current()
+            mixer.current?.stop()
+            setReviewing(false)
+          }}
           aspectRatio={aspectRatio}
         />
         {counting && <Countdown onDone={() => void armRecorder()} />}
       </div>
 
       <section aria-label="Partition de la bande originale" className="space-y-2.5">
-        <div className="flex items-baseline justify-between">
-          <span className="eyebrow text-faint">Cinq secondes à venir</span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="flex items-center gap-3">
+            <span className="eyebrow text-faint">Cinq secondes à venir</span>
+            <LiveClock ref={clockView} duration={durationSec} />
+          </span>
           <span className="eyebrow text-faint">
             {peaksError
               ? 'Spectre indisponible sur ce navigateur'
@@ -369,6 +434,16 @@ export function DubGame({
         />
       </section>
 
+      <div className="flex justify-center">
+        <VolumeControl
+          value={volume}
+          onChange={(next) => {
+            setVolume(next)
+            stage.current?.setVolume(next)
+          }}
+        />
+      </div>
+
       <Transport
         playing={playing}
         recording={recording}
@@ -377,6 +452,9 @@ export function DubGame({
         onPlayPause={() => stage.current?.toggle()}
         onRecord={toggleRecord}
         onRestart={() => stage.current?.seek(0)}
+        reviewing={reviewing}
+        canReview={takes.length > 0}
+        onReview={() => void playResult()}
         onBreakpoint={dropBreakpoint}
         onStep={(direction) =>
           goToSegment(

@@ -15,6 +15,11 @@ export interface TransportProps {
   onRestart: () => void
   onBreakpoint: () => void
   onStep: (direction: 1 | -1) => void
+  /** Une ecoute du resultat est en cours. */
+  reviewing: boolean
+  /** Il y a au moins une prise a entendre. */
+  canReview: boolean
+  onReview: () => void
 }
 
 /** Un raccourci n'est utile que s'il est écrit quelque part. */
@@ -23,6 +28,7 @@ const SHORTCUTS: [key: string, action: string][] = [
   ['B', 'poser une coupe à cet instant'],
   ['R', 'doubler le segment courant'],
   ['← →', 'segment précédent ou suivant'],
+  ['L', 'écouter le résultat'],
   ['Début', 'revenir au début'],
 ]
 
@@ -48,6 +54,9 @@ export function Transport({
   onRestart,
   onBreakpoint,
   onStep,
+  reviewing,
+  canReview,
+  onReview,
 }: TransportProps) {
   const locked = blockedBy !== null
 
@@ -72,6 +81,11 @@ export function Transport({
           <>
             <span className="bg-rec size-2.5 animate-pulse rounded-full" />
             <span className="text-muted">{blockedBy} enregistre</span>
+          </>
+        ) : reviewing ? (
+          <>
+            <span className="bg-accent size-2.5 rounded-full" />
+            <span className="text-accent font-medium">Toutes les voix</span>
           </>
         ) : (
           <span className="text-faint">
@@ -148,6 +162,26 @@ export function Transport({
         >
           <svg viewBox="0 0 20 20" className="size-5" fill="currentColor" aria-hidden="true">
             <path d="M9.5 5v10L3 10l6.5-5ZM17 5v10l-6.5-5L17 5Z" />
+          </svg>
+        </IconButton>
+
+        <IconButton
+          label={reviewing ? 'Arrêter l’écoute' : 'Écouter le résultat'}
+          onClick={onReview}
+          disabled={recording || !canReview}
+          variant={reviewing ? 'danger' : 'raised'}
+        >
+          <svg viewBox="0 0 20 20" className="size-5" fill="none" aria-hidden="true">
+            <path
+              d="M3 12V8.5a7 7 0 0 1 14 0V12"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+            <path
+              d="M3 11.5h2a1 1 0 0 1 1 1v2.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3.5ZM17 11.5h-2a1 1 0 0 0-1 1v2.5a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-3.5Z"
+              fill="currentColor"
+            />
           </svg>
         </IconButton>
 
