@@ -24,7 +24,6 @@ import {
   submitAnswer,
 } from '@/lib/quiz/actions'
 import {
-  KIND_LABELS,
   type AnswerPayload,
   type EstimatePayload,
   type ListPayload,
@@ -39,6 +38,7 @@ import {
   type TimelinePayload,
   type WrittenPayload,
 } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 import { mergeOptions } from '@/lib/rooms/options'
 import { secondsFor } from '@/lib/quiz/timing'
 import type { Player, Room } from '@/lib/supabase/types'
@@ -52,6 +52,7 @@ export interface QuizGameProps {
 }
 
 export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
+  const t = useT()
   const options = mergeOptions(room.options)
   const step = Math.min(room.current_step, Math.max(0, questions.length - 1))
   const question = questions[step]
@@ -192,9 +193,9 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
       // La prochaine frappe reessaiera : on oublie ce qui n'est pas passe.
       stored.current = ''
       setSaved(false)
-      setError(cause instanceof Error ? cause.message : 'Réponse non enregistrée.')
+      setError(cause instanceof Error ? cause.message : t.quiz.notSaved)
     }
-  }, [room.id, youId, question, answer])
+  }, [room.id, youId, question, answer, t.quiz.notSaved])
 
   /**
    * L'enregistrement suit la saisie, avec un temps mort.
@@ -272,7 +273,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
   if (!question) {
     return (
       <p className="text-muted py-16 text-center text-[17px]">
-        Aucune question dans cette partie.
+        {t.quiz.empty}
       </p>
     )
   }
@@ -309,7 +310,8 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
             hors du flux, pour ne rien deplacer. */}
         <div className="relative flex flex-wrap items-center justify-between gap-3 pr-12">
           <span className="eyebrow text-faint">
-            Question {step + 1} sur {questions.length} · {KIND_LABELS[question.kind]}
+            {t.quiz.question(step + 1, questions.length)} ·{' '}
+            {t.quiz.kinds[question.kind]}
           </span>
           {/* Le theme au choix n'annonce ni difficulte ni points : c'est le
               joueur qui les fixe, et les afficher d'avance mentirait. */}
@@ -325,7 +327,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
               bouton sautait d'une demi-hauteur des qu'on l'approchait. */}
           <span className="absolute top-1/2 right-0 -translate-y-1/2">
             <IconButton
-              label={done ? 'Réponse validée' : 'Valider ma réponse'}
+              label={done ? t.quiz.validated : t.quiz.validate}
               size="sm"
               variant={done ? 'ghost' : 'raised'}
               disabled={done || timeUp || busy}
@@ -357,7 +359,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
           </div>
           <div className="flex items-center justify-between">
             <span className="eyebrow text-faint">
-              Progression : {step + 1} / {questions.length}
+              {t.quiz.progress(step + 1, questions.length)}
             </span>
             <span
               className={cn(
@@ -365,7 +367,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
                 remaining <= 5 ? 'text-rec' : 'text-faint',
               )}
             >
-              {Math.ceil(remaining)} s
+              {t.quiz.seconds(Math.ceil(remaining))}
             </span>
           </div>
         </div>
@@ -375,7 +377,7 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
         </h1>
 
         {question.hint && options.allowHints && (
-          <p className="text-muted text-[15px]">Indice : {question.hint}</p>
+          <p className="text-muted text-[15px]">{t.quiz.hint(question.hint)}</p>
         )}
       </header>
 
@@ -481,17 +483,17 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
         >
           {saved && <CheckIcon className="size-4" />}
           {timeUp
-            ? 'Temps écoulé'
+            ? t.quiz.timeUp
             : saved
-              ? 'Réponse enregistrée'
+              ? t.quiz.saved
               : answer
-                ? 'Enregistrement…'
-                : 'Votre réponse s’enregistre toute seule'}
+                ? t.quiz.saving
+                : t.quiz.autoSaves}
         </p>
 
         {/* On voit qui a repondu, jamais ce qu'ils ont repondu. */}
         <p className="text-faint text-[13px]">
-          {answered.length} sur {players.length} ont validé
+          {t.quiz.validatedCount(answered.length, players.length)}
         </p>
 
         <div className="flex flex-wrap justify-center gap-1.5">

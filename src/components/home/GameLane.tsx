@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { getShape, type Game } from '@/lib/games'
+import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils/cn'
 
 const BAR_COUNT = 56
@@ -38,6 +39,7 @@ function Chevron() {
  * une seule voix à la fois, c'est aussi la règle du produit.
  */
 export function GameLane({ game }: { game: Game }) {
+  const t = useT()
   const trackRef = useRef<HTMLDivElement>(null)
   const bars = useRef<(HTMLDivElement | null)[]>([])
   const shape = getShape(game.id)
@@ -101,11 +103,11 @@ export function GameLane({ game }: { game: Game }) {
       <div className="min-w-0 sm:w-52 sm:shrink-0">
         <div className="flex items-center gap-2.5">
           <h2 className="text-fg text-[19px] font-medium tracking-[-0.02em]">
-            {game.name}
+            {t.games[game.id].name}
           </h2>
           {!playable && <span className="eyebrow text-faint">Bientôt</span>}
         </div>
-        <p className="text-muted mt-1 text-[14px] leading-snug">{game.tagline}</p>
+        <p className="text-muted mt-1 text-[14px] leading-snug">{t.games[game.id].tagline}</p>
       </div>
 
       <div

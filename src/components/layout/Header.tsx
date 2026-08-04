@@ -1,4 +1,5 @@
 import { Logo } from '@/components/brand/Logo'
+import { LangToggle } from '@/components/ui/LangToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils/cn'
 
@@ -25,6 +26,7 @@ export function Header({
       <div className="text-muted flex flex-1 items-center justify-center text-[13px]">
         {children}
       </div>
+      <LangToggle />
       <ThemeToggle />
     </header>
   )

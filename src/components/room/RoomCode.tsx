@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { CheckIcon, CopyIcon } from '@/components/ui/icons'
+import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils/cn'
 
 /**
@@ -21,6 +22,7 @@ export function RoomCode({
   /** Combien de joueurs sont connectes, affiche en pastille sur le code. */
   present?: number
 }) {
+  const t = useT()
   const codeRef = useRef<HTMLSpanElement>(null)
   const [copied, setCopied] = useState(false)
 
@@ -52,14 +54,14 @@ export function RoomCode({
 
   return (
     <div className="relative flex flex-col items-center gap-2">
-      <p className="eyebrow text-faint">Code du salon</p>
+      <p className="eyebrow text-faint">{t.room.code}</p>
 
       {/* Le point vert bat : c'est ce qui dit que le salon est vivant, et
           le nombre suffit a dire combien on est. */}
       {present !== undefined && (
         <span
           className="text-muted absolute top-0 right-0 flex items-center gap-1.5 text-[13px]"
-          aria-label={`${present} joueur${present > 1 ? 's' : ''} connecté${present > 1 ? 's' : ''}`}
+          aria-label={t.room.connected(present)}
         >
           <span className="tnum">{present}</span>
           <span className="bg-accent size-2 animate-pulse rounded-full" />
@@ -70,7 +72,7 @@ export function RoomCode({
         type="button"
         onClick={() => void copyCode()}
         aria-label={
-          copied ? 'Code copié' : `Copier le code ${code}`
+          copied ? t.room.copied : t.room.copy(code)
         }
         className="rounded-token group relative px-4 pb-3 transition-colors duration-200"
       >
@@ -102,7 +104,7 @@ export function RoomCode({
           copied ? 'text-accent opacity-100' : 'opacity-0',
         )}
       >
-        Code copié
+        {t.room.copied}
       </p>
     </div>
   )

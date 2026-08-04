@@ -11,12 +11,8 @@ import {
   gradeAnswers,
   type PlayerAnswer,
 } from '@/lib/quiz/actions'
-import {
-  DIFFICULTY_LABELS,
-  isAutoScored,
-  KIND_LABELS,
-  type Question,
-} from '@/lib/quiz/kinds'
+import { DIFFICULTY_LABELS, isAutoScored, type Question } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 import { groupAnswers, type Group } from '@/lib/quiz/similarity'
 import { mergeOptions } from '@/lib/rooms/options'
 import type { Player, Room } from '@/lib/supabase/types'
@@ -88,6 +84,7 @@ export function GradingDeck({
   youId: string | null
   questions: Question[]
 }) {
+  const t = useT()
   const options = mergeOptions(room.options)
   const step = Math.min(room.current_step, Math.max(0, questions.length - 1))
   const question = questions[step]
@@ -227,10 +224,11 @@ export function GradingDeck({
       <header className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="eyebrow text-faint">
-            Correction {step + 1} sur {questions.length} · {KIND_LABELS[question.kind]}
+            {t.grading.title(step + 1, questions.length)} ·{' '}
+            {t.quiz.kinds[question.kind]}
           </span>
           <span className="eyebrow text-faint">
-            {question.points} point{question.points > 1 ? 's' : ''}
+            {t.common.points(question.points)}
           </span>
         </div>
 
@@ -257,7 +255,7 @@ export function GradingDeck({
 
       {auto && (
         <p className="text-muted text-[15px]">
-          Cette forme se note toute seule. Vous pouvez rectifier si besoin.
+          {t.grading.autoScored}
         </p>
       )}
 
@@ -290,7 +288,7 @@ export function GradingDeck({
                   )}
                   {options.anonymousGrading && (
                     <span className="text-faint mt-0.5 block text-[13px]">
-                      {members.length} joueur{members.length > 1 ? 's' : ''}
+                      {t.common.players(members.length)}
                     </span>
                   )}
                 </span>
@@ -306,7 +304,7 @@ export function GradingDeck({
                     className="gap-1.5"
                   >
                     <CheckIcon className="size-4" />
-                    Juste
+                    {t.grading.right}
                   </Button>
                   <Button
                     size="sm"
@@ -315,7 +313,7 @@ export function GradingDeck({
                     className="gap-1.5"
                   >
                     <CrossIcon className="size-4" />
-                    Faux
+                    {t.grading.wrong}
                   </Button>
                 </span>}
               </Panel>
@@ -325,7 +323,7 @@ export function GradingDeck({
 
         {groups.length === 0 && (
           <li className="text-faint border-default rounded-token border border-dashed px-4 py-8 text-center text-[15px]">
-            Personne n’a répondu à cette question.
+            {t.grading.nobody}
           </li>
         )}
       </ul>
@@ -334,16 +332,12 @@ export function GradingDeck({
         {isHost ? (
           <>
             <Button size="lg" loading={busy} onClick={() => void next()}>
-              {step >= questions.length - 1
-                ? 'Ajuster les points'
-                : 'Question suivante'}
+              {step >= questions.length - 1 ? t.grading.toFix : t.grading.next}
             </Button>
-            <p className="text-faint text-[13px]">Entrée ou → pour avancer</p>
+            <p className="text-faint text-[13px]">{t.grading.keyboard}</p>
           </>
         ) : (
-          <p className="text-faint text-[13px]">
-            L’hôte passe les réponses en revue.
-          </p>
+          <p className="text-faint text-[13px]">{t.grading.watching}</p>
         )}
       </div>
 

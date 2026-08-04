@@ -2,19 +2,25 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils/cn'
 
 /**
- * Une forme d'onde : le silence, un pic de voix, puis le retour au calme.
+ * Sept barres, une montée, un pic, une descente.
  *
- * Le profil est volontairement dissymétrique — montée franche, descente
- * plus lente. C'est ainsi qu'un son se comporte réellement, et c'est ce qui
- * distingue la marque d'un égaliseur symétrique quelconque.
+ * Un logo se lit, il ne se détaille pas : une dizaine de barres fines
+ * donnait l'illustration d'une forme d'onde, pas une marque. Sept barres
+ * épaisses, largement espacées, gardent la même idée et tiennent encore à
+ * seize pixels, ce qui est la seule taille où un logo doit vraiment
+ * fonctionner.
  *
- * Toutes les barres partagent le même centre : c'est la hauteur seule qui
- * fait le dessin, et la marque tient donc à seize pixels.
+ * La symétrie est voulue : elle équilibre la tuile. Un profil réaliste,
+ * avec attaque franche et longue traîne, ressemblait à une capture d'écran.
  */
-export const BAR_HEIGHTS = [1.4, 2, 3.4, 6, 11, 16.4, 12, 7, 3.6, 1.6]
+const BAR_WIDTH = 1.9
+const BAR_GAP = 0.85
+const BAR_HEIGHTS = [3, 6, 11, 17.4, 11, 6, 3]
+
+const SPAN = BAR_HEIGHTS.length * BAR_WIDTH + (BAR_HEIGHTS.length - 1) * BAR_GAP
 
 const BARS = BAR_HEIGHTS.map((height, index) => ({
-  x: 0.9 + index * 1.92,
+  x: (20 - SPAN) / 2 + index * (BAR_WIDTH + BAR_GAP),
   height,
 }))
 
@@ -31,9 +37,9 @@ export function WaveMark({ className }: { className?: string }) {
           key={x}
           x={x}
           y={(20 - height) / 2}
-          width="1.15"
+          width={BAR_WIDTH}
           height={height}
-          rx="0.58"
+          rx={BAR_WIDTH / 2}
         />
       ))}
     </svg>

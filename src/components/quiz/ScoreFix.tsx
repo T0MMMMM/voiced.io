@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, Panel } from '@/components/ui'
 import { IconButton } from '@/components/ui'
+import { useT } from '@/lib/i18n'
 import { adjustScore, publishResults, standings, type Standing } from '@/lib/quiz/actions'
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
@@ -30,6 +31,7 @@ export function ScoreFix({
   players: Player[]
   youId: string | null
 }) {
+  const t = useT()
   const isHost = players.find((player) => player.id === youId)?.is_host ?? false
 
   const [rows, setRows] = useState<Standing[]>([])
@@ -90,14 +92,12 @@ export function ScoreFix({
   return (
     <div className="space-y-7">
       <header className="space-y-2 text-center">
-        <p className="eyebrow text-accent">Avant le podium</p>
+        <p className="eyebrow text-accent">{t.fix.eyebrow}</p>
         <h1 className="text-fg text-[clamp(1.5rem,3.6vw,2.25rem)] leading-[1.15] font-medium tracking-[-0.025em] text-balance">
-          Un point à rattraper ?
+          {t.fix.title}
         </h1>
         <p className="text-muted text-[15px]">
-          {isHost
-            ? 'Rattrapez une correction injuste, puis publiez. Les totaux restent cachés jusqu’au podium.'
-            : 'L’hôte rattrape les erreurs de correction avant le podium.'}
+          {isHost ? t.fix.hostHelp : t.fix.playerHelp}
         </p>
       </header>
 
@@ -116,8 +116,7 @@ export function ScoreFix({
                       row.bonus > 0 ? 'text-accent' : 'text-rec',
                     )}
                   >
-                    {row.bonus > 0 ? '+' : ''}
-                    {row.bonus} ajusté{Math.abs(row.bonus) > 1 ? 's' : ''}
+                    {t.fix.adjusted(row.bonus)}
                   </span>
                 )}
               </span>
@@ -146,7 +145,7 @@ export function ScoreFix({
       {isHost && (
         <div className="flex justify-center">
           <Button size="lg" loading={busy} onClick={() => void publish()}>
-            Publier les résultats
+            {t.fix.publish}
           </Button>
         </div>
       )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { DIFFICULTY_LABELS } from '@/lib/quiz/kinds'
+import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils/cn'
 
 /**
@@ -26,7 +26,8 @@ export function QuestionMeta({
   points: number
   className?: string
 }) {
-  const level = Math.min(3, Math.max(1, difficulty))
+  const t = useT()
+  const level = Math.min(3, Math.max(1, difficulty)) as 1 | 2 | 3
 
   return (
     <span className={cn('flex items-center gap-2', className)}>
@@ -49,12 +50,10 @@ export function QuestionMeta({
             />
           ))}
         </span>
-        <span className="eyebrow">{DIFFICULTY_LABELS[level]}</span>
+        <span className="eyebrow">{t.quiz.difficulties[level]}</span>
       </span>
 
-      <span className="eyebrow text-faint">
-        {points} point{points > 1 ? 's' : ''}
-      </span>
+      <span className="eyebrow text-faint">{t.common.points(points)}</span>
     </span>
   )
 }

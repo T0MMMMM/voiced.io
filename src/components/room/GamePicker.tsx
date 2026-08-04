@@ -3,6 +3,7 @@
 import { Silhouette } from '@/components/room/Silhouette'
 import { IconButton } from '@/components/ui'
 import { GAMES, type GameId } from '@/lib/games'
+import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils/cn'
 
 function Chevron({ direction }: { direction: 'left' | 'right' }) {
@@ -38,6 +39,7 @@ export function GamePicker({
   canChange: boolean
   onChange: (next: GameId) => void
 }) {
+  const t = useT()
   const index = Math.max(
     0,
     GAMES.findIndex((candidate) => candidate.id === game),
@@ -70,12 +72,12 @@ export function GamePicker({
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
             <span className="text-fg text-[17px] font-medium tracking-[-0.015em]">
-              {current.name}
+              {t.games[current.id].name}
             </span>
-            {!available && <span className="eyebrow text-faint">Bientôt</span>}
+            {!available && <span className="eyebrow text-faint">{t.common.soon}</span>}
           </span>
           <span className="text-muted mt-0.5 block truncate text-[13px]">
-            {current.tagline}
+            {t.games[current.id].tagline}
           </span>
         </span>
       </div>

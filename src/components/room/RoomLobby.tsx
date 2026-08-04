@@ -17,6 +17,7 @@ import {
   PACE_CHOICES,
   type RoomOptions,
 } from '@/lib/rooms/options'
+import { useT } from '@/lib/i18n'
 import type { Player, Room } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils/cn'
 
@@ -27,39 +28,24 @@ type ToggleKey = Exclude<keyof RoomOptions, ScaleKey | 'kinds'>
 
 interface Scale {
   key: ScaleKey
-  legend: string
   choices: readonly { value: string | number; label: string }[]
 }
 
 const SCALES: Scale[] = [
-  { key: 'questionCount', legend: 'Longueur', choices: COUNT_CHOICES },
+  { key: 'questionCount', choices: COUNT_CHOICES },
   // On ne regle plus une duree : chaque question tire son temps de sa
   // forme et de sa difficulte, et ce reglage ne fait que l'etirer.
-  { key: 'pace', legend: 'Rythme', choices: PACE_CHOICES },
+  { key: 'pace', choices: PACE_CHOICES },
 ]
 
-const LABELS: Record<ToggleKey, { label: string; hint: string }> = {
-  shuffle: {
-    label: 'Ordre aléatoire',
-    hint: 'Les questions ne tombent pas dans l’ordre',
-  },
-  anonymousGrading: {
-    label: 'Correction anonyme',
-    hint: 'L’hôte ne voit pas qui a répondu quoi',
-  },
-  allowBets: {
-    label: 'Paris',
-    hint: 'Chacun mise sur sa confiance avant de répondre',
-  },
-  allowHints: {
-    label: 'Indices',
-    hint: 'Des indices tombent, la question perd de la valeur',
-  },
-  allowSteal: {
-    label: 'Question volée',
-    hint: 'Celui qui passe laisse la main aux autres',
-  },
-}
+/**
+ * Reglages annonces mais pas encore branches.
+ *
+ * On les laisse visibles, marques « bientot » et decoches : cacher ce qui
+ * arrive priverait l'hote de savoir ou va le jeu, et le proposer sans
+ * l'implementer serait une promesse non tenue au milieu d'une partie.
+ */
+const SOON: ToggleKey[] = ['allowBets', 'allowSteal']
 
 function SectionTitle({
   icon,
@@ -90,6 +76,19 @@ export function RoomLobby({
   players: Player[]
   youId: string | null
 }) {
+  const t = useT()
+
+  /** Les libelles vivent dans le dictionnaire, pas dans les tables. */
+  function legendOf(key: ScaleKey): string {
+    return key === 'questionCount' ? t.options.length : t.options.pace
+  }
+
+  function labelOf(key: ScaleKey, value: string | number): string {
+    return key === 'questionCount'
+      ? t.options.lengths[value as 10 | 20 | 30]
+      : t.options.paces[value as 'calme' | 'normal' | 'rapide']
+  }
+
   const [busy, setBusy] = useState(false)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -152,8 +151,8 @@ export function RoomLobby({
       </div>
 
       <section aria-label="Joueurs">
-        <SectionTitle icon={<UsersIcon />} aside={isHost ? 'Vous arbitrez' : undefined}>
-          Autour de la table
+        <SectionTitle icon={<UsersIcon />} aside={isHost ? t.room.hosting : undefined}>
+          {t.room.table}
         </SectionTitle>
         <PlayerSeats players={players} youId={youId} hostId={room.host_player_id} />
       </section>
@@ -182,10 +181,10 @@ export function RoomLobby({
           >
             <span className="eyebrow text-faint flex items-center gap-2">
               <SlidersIcon className="size-4" />
-              Réglages
+              {t.room.settings}
             </span>
             <span className="eyebrow text-faint flex items-center gap-1.5">
-              {open ? 'Masquer' : 'Afficher'}
+              {open ? t.room.hide : t.room.show}
               <svg
                 viewBox="0 0 20 20"
                 aria-hidden="true"
@@ -210,13 +209,13 @@ export function RoomLobby({
                 {scales.map((scale) => (
                   <div key={scale.key}>
                     <legend className="text-fg mb-2 text-[15px] font-medium">
-                      {scale.legend}
+                      {legendOf(scale.key)}
                     </legend>
                     <Segmented
-                      label={scale.legend}
+                      label={legendOf(scale.key)}
                       options={scale.choices.map((choice) => ({
                         value: choice.value,
-                        label: choice.label,
+                        label: labelOf(scale.key, choice.value),
                       }))}
                       value={options[scale.key]}
                       disabled={!isHost || busy}
@@ -232,7 +231,7 @@ export function RoomLobby({
                 {available.includes('kinds') && (
                   <div>
                     <legend className="text-fg mb-2 text-[15px] font-medium">
-                      Formes de questions
+                      {t.options.kinds}
                     </legend>
                     <div className="flex flex-wrap gap-2">
                       {KIND_CHOICES.map((choice) => {
@@ -269,19 +268,25 @@ export function RoomLobby({
                       scales.length > 0 && 'border-t border-t-[var(--border)] pt-1',
                     )}
                   >
-                    {toggles.map((key) => (
-                      <Checkbox
-                        key={key}
-                        label={LABELS[key].label}
-                        hint={LABELS[key].hint}
-                        checked={options[key]}
-                        onChange={(event) =>
-                          void run(() =>
-                            setRoomOptions(room.id, { [key]: event.target.checked }),
-                          )
-                        }
-                      />
-                    ))}
+                    {toggles.map((key) => {
+                      const soon = SOON.includes(key)
+                      return (
+                        <Checkbox
+                          key={key}
+                          label={
+                            soon ? `${t.options[key]} · ${t.common.soon}` : t.options[key]
+                          }
+                          hint={t.options[`${key}Hint` as const]}
+                          checked={soon ? false : options[key]}
+                          disabled={soon}
+                          onChange={(event) =>
+                            void run(() =>
+                              setRoomOptions(room.id, { [key]: event.target.checked }),
+                            )
+                          }
+                        />
+                      )
+                    })}
                   </div>
                 )}
               </fieldset>
@@ -305,11 +310,11 @@ export function RoomLobby({
             }
           >
             <PlayIcon />
-            Lancer la partie
+            {t.room.start}
           </Button>
         ) : (
           <p className="text-muted text-[15px]">
-            En attente de l’hôte pour lancer la partie.
+            {t.room.waiting}
           </p>
         )}
 

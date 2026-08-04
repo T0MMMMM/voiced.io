@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useT } from '@/lib/i18n'
 import { applyTheme, readStoredTheme, toggleTheme, type Theme } from '@/lib/theme'
 import { IconButton } from './IconButton'
 
@@ -30,6 +31,7 @@ function SunIcon() {
 }
 
 export function ThemeToggle() {
+  const t = useT()
   // Le rendu serveur ne connaît pas localStorage : on part sur 'dark',
   // qui est aussi le défaut du produit, puis on se synchronise au montage.
   const [theme, setTheme] = useState<Theme>('dark')
@@ -46,7 +48,7 @@ export function ThemeToggle() {
     applyTheme(next)
   }
 
-  const label = theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre'
+  const label = theme === 'dark' ? t.common.theme.light : t.common.theme.dark
 
   return (
     <IconButton

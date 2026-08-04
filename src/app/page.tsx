@@ -5,8 +5,11 @@ import { VoiceField } from '@/components/home/VoiceField'
 import { buttonClassName } from '@/components/ui/Button'
 import { ArrowRightIcon, PlusIcon } from '@/components/ui/icons'
 import { GAMES } from '@/lib/games'
+import { getT } from '@/lib/i18n/server'
 
-export default function Home() {
+export default async function Home() {
+  const t = await getT()
+
   return (
     <>
       <CursorGlow />
@@ -17,7 +20,7 @@ export default function Home() {
             className="rise text-fg max-w-2xl text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.95] font-medium tracking-[-0.05em] text-balance"
             style={{ animationDelay: '60ms' }}
           >
-            Jouez ensemble. Amusez vous bien ;)
+            {t.home.title}
           </h1>
           <div className="rise mt-12 sm:mt-14" style={{ animationDelay: '260ms' }}>
             <VoiceField />
@@ -37,18 +40,18 @@ export default function Home() {
               })}
             >
               <PlusIcon />
-              Créer un salon
+              {t.home.create}
             </Link>
             <Link
               href="/join"
-              aria-label="Rejoindre une partie"
+              aria-label={t.home.join}
               className={buttonClassName({
                 variant: 'secondary',
                 size: 'lg',
                 className: 'basis-1/5 gap-2 px-0',
               })}
             >
-              <span className="hidden sm:inline">Rejoindre</span>
+              <span className="hidden sm:inline">{t.home.join}</span>
               <ArrowRightIcon />
             </Link>
           </div>
@@ -59,7 +62,7 @@ export default function Home() {
         <section className="pt-8 pb-4">
           <div className="mb-3 flex items-baseline justify-between px-1">
             <span className="eyebrow text-faint">Les jeux</span>
-            <span className="eyebrow text-faint">Survolez une piste</span>
+            <span className="eyebrow text-faint">{t.home.hoverHint}</span>
           </div>
 
           <ul className="bg-surface shadow-token rounded-token-lg overflow-hidden">

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { Space_Grotesk, Space_Mono } from 'next/font/google'
 import { THEME_INIT_SCRIPT } from '@/lib/theme'
 import { Header } from '@/components/layout/Header'
+import { LangProvider } from '@/lib/i18n'
+import { LOCALE_STORAGE_KEY, resolveLocale } from '@/lib/i18n/locales'
 import './globals.css'
 
 /**
@@ -29,21 +32,32 @@ export const metadata: Metadata = {
     'Doublez une scène d’anime à deux, en direct, depuis votre navigateur.',
 }
 
-export default function RootLayout({
+/**
+ * La langue est lue au rendu serveur, dans le cookie.
+ *
+ * C'est ce qui rend la premiere image deja traduite : la resoudre cote
+ * client aurait affiche un ecran francais puis l'aurait remplace.
+ */
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const store = await cookies()
+  const locale = resolveLocale(store.get(LOCALE_STORAGE_KEY)?.value)
+
   return (
-    <html lang="fr" data-theme="dark" suppressHydrationWarning>
+    <html lang={locale} data-theme="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body
         className={`${spaceGrotesk.variable} ${spaceMono.variable} font-sans`}
       >
-        <Header />
-        {children}
+        <LangProvider locale={locale}>
+          <Header />
+          {children}
+        </LangProvider>
       </body>
     </html>
   )
