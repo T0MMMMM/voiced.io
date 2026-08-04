@@ -8,6 +8,7 @@ import { Button, Checkbox, Panel, Segmented } from '@/components/ui'
 import { PlayIcon, SlidersIcon, UsersIcon } from '@/components/ui/icons'
 import type { GameId } from '@/lib/games'
 import { setRoomGame, setRoomOptions, startGame, touchPlayer } from '@/lib/rooms/actions'
+import { startQuiz } from '@/lib/quiz/actions'
 import {
   COUNT_CHOICES,
   mergeOptions,
@@ -244,7 +245,13 @@ export function RoomLobby({
             size="lg"
             loading={busy}
             className="gap-2.5"
-            onClick={() => void run(() => startGame(room.id))}
+            onClick={() =>
+              void run(() =>
+                // Le quiz doit tirer ses questions avant de demarrer ; les
+                // autres jeux se contentent de changer d'etat.
+                room.game === 'quiz' ? startQuiz(room.id) : startGame(room.id),
+              )
+            }
           >
             <PlayIcon />
             Lancer la partie

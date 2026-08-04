@@ -4,6 +4,8 @@ import { RoomScreen } from '@/components/room/RoomScreen'
 import { buttonClassName } from '@/components/ui'
 import { readIdentity } from '@/lib/rooms/identity'
 import { listTakes } from '@/lib/takes/actions'
+import { loadQuestions } from '@/lib/quiz/actions'
+import type { Question } from '@/lib/quiz/kinds'
 import { getUrl } from '@/lib/storage'
 import type { DubContext } from '@/components/room/RoomScreen'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -83,6 +85,13 @@ export default async function RoomPage({
     }
   }
 
+  // Les enonces sont charges cote serveur, jamais leur correction : elle
+  // ne doit pas descendre dans le navigateur pendant la partie.
+  let questions: Question[] = []
+  if (room.game === 'quiz' && Array.isArray(room.question_ids)) {
+    questions = await loadQuestions(room.question_ids as string[])
+  }
+
   return (
     <main className="mx-auto max-w-4xl px-6 pt-28 pb-24 sm:px-10 sm:pt-32">
       <RoomScreen
@@ -91,6 +100,7 @@ export default async function RoomPage({
         initialRoom={room}
         initialPlayers={players ?? []}
         dub={dub}
+        questions={questions}
       />
     </main>
   )

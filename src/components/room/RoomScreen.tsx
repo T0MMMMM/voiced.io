@@ -4,6 +4,10 @@ import { useEffect } from 'react'
 import { ClipStep } from '@/components/room/ClipStep'
 import { DubGame } from '@/components/dub/DubGame'
 import { DubResult } from '@/components/dub/DubResult'
+import { GradingDeck } from '@/components/quiz/GradingDeck'
+import { Podium } from '@/components/quiz/Podium'
+import { QuizGame } from '@/components/quiz/QuizGame'
+import type { Question } from '@/lib/quiz/kinds'
 import { RoomLobby } from '@/components/room/RoomLobby'
 import type { SavedTake } from '@/lib/takes/actions'
 import type { Player, Room } from '@/lib/supabase/types'
@@ -30,12 +34,14 @@ export function RoomScreen({
   initialRoom,
   initialPlayers,
   dub,
+  questions,
 }: {
   code: string
   youId: string | null
   initialRoom: Room
   initialPlayers: Player[]
   dub: DubContext | null
+  questions: Question[]
 }) {
   const {
     room: liveRoom,
@@ -63,6 +69,23 @@ export function RoomScreen({
 
   if (room.status === 'lobby') {
     return <RoomLobby room={room} players={players} youId={youId} />
+  }
+
+  if (room.game === 'quiz') {
+    if (room.status === 'results') return <Podium room={room} youId={youId} />
+    if (room.status === 'grading') {
+      return (
+        <GradingDeck
+          room={room}
+          players={players}
+          youId={youId}
+          questions={questions}
+        />
+      )
+    }
+    return (
+      <QuizGame room={room} players={players} youId={youId} questions={questions} />
+    )
   }
 
   // Le doublage ne peut pas commencer sans matiere : l'import devient une

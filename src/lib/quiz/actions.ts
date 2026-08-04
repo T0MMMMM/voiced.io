@@ -215,6 +215,128 @@ export async function gradeAnswers(
   if (error) throw new Error(`Correction non enregistrée : ${error.message}`)
 }
 
+/**
+ * Qui a repondu, sans dire quoi.
+ *
+ * La politique RLS interdit toute lecture des reponses avant les resultats,
+ * y compris les siennes — faute de comptes, elle ne peut pas distinguer un
+ * joueur d'un autre. Tout ce dont le client a besoin passe donc par ici,
+ * et on ne rend que ce qui ne renseigne sur rien.
+ */
+export async function answeredPlayers(
+  roomId: string,
+  questionId: string,
+): Promise<string[]> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('answers')
+    .select('player_id')
+    .eq('room_id', roomId)
+    .eq('question_id', questionId)
+
+  return (data ?? []).map((answer) => answer.player_id)
+}
+
+/** Sa propre reponse, pour la retrouver apres un rafraichissement. */
+export async function myAnswer(
+  roomId: string,
+  playerId: string,
+  questionId: string,
+): Promise<unknown | null> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('answers')
+    .select('payload')
+    .eq('room_id', roomId)
+    .eq('player_id', playerId)
+    .eq('question_id', questionId)
+    .maybeSingle()
+
+  return data?.payload ?? null
+}
+
+/**
+ * Toutes les reponses a une question, pour l'hote.
+ *
+ * Refuse tant que la partie n'est pas en correction : sans comptes, rien
+ * n'empeche un joueur d'appeler cette action depuis sa console, et la
+ * seule barriere possible est l'etat du salon.
+ */
+export async function answersFor(
+  roomId: string,
+  questionId: string,
+): Promise<(PlayerAnswer & { id: string })[]> {
+  const supabase = createServiceClient()
+
+  const { data: room } = await supabase
+    .from('rooms')
+    .select('status')
+    .eq('id', roomId)
+    .maybeSingle()
+
+  if (room?.status !== 'grading' && room?.status !== 'results') {
+    throw new Error('Les réponses ne sont pas encore consultables.')
+  }
+
+  const { data } = await supabase
+    .from('answers')
+    .select('id, player_id, payload, auto_score, final_score, graded_by_host')
+    .eq('room_id', roomId)
+    .eq('question_id', questionId)
+
+  const { data: players } = await supabase
+    .from('players')
+    .select('id, nickname')
+    .eq('room_id', roomId)
+
+  const names = new Map((players ?? []).map((p) => [p.id, p.nickname]))
+
+  return (data ?? []).map((answer) => ({
+    id: answer.id,
+    playerId: answer.player_id,
+    nickname: names.get(answer.player_id) ?? 'Anonyme',
+    payload: answer.payload,
+    autoScore: answer.auto_score === null ? null : Number(answer.auto_score),
+    finalScore: answer.final_score === null ? null : Number(answer.final_score),
+    graded: answer.graded_by_host,
+  }))
+}
+
+export interface Standing {
+  playerId: string
+  nickname: string
+  score: number
+  answered: number
+}
+
+/** Le classement final. Seule la note retenue par l'hote compte. */
+export async function standings(roomId: string): Promise<Standing[]> {
+  const supabase = createServiceClient()
+
+  const { data: players } = await supabase
+    .from('players')
+    .select('id, nickname')
+    .eq('room_id', roomId)
+    .order('slot')
+
+  const { data: answers } = await supabase
+    .from('answers')
+    .select('player_id, final_score')
+    .eq('room_id', roomId)
+
+  return (players ?? [])
+    .map((player) => {
+      const own = (answers ?? []).filter((a) => a.player_id === player.id)
+      return {
+        playerId: player.id,
+        nickname: player.nickname,
+        score: own.reduce((sum, a) => sum + Number(a.final_score ?? 0), 0),
+        answered: own.length,
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+}
+
 export async function publishResults(roomId: string): Promise<void> {
   const supabase = createServiceClient()
   const { error } = await supabase
