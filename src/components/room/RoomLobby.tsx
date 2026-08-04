@@ -11,6 +11,7 @@ import { setRoomGame, setRoomOptions, startGame, touchPlayer } from '@/lib/rooms
 import { startQuiz } from '@/lib/quiz/actions'
 import {
   COUNT_CHOICES,
+  KIND_CHOICES,
   mergeOptions,
   optionsFor,
   TIMER_CHOICES,
@@ -21,7 +22,8 @@ import { cn } from '@/lib/utils/cn'
 
 /** Reglages a plusieurs valeurs : ils s'affichent en controle segmente. */
 type ScaleKey = 'timerSec' | 'questionCount'
-type ToggleKey = Exclude<keyof RoomOptions, ScaleKey>
+/** Les formes ont leur propre controle : ni echelle, ni interrupteur. */
+type ToggleKey = Exclude<keyof RoomOptions, ScaleKey | 'kinds'>
 
 interface Scale {
   key: ScaleKey
@@ -100,8 +102,24 @@ export function RoomLobby({
   const scales = SCALES.filter((scale) => available.includes(scale.key))
 
   const toggles = available.filter(
-    (key): key is ToggleKey => key !== 'timerSec' && key !== 'questionCount',
+    (key): key is ToggleKey =>
+      key !== 'timerSec' && key !== 'questionCount' && key !== 'kinds',
   )
+
+  /**
+   * Retire ou remet une forme.
+   *
+   * La derniere ne peut pas partir : un salon sans aucune forme n'aurait
+   * plus rien a tirer, et le refus se lit mieux ici qu'au lancement.
+   */
+  function toggleKind(kind: (typeof KIND_CHOICES)[number]['value']) {
+    const active = options.kinds.includes(kind)
+    if (active && options.kinds.length === 1) return
+    const next = active
+      ? options.kinds.filter((current) => current !== kind)
+      : [...options.kinds, kind]
+    void run(() => setRoomOptions(room.id, { kinds: next }))
+  }
 
   useEffect(() => {
     if (!youId) return
@@ -210,6 +228,39 @@ export function RoomLobby({
                     />
                   </div>
                 ))}
+
+                {available.includes('kinds') && (
+                  <div>
+                    <legend className="text-fg mb-2 text-[15px] font-medium">
+                      Formes de questions
+                    </legend>
+                    <div className="flex flex-wrap gap-2">
+                      {KIND_CHOICES.map((choice) => {
+                        const active = options.kinds.includes(choice.value)
+                        return (
+                          <button
+                            key={choice.value}
+                            type="button"
+                            aria-pressed={active}
+                            disabled={!isHost || busy}
+                            onClick={() => toggleKind(choice.value)}
+                            className={cn(
+                              'rounded-token px-3 py-1.5 text-[14px]',
+                              'transition-[background-color,color,transform] duration-200',
+                              'active:scale-[0.97]',
+                              active
+                                ? 'bg-accent text-on-accent'
+                                : 'bg-sunken text-muted',
+                              (!isHost || busy) && 'cursor-default',
+                            )}
+                          >
+                            {choice.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {toggles.length > 0 && (
                   <div

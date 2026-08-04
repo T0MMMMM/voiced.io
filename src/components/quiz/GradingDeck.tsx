@@ -29,6 +29,21 @@ function readable(payload: unknown): string {
       return value.items.filter((item) => String(item).trim()).join(' · ') || '—'
     }
     if (typeof value.choice === 'string') return value.choice
+    if (value.pairs && typeof value.pairs === 'object') {
+      return Object.entries(value.pairs as Record<string, string>)
+        .map(([left, right]) => `${left} → ${right}`)
+        .join(' · ')
+    }
+    if (value.words && typeof value.words === 'object') {
+      // La catégorie est rappelée devant chaque mot : l'hôte tranche
+      // « Nice » selon qu'on lui demandait une ville ou un prénom.
+      return (
+        Object.entries(value.words as Record<string, string>)
+          .filter(([, word]) => String(word).trim())
+          .map(([category, word]) => `${category} : ${word}`)
+          .join(' · ') || '—'
+      )
+    }
   }
   return '—'
 }

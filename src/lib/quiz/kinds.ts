@@ -42,6 +42,10 @@ export interface PairsPayload {
   left: string[]
   right: string[]
 }
+export interface PetitBacPayload {
+  letter: string
+  categories: string[]
+}
 
 export interface Question {
   id: string
@@ -64,6 +68,8 @@ export type AnswerPayload =
   | { kind: 'estimation'; value: number }
   | { kind: 'classement'; order: string[] }
   | { kind: 'intrus'; choice: string }
+  | { kind: 'association'; pairs: Record<string, string> }
+  | { kind: 'petit_bac'; words: Record<string, string> }
 
 /**
  * Contrat commun a toutes les formes. `disabled` couvre aussi bien le

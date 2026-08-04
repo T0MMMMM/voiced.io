@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_OPTIONS, mergeOptions, TIMER_CHOICES } from './options'
+import {
+  DEFAULT_OPTIONS,
+  KIND_CHOICES,
+  mergeOptions,
+  TIMER_CHOICES,
+} from './options'
 
 describe('mergeOptions', () => {
   it('rend les valeurs par defaut sur un salon neuf', () => {
@@ -75,5 +80,38 @@ describe('TIMER_CHOICES', () => {
     expect(TIMER_CHOICES.map((choice) => choice.value)).toContain(
       DEFAULT_OPTIONS.timerSec,
     )
+  })
+})
+
+describe('formes de questions', () => {
+  it('ne garde que les formes connues', () => {
+    expect(mergeOptions({ kinds: ['ecrite', 'sondage', 42] }).kinds).toEqual([
+      'ecrite',
+    ])
+  })
+
+  it('retombe sur tout quand la selection est vide', () => {
+    // Un salon sans aucune forme n'aurait plus rien a tirer : mieux vaut
+    // tout proposer que lancer une partie de zero question.
+    expect(mergeOptions({ kinds: [] }).kinds).toEqual(DEFAULT_OPTIONS.kinds)
+  })
+
+  it('retombe sur tout quand la valeur n’est pas une liste', () => {
+    expect(mergeOptions({ kinds: 'ecrite' }).kinds).toEqual(DEFAULT_OPTIONS.kinds)
+  })
+
+  it('rend les formes dans l’ordre du salon, pas celui du stockage', () => {
+    // L'ordre vient de KIND_CHOICES : une liste stockee a l'envers ne doit
+    // pas rendre l'affichage des reglages instable d'une partie a l'autre.
+    expect(mergeOptions({ kinds: ['petit_bac', 'ecrite'] }).kinds).toEqual([
+      'ecrite',
+      'petit_bac',
+    ])
+  })
+
+  it('n’offre aucune forme absente de la banque', () => {
+    const offered = KIND_CHOICES.map((choice) => choice.value)
+    expect(offered).not.toContain('carte')
+    expect(offered).not.toContain('media')
   })
 })

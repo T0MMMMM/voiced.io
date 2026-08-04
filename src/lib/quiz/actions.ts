@@ -39,15 +39,18 @@ export async function startQuiz(roomId: string): Promise<void> {
     .eq('id', roomId)
     .maybeSingle()
 
-  const { questionCount, shuffle } = mergeOptions(room?.options)
+  const { questionCount, shuffle, kinds } = mergeOptions(room?.options)
 
   const { data: pool } = await supabase
     .from('questions')
     .select('id')
+    .in('kind', kinds)
     .limit(500)
 
   if (!pool || pool.length === 0) {
-    throw new Error('La banque de questions est vide.')
+    throw new Error(
+      'Aucune question ne correspond aux formes choisies. Réactivez-en une.',
+    )
   }
 
   // On tire toujours au hasard dans la banque ; l'option « ordre aleatoire »
@@ -166,11 +169,8 @@ function scoreOf(
     if (kind === 'intrus' && given.kind === 'intrus') {
       return scoreOddOneOut(given.choice, String(expected))
     }
-    if (kind === 'association') {
-      return scorePairs(
-        given as unknown as Record<string, string>,
-        expected as Record<string, string>,
-      )
+    if (kind === 'association' && given.kind === 'association') {
+      return scorePairs(given.pairs, expected as Record<string, string>)
     }
     if (kind === 'carte') {
       const target = expected as { point: LatLng; maxKm: number }

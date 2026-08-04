@@ -1,9 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { EstimateQuestion } from '@/components/quiz/kinds/EstimateQuestion'
 import { ListQuestion } from '@/components/quiz/kinds/ListQuestion'
 import { OddOneOutQuestion } from '@/components/quiz/kinds/OddOneOutQuestion'
+import { PairsQuestion } from '@/components/quiz/kinds/PairsQuestion'
+import { PetitBacQuestion } from '@/components/quiz/kinds/PetitBacQuestion'
 import { RankingQuestion } from '@/components/quiz/kinds/RankingQuestion'
 import { WrittenQuestion } from '@/components/quiz/kinds/WrittenQuestion'
 import { QuestionMeta } from '@/components/quiz/QuestionMeta'
@@ -22,6 +24,8 @@ import {
   type EstimatePayload,
   type ListPayload,
   type OddOneOutPayload,
+  type PairsPayload,
+  type PetitBacPayload,
   type Question,
   type RankingPayload,
   type WrittenPayload,
@@ -52,11 +56,24 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  /**
+   * Derniere etape depuis laquelle on a declenche un passage.
+   *
+   * Sans ce garde, valider sautait deux questions : au moment ou l'etape
+   * change, la liste « qui a repondu » porte encore les reponses de la
+   * question precedente, et l'ecran conclut aussitot que tout le monde a
+   * repondu a la nouvelle.
+   */
+  const advancedFrom = useRef<number | null>(null)
+
   // Chaque question repart de zero, et sa reponse deja envoyee est relue :
   // rafraichir sa page ne doit rien faire perdre.
   useEffect(() => {
     setAnswer(null)
     setSent(false)
+    // On efface aussi les repondants : les garder ferait croire que la
+    // nouvelle question a deja recu toutes les reponses.
+    setAnswered([])
     if (!question || !youId) return
 
     void myAnswer(room.id, youId, question.id).then((stored) => {
@@ -124,9 +141,12 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
    */
   useEffect(() => {
     if (!isHost || !question) return
+    if (advancedFrom.current === step) return
+
     const everyoneAnswered = players.length > 0 && answered.length >= players.length
     if (remaining > 0 && !everyoneAnswered) return
 
+    advancedFrom.current = step
     const action =
       step >= questions.length - 1 ? startGrading(room.id) : advanceQuiz(room.id, step + 1)
     void action.catch(() => {
@@ -224,6 +244,22 @@ export function QuizGame({ room, players, youId, questions }: QuizGameProps) {
           <OddOneOutQuestion
             payload={question.payload as OddOneOutPayload}
             value={answer?.kind === 'intrus' ? answer : null}
+            disabled={locked}
+            onChange={setAnswer}
+          />
+        )}
+        {question.kind === 'association' && (
+          <PairsQuestion
+            payload={question.payload as PairsPayload}
+            value={answer?.kind === 'association' ? answer : null}
+            disabled={locked}
+            onChange={setAnswer}
+          />
+        )}
+        {question.kind === 'petit_bac' && (
+          <PetitBacQuestion
+            payload={question.payload as PetitBacPayload}
+            value={answer?.kind === 'petit_bac' ? answer : null}
             disabled={locked}
             onChange={setAnswer}
           />

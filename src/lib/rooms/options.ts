@@ -8,6 +8,8 @@
  * referme ce risque : tout ce qui entre dans l'application passe par elle.
  */
 
+import type { QuestionKind } from '@/lib/quiz/kinds'
+
 /** Assez pour une soiree ; au-dela, plus personne ne suit. */
 export const MAX_PLAYERS = 8
 
@@ -16,11 +18,31 @@ export type TimerSec = 20 | 30 | 45 | 60
 /** Longueur d'une partie de quiz. */
 export type QuestionCount = 10 | 20 | 30
 
+/**
+ * Les formes qu'un salon peut tirer.
+ *
+ * Seules celles que la banque alimente sont proposees : offrir « Carte »
+ * dans le salon alors qu'aucune question n'existe reviendrait a promettre
+ * une partie qui ne tomberait jamais.
+ */
+export const KIND_CHOICES: { value: QuestionKind; label: string }[] = [
+  { value: 'ecrite', label: 'Réponse écrite' },
+  { value: 'liste', label: 'Citez' },
+  { value: 'estimation', label: 'Estimation' },
+  { value: 'intrus', label: 'Intrus' },
+  { value: 'classement', label: 'Classement' },
+  { value: 'frise', label: 'Frise' },
+  { value: 'association', label: 'Association' },
+  { value: 'petit_bac', label: 'Petit bac' },
+]
+
 export interface RoomOptions {
   /** 0 = pas de minuteur. */
   timerSec: TimerSec
   /** Nombre de questions tirees pour la partie. */
   questionCount: QuestionCount
+  /** Formes de questions autorisees dans le tirage. */
+  kinds: QuestionKind[]
   /** Ordre des questions tire au hasard. */
   shuffle: boolean
   /** L'hote corrige sans voir qui a repondu quoi. */
@@ -56,6 +78,9 @@ export const TIMER_CHOICES: { value: TimerSec; label: string }[] = [
 export const DEFAULT_OPTIONS: RoomOptions = {
   timerSec: 30,
   questionCount: 20,
+  // Toutes les formes par defaut : une premiere partie doit montrer ce que
+  // le quiz sait faire, pas la version la plus sage.
+  kinds: KIND_CHOICES.map((choice) => choice.value),
   shuffle: false,
   anonymousGrading: false,
   allowBets: false,
@@ -65,6 +90,7 @@ export const DEFAULT_OPTIONS: RoomOptions = {
 
 const TIMER_VALUES = TIMER_CHOICES.map((choice) => choice.value)
 const COUNT_VALUES = COUNT_CHOICES.map((choice) => choice.value)
+const KIND_VALUES = KIND_CHOICES.map((choice) => choice.value)
 
 /**
  * Reglages qui ont un sens pour chaque jeu.
@@ -77,6 +103,7 @@ export const OPTIONS_BY_GAME: Record<string, (keyof RoomOptions)[]> = {
   quiz: [
     'questionCount',
     'timerSec',
+    'kinds',
     'shuffle',
     'anonymousGrading',
     'allowBets',
@@ -102,6 +129,19 @@ function timer(value: unknown): TimerSec {
     : DEFAULT_OPTIONS.timerSec
 }
 
+/**
+ * Les formes retenues.
+ *
+ * Une liste vide n'est pas une erreur a corriger en silence : c'est un
+ * salon qui n'aurait aucune question a tirer. On retombe alors sur tout,
+ * ce que le tirage confirmera de son cote.
+ */
+function kindList(value: unknown): QuestionKind[] {
+  if (!Array.isArray(value)) return DEFAULT_OPTIONS.kinds
+  const kept = KIND_VALUES.filter((kind) => value.includes(kind))
+  return kept.length > 0 ? kept : DEFAULT_OPTIONS.kinds
+}
+
 function count(value: unknown): QuestionCount {
   return COUNT_VALUES.includes(value as QuestionCount)
     ? (value as QuestionCount)
@@ -118,6 +158,7 @@ export function mergeOptions(stored: unknown): RoomOptions {
   return {
     timerSec: timer(source.timerSec),
     questionCount: count(source.questionCount),
+    kinds: kindList(source.kinds),
     shuffle: bool(source.shuffle, DEFAULT_OPTIONS.shuffle),
     anonymousGrading: bool(
       source.anonymousGrading,

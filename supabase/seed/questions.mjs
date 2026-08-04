@@ -50,6 +50,43 @@ const classement = (theme, difficulty, prompt, order, topLabel, bottomLabel) => 
   answer: order,
 })
 
+/** Association : `pairs` est la reponse ; les colonnes sont melangees au jeu. */
+const association = (theme, difficulty, prompt, pairs) => ({
+  theme, kind: 'association', prompt, difficulty, points: POINTS[difficulty],
+  hint: null,
+  payload: {
+    left: Object.keys(pairs),
+    // La colonne de droite est brouillee, sinon les paires se lisent en
+    // diagonale sans rien connaitre.
+    right: [...Object.values(pairs)].reverse(),
+  },
+  answer: pairs,
+})
+
+/**
+ * Frise : un classement dans le temps. Le moteur le note comme un
+ * classement — seul l'ordre compte, jamais la date exacte.
+ */
+const frise = (theme, difficulty, prompt, order) => ({
+  theme, kind: 'frise', prompt, difficulty, points: POINTS[difficulty],
+  hint: null,
+  payload: {
+    items: [...order].reverse(),
+    topLabel: 'Le plus ancien',
+    bottomLabel: 'Le plus récent',
+  },
+  answer: order,
+})
+
+/** Petit bac : une lettre, des categories. Corrige a la main, toujours. */
+const petitBac = (theme, difficulty, letter, categories) => ({
+  theme, kind: 'petit_bac',
+  prompt: `Petit bac — lettre ${letter}`,
+  difficulty, points: POINTS[difficulty], hint: null,
+  payload: { letter, categories },
+  answer: null,
+})
+
 const intrus = (theme, difficulty, prompt, items, odd, hint = null) => ({
   theme, kind: 'intrus', prompt, difficulty, points: POINTS[difficulty], hint,
   payload: { items }, answer: odd,
@@ -404,4 +441,57 @@ export const QUESTIONS = [
     ['Rouge', 'Bleu', 'Jaune', 'Vert', 'Orange', 'Violet']),
   intrus('Arts', 2, 'Lequel n’est pas un peintre ?',
     ['Picasso', 'Matisse', 'Rodin', 'Kandinsky', 'Klimt'], 'Rodin'),
+
+  // ═══ Associations ═════════════════════════════════════════════════════
+  association('Géographie', 1, 'Reliez chaque pays à sa capitale', {
+    'Italie': 'Rome', 'Espagne': 'Madrid', 'Portugal': 'Lisbonne',
+    'Grèce': 'Athènes',
+  }),
+  association('Géographie', 2, 'Reliez chaque pays à sa monnaie', {
+    'Japon': 'Yen', 'Royaume-Uni': 'Livre sterling', 'Suisse': 'Franc suisse',
+    'Inde': 'Roupie',
+  }),
+  association('Sciences', 1, 'Reliez chaque élément à son symbole', {
+    'Or': 'Au', 'Fer': 'Fe', 'Oxygène': 'O', 'Sodium': 'Na',
+  }),
+  association('Cinéma', 1, 'Reliez chaque film à son réalisateur', {
+    'Pulp Fiction': 'Quentin Tarantino', 'Inception': 'Christopher Nolan',
+    'Jurassic Park': 'Steven Spielberg', 'Le Parrain': 'Francis Ford Coppola',
+  }),
+  association('Musique', 2, 'Reliez chaque chanson à son groupe', {
+    'Bohemian Rhapsody': 'Queen', 'Hey Jude': 'Les Beatles',
+    'Stairway to Heaven': 'Led Zeppelin', 'Smells Like Teen Spirit': 'Nirvana',
+  }),
+  association('Nature', 1, 'Reliez chaque animal à son petit', {
+    'Vache': 'Veau', 'Cheval': 'Poulain', 'Mouton': 'Agneau', 'Chèvre': 'Chevreau',
+  }),
+  association('Sport', 1, 'Reliez chaque sport à son terrain', {
+    'Tennis': 'Court', 'Football': 'Stade', 'Natation': 'Piscine',
+    'Patinage': 'Patinoire',
+  }),
+  association('Arts', 2, 'Reliez chaque œuvre à son auteur', {
+    'La Joconde': 'Léonard de Vinci', 'La Nuit étoilée': 'Van Gogh',
+    'Le Penseur': 'Rodin', 'Guernica': 'Picasso',
+  }),
+
+  // ═══ Frises ═══════════════════════════════════════════════════════════
+  frise('Histoire', 1, 'Replacez ces événements dans l’ordre chronologique',
+    ['Construction des pyramides', 'Empire romain', 'Moyen Âge',
+      'Révolution française', 'Premier pas sur la Lune']),
+  frise('Histoire', 2, 'Replacez ces guerres dans l’ordre chronologique',
+    ['Guerre de Cent Ans', 'Guerre de Trente Ans', 'Guerres napoléoniennes',
+      'Première Guerre mondiale', 'Guerre du Golfe']),
+  frise('Technologie', 1, 'Replacez ces inventions dans l’ordre chronologique',
+    ['Roue', 'Imprimerie', 'Ampoule électrique', 'Ordinateur', 'Internet']),
+  frise('Cinéma', 2, 'Replacez ces films dans l’ordre de sortie',
+    ['Blanche-Neige', 'Le Roi Lion', 'Toy Story', 'Shrek', 'Frozen']),
+  frise('Sciences', 2, 'Replacez ces découvertes dans l’ordre chronologique',
+    ['Loi de la gravitation', 'Théorie de l’évolution', 'Relativité',
+      'Structure de l’ADN', 'Séquençage du génome humain']),
+
+  // ═══ Petit bac ════════════════════════════════════════════════════════
+  petitBac('Petit bac', 1, 'B', ['Un pays', 'Un animal', 'Un aliment', 'Un métier']),
+  petitBac('Petit bac', 1, 'M', ['Une ville', 'Un fruit', 'Un sport', 'Un prénom']),
+  petitBac('Petit bac', 2, 'V', ['Un pays', 'Un légume', 'Un instrument', 'Une couleur']),
+  petitBac('Petit bac', 2, 'C', ['Un animal', 'Une capitale', 'Un métier', 'Un film']),
 ]
